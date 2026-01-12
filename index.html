@@ -123,7 +123,25 @@
       50% { transform: translateY(-4px); }
     }
 
-    /* Logo overlay - appears behind dialogue */
+    /* Fireworks canvases */
+    .fireworks-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .fireworks-bg {
+      z-index: 0;
+    }
+
+    .fireworks-fg {
+      z-index: 3;
+    }
+
+    /* Logo overlay - appears between firework layers */
     .logo-overlay {
       position: fixed;
       top: 0;
@@ -274,10 +292,16 @@
   </style>
 </head>
 <body>
+  <!-- Fireworks canvas (background) -->
+  <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
+  
   <!-- Logo overlay -->
   <div class="logo-overlay" id="logoOverlay">
     <img class="logo-image" id="logoImage" src="images/logo.png" alt="MARZIALE TECHNOLOGIES">
   </div>
+  
+  <!-- Fireworks canvas (foreground debris) -->
+  <canvas id="fireworksFg" class="fireworks-canvas fireworks-fg"></canvas>
 
   <div class="container" id="mainContainer">
     <div class="character" id="character">
@@ -472,6 +496,202 @@
     // Load MIDI on page load
     loadMidi();
 
+    // Fireworks system
+    const bgCanvas = document.getElementById('fireworksBg');
+    const fgCanvas = document.getElementById('fireworksFg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const fgCtx = fgCanvas.getContext('2d');
+    
+    let fireworksActive = false;
+    let rockets = [];
+    let explosions = [];
+    let debris = [];
+    
+    const colors = ['#ff0040', '#00ff80', '#0080ff', '#ff8000', '#ff00ff', '#ffff00', '#00ffff', '#ff4080'];
+    
+    function resizeCanvases() {
+      bgCanvas.width = fgCanvas.width = window.innerWidth;
+      bgCanvas.height = fgCanvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+    
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    function createRocket() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      
+      rockets.push({
+        x: centerX + random(-100, 100),
+        y: centerY + random(-30, 30),
+        vx: random(-2, 2),
+        vy: random(-12, -8),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        trail: []
+      });
+    }
+    
+    function createExplosion(x, y, color) {
+      const particleCount = 60 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
+        const speed = random(2, 8);
+        const particleColor = Math.random() > 0.3 ? color : colors[Math.floor(Math.random() * colors.length)];
+        
+        explosions.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: particleColor,
+          life: 1,
+          decay: random(0.01, 0.025),
+          size: random(2, 4)
+        });
+      }
+      
+      // Create foreground debris (larger, falls slower for depth)
+      for (let i = 0; i < 15; i++) {
+        debris.push({
+          x: x + random(-50, 50),
+          y: random(-20, 100),
+          vx: random(-1, 1),
+          vy: random(1, 3),
+          color: colors[Math.floor(Math.random() * colors.length)],
+          life: 1,
+          decay: random(0.003, 0.008),
+          size: random(4, 8)
+        });
+      }
+    }
+    
+    function updateFireworks() {
+      // Update rockets
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 10) r.trail.shift();
+        
+        r.x += r.vx;
+        r.y += r.vy;
+        r.vy += 0.15; // Gravity
+        
+        // Explode when slowing down or reaching top
+        if (r.vy > -2 || r.y < window.innerHeight * 0.3) {
+          createExplosion(r.x, r.y, r.color);
+          rockets.splice(i, 1);
+        }
+      }
+      
+      // Update explosion particles
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const p = explosions[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08; // Gravity
+        p.vx *= 0.98; // Drag
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+          explosions.splice(i, 1);
+        }
+      }
+      
+      // Update debris (foreground)
+      for (let i = debris.length - 1; i >= 0; i--) {
+        const d = debris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.02; // Slow gravity for floating effect
+        d.vx += random(-0.1, 0.1); // Drift
+        d.life -= d.decay;
+        
+        if (d.life <= 0 || d.y > window.innerHeight + 20) {
+          debris.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawFireworks() {
+      // Clear canvases
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      
+      // Draw rockets and explosions on background canvas
+      rockets.forEach(r => {
+        // Draw trail
+        r.trail.forEach((t, i) => {
+          const alpha = i / r.trail.length * 0.5;
+          bgCtx.fillStyle = r.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+          bgCtx.beginPath();
+          bgCtx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+          bgCtx.fill();
+        });
+        
+        // Draw rocket
+        bgCtx.fillStyle = r.color;
+        bgCtx.beginPath();
+        bgCtx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      
+      // Draw explosion particles
+      explosions.forEach(p => {
+        bgCtx.globalAlpha = p.life;
+        bgCtx.fillStyle = p.color;
+        bgCtx.beginPath();
+        bgCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      bgCtx.globalAlpha = 1;
+      
+      // Draw debris on foreground canvas (larger for depth)
+      debris.forEach(d => {
+        fgCtx.globalAlpha = d.life;
+        fgCtx.fillStyle = d.color;
+        fgCtx.shadowColor = d.color;
+        fgCtx.shadowBlur = 10;
+        fgCtx.beginPath();
+        fgCtx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        fgCtx.fill();
+      });
+      fgCtx.globalAlpha = 1;
+      fgCtx.shadowBlur = 0;
+    }
+    
+    function fireworksLoop() {
+      if (!fireworksActive) return;
+      
+      updateFireworks();
+      drawFireworks();
+      
+      // Randomly launch new rockets
+      if (Math.random() < 0.08) {
+        createRocket();
+      }
+      
+      requestAnimationFrame(fireworksLoop);
+    }
+    
+    function startFireworks() {
+      if (fireworksActive) return;
+      fireworksActive = true;
+      fireworksLoop();
+    }
+    
+    function stopFireworks() {
+      fireworksActive = false;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      rockets = [];
+      explosions = [];
+      debris = [];
+    }
+
     function playChatter() {
       if (!audioCtx) return;
       
@@ -568,10 +788,11 @@
         // Done typing
         isTyping = false;
         
-        // Show logo and start music when frame 4 finishes typing
+        // Show logo, start music, and fireworks when frame 4 finishes typing
         if (currentFrame === LOGO_FRAME) {
           logoOverlay.classList.add('visible');
           startMusic();
+          startFireworks();
         }
         
         // If text ends with ellipsis, delay before showing prompt
@@ -605,6 +826,7 @@
     function endSequence() {
       isFinished = true;
       stopMusic();
+      stopFireworks();
       dialogueBox.classList.remove('visible');
       character.classList.remove('entered');
       promptIcon.classList.remove('visible');
@@ -697,10 +919,11 @@
         dialogueText.textContent = fullText;
         isTyping = false;
         
-        // Show logo and start music when skipping frame 4's text
+        // Show logo, start music, and fireworks when skipping frame 4's text
         if (currentFrame === LOGO_FRAME) {
           logoOverlay.classList.add('visible');
           startMusic();
+          startFireworks();
         }
         
         // If text ends with ellipsis, still do the delay
