@@ -321,8 +321,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.3</span>
-    <span class="version-desc">Fewer fireworks, delayed debris falls from above</span>
+    <span class="version-number">v1.4</span>
+    <span class="version-desc">Even fewer fireworks (0.0087)</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -703,8 +703,8 @@
       updateFireworks();
       drawFireworks();
       
-      // Randomly launch new rockets (0.33x frequency)
-      if (Math.random() < 0.026) {
+      // Randomly launch new rockets (reduced frequency)
+      if (Math.random() < 0.0087) {
         createRocket();
       }
       
