@@ -321,8 +321,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.1</span>
-    <span class="version-desc">Slower fireworks rise, break, and debris fall</span>
+    <span class="version-number">v1.2</span>
+    <span class="version-desc">Fireworks span logo width, uniform color per explosion</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -556,12 +556,13 @@
     function createRocket() {
       const centerX = window.innerWidth / 2;
       const centerY = window.innerHeight / 2;
+      const logoWidth = window.innerWidth * 0.35; // Approximate logo width
       
       rockets.push({
-        x: centerX + random(-100, 100),
+        x: centerX + random(-logoWidth, logoWidth), // Span entire logo width
         y: centerY + random(-30, 30),
         vx: random(-1, 1),
-        vy: random(-5, -3), // Slower rise
+        vy: random(-5, -3),
         color: colors[Math.floor(Math.random() * colors.length)],
         trail: []
       });
@@ -571,31 +572,30 @@
       const particleCount = 60 + Math.floor(Math.random() * 40);
       for (let i = 0; i < particleCount; i++) {
         const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
-        const speed = random(1, 4); // Slower explosion spread
-        const particleColor = Math.random() > 0.3 ? color : colors[Math.floor(Math.random() * colors.length)];
+        const speed = random(1, 4);
         
         explosions.push({
           x: x,
           y: y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          color: particleColor,
+          color: color, // Single uniform color for entire explosion
           life: 1,
-          decay: random(0.005, 0.012), // Slower decay
+          decay: random(0.005, 0.012),
           size: random(2, 4)
         });
       }
       
-      // Create foreground debris (larger, falls slower for depth)
+      // Create foreground debris (same color as explosion)
       for (let i = 0; i < 15; i++) {
         debris.push({
           x: x + random(-50, 50),
           y: random(-20, 100),
           vx: random(-0.5, 0.5),
-          vy: random(0.3, 1), // Much slower fall
-          color: colors[Math.floor(Math.random() * colors.length)],
+          vy: random(0.3, 1),
+          color: color, // Same uniform color
           life: 1,
-          decay: random(0.002, 0.005), // Slower decay
+          decay: random(0.002, 0.005),
           size: random(4, 8)
         });
       }
