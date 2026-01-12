@@ -321,8 +321,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.0</span>
-    <span class="version-desc">Add fireworks effect</span>
+    <span class="version-number">v1.1</span>
+    <span class="version-desc">Slower fireworks rise, break, and debris fall</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -560,8 +560,8 @@
       rockets.push({
         x: centerX + random(-100, 100),
         y: centerY + random(-30, 30),
-        vx: random(-2, 2),
-        vy: random(-12, -8),
+        vx: random(-1, 1),
+        vy: random(-5, -3), // Slower rise
         color: colors[Math.floor(Math.random() * colors.length)],
         trail: []
       });
@@ -571,7 +571,7 @@
       const particleCount = 60 + Math.floor(Math.random() * 40);
       for (let i = 0; i < particleCount; i++) {
         const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
-        const speed = random(2, 8);
+        const speed = random(1, 4); // Slower explosion spread
         const particleColor = Math.random() > 0.3 ? color : colors[Math.floor(Math.random() * colors.length)];
         
         explosions.push({
@@ -581,7 +581,7 @@
           vy: Math.sin(angle) * speed,
           color: particleColor,
           life: 1,
-          decay: random(0.01, 0.025),
+          decay: random(0.005, 0.012), // Slower decay
           size: random(2, 4)
         });
       }
@@ -591,11 +591,11 @@
         debris.push({
           x: x + random(-50, 50),
           y: random(-20, 100),
-          vx: random(-1, 1),
-          vy: random(1, 3),
+          vx: random(-0.5, 0.5),
+          vy: random(0.3, 1), // Much slower fall
           color: colors[Math.floor(Math.random() * colors.length)],
           life: 1,
-          decay: random(0.003, 0.008),
+          decay: random(0.002, 0.005), // Slower decay
           size: random(4, 8)
         });
       }
@@ -606,14 +606,14 @@
       for (let i = rockets.length - 1; i >= 0; i--) {
         const r = rockets[i];
         r.trail.push({ x: r.x, y: r.y });
-        if (r.trail.length > 10) r.trail.shift();
+        if (r.trail.length > 15) r.trail.shift();
         
         r.x += r.vx;
         r.y += r.vy;
-        r.vy += 0.15; // Gravity
+        r.vy += 0.05; // Slower gravity for rockets
         
         // Explode when slowing down or reaching top
-        if (r.vy > -2 || r.y < window.innerHeight * 0.3) {
+        if (r.vy > -0.5 || r.y < window.innerHeight * 0.25) {
           createExplosion(r.x, r.y, r.color);
           rockets.splice(i, 1);
         }
@@ -624,8 +624,8 @@
         const p = explosions[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.08; // Gravity
-        p.vx *= 0.98; // Drag
+        p.vy += 0.03; // Slower gravity for particles
+        p.vx *= 0.99; // Less drag
         p.life -= p.decay;
         
         if (p.life <= 0) {
@@ -638,8 +638,8 @@
         const d = debris[i];
         d.x += d.vx;
         d.y += d.vy;
-        d.vy += 0.02; // Slow gravity for floating effect
-        d.vx += random(-0.1, 0.1); // Drift
+        d.vy += 0.008; // Very slow gravity for gentle floating
+        d.vx += random(-0.05, 0.05); // Gentle drift
         d.life -= d.decay;
         
         if (d.life <= 0 || d.y > window.innerHeight + 20) {
