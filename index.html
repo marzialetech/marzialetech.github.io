@@ -105,27 +105,11 @@
       50% { transform: translateY(-4px); }
     }
 
-    /* Pause indicator */
-    .pause-indicator {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 3rem;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-      pointer-events: none;
-    }
-
-    .pause-indicator.visible {
-      opacity: 0.6;
-    }
-
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .container {
         padding: 1rem;
-        padding-bottom: 4rem; /* Elevate above mobile address bar */
+        padding-bottom: 4rem;
       }
       
       .character {
@@ -167,8 +151,6 @@
     </div>
   </div>
 
-  <div class="pause-indicator" id="pauseIndicator">. . .</div>
-
   <script>
     // Audio context for Animal Crossing style chatter
     let audioCtx = null;
@@ -205,6 +187,7 @@
     }
 
     // Animation sequence: 2,3,6,3,9,1,4,1,(pause),5,6,7,2,8
+    // Pause is now img 5 (embarrassed) with slow dots
     const sequence = [
       { img: 2, dialogue: "Hey there!" },
       { img: 3, dialogue: "So let me tell you about this thing I've been working on..." },
@@ -214,7 +197,7 @@
       { img: 1, dialogue: "This is EVERYTHING I've been dreaming about!" },
       { img: 4, dialogue: "Years of effort! YEARS!" },
       { img: 1, dialogue: "I could cry right now, this is—" },
-      { img: 'pause', dialogue: "" },
+      { img: 5, dialogue: "...", slow: true }, // Slow dots pause
       { img: 5, dialogue: "...sorry. I got a bit carried away there." },
       { img: 6, dialogue: "Anyway, what I meant to say is..." },
       { img: 7, dialogue: "...there might be more surprises where that came from." },
@@ -236,8 +219,8 @@
 
     let currentFrame = -1;
     let started = false;
-    let isPaused = false;
     let isTyping = false;
+    let isSlowPause = false;
     let isFinished = false;
     let typewriterTimeout = null;
     let fullText = '';
@@ -248,7 +231,6 @@
     const dialogueText = document.getElementById('dialogueText');
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
-    const pauseIndicator = document.getElementById('pauseIndicator');
     const promptIcon = document.getElementById('promptIcon');
 
     // Preload images
@@ -278,6 +260,25 @@
       }
     }
 
+    function slowTypeWriter() {
+      if (charIndex < fullText.length) {
+        dialogueText.textContent += fullText.charAt(charIndex);
+        playChatter();
+        charIndex++;
+        
+        // 500ms per dot (1.5s total for 3 dots)
+        typewriterTimeout = setTimeout(slowTypeWriter, 500);
+      } else {
+        // Done with slow typing - auto advance after a moment
+        isTyping = false;
+        isSlowPause = false;
+        setTimeout(() => {
+          currentFrame++;
+          showFrame(currentFrame);
+        }, 300);
+      }
+    }
+
     function endSequence() {
       isFinished = true;
       dialogueBox.classList.remove('visible');
@@ -294,7 +295,6 @@
       started = false;
       currentFrame = -1;
       mainContainer.classList.remove('hidden');
-      // Start immediately
       startSequence();
     }
 
@@ -307,28 +307,11 @@
 
     function showFrame(index) {
       if (index >= sequence.length) {
-        // End of sequence - close everything
         endSequence();
         return;
       }
 
       const frame = sequence[index];
-
-      if (frame.img === 'pause') {
-        // Show pause
-        isPaused = true;
-        dialogueBox.classList.remove('visible');
-        promptIcon.classList.remove('visible');
-        pauseIndicator.classList.add('visible');
-        
-        setTimeout(() => {
-          pauseIndicator.classList.remove('visible');
-          isPaused = false;
-          currentFrame++;
-          showFrame(currentFrame);
-        }, 1500);
-        return;
-      }
 
       // Update character
       character.classList.remove('visible');
@@ -352,12 +335,19 @@
         charIndex = 0;
         isTyping = true;
         dialogueBox.classList.add('visible');
-        typeWriter();
+        
+        if (frame.slow) {
+          // Slow dots mode
+          isSlowPause = true;
+          slowTypeWriter();
+        } else {
+          typeWriter();
+        }
       }, 150);
     }
 
     function advance() {
-      if (isPaused) return;
+      if (isSlowPause) return; // Can't skip slow pause
       if (isFinished) return;
 
       // Initialize audio on first interaction
