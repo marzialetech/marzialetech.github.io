@@ -321,8 +321,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.2</span>
-    <span class="version-desc">Fireworks span logo width, uniform color per explosion</span>
+    <span class="version-number">v1.3</span>
+    <span class="version-desc">Fewer fireworks, delayed debris falls from above</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -586,19 +586,21 @@
         });
       }
       
-      // Create foreground debris (same color as explosion)
-      for (let i = 0; i < 15; i++) {
-        debris.push({
-          x: x + random(-50, 50),
-          y: random(-20, 100),
-          vx: random(-0.5, 0.5),
-          vy: random(0.3, 1),
-          color: color, // Same uniform color
-          life: 1,
-          decay: random(0.002, 0.005),
-          size: random(4, 8)
-        });
-      }
+      // Create foreground debris after a delay, starting above viewport
+      setTimeout(() => {
+        for (let i = 0; i < 15; i++) {
+          debris.push({
+            x: x + random(-100, 100),
+            y: random(-150, -50), // Start above the viewport
+            vx: random(-0.5, 0.5),
+            vy: random(0.3, 1),
+            color: color,
+            life: 1,
+            decay: random(0.002, 0.005),
+            size: random(4, 8)
+          });
+        }
+      }, 400); // 400ms delay after explosion
     }
     
     function updateFireworks() {
@@ -701,8 +703,8 @@
       updateFireworks();
       drawFireworks();
       
-      // Randomly launch new rockets
-      if (Math.random() < 0.08) {
+      // Randomly launch new rockets (0.33x frequency)
+      if (Math.random() < 0.026) {
         createRocket();
       }
       
