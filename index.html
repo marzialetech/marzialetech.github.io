@@ -44,12 +44,18 @@
       min-width: 100px;
       max-width: 180px;
       flex-shrink: 0;
-      transform: translateY(100vh);
+      transform: translate3d(0, 100vh, 0);
+      -webkit-transform: translate3d(0, 100vh, 0);
       transition: transform 0.8s linear;
+      -webkit-transition: -webkit-transform 0.8s linear;
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
     }
 
     .character.entered {
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
     }
 
     .character img {
