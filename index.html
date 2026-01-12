@@ -44,8 +44,12 @@
       min-width: 100px;
       max-width: 180px;
       flex-shrink: 0;
-      opacity: 0;
-      transition: opacity 0.15s ease;
+      transform: translateY(100vh);
+      transition: transform 0.8s linear;
+    }
+
+    .character.entered {
+      transform: translateY(0);
     }
 
     .character.visible {
@@ -105,6 +109,47 @@
       50% { transform: translateY(-4px); }
     }
 
+    /* Intro prompt - spacebar + cursor */
+    .intro-prompt {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      padding-bottom: 0.5rem;
+    }
+
+    .intro-prompt.visible {
+      opacity: 1;
+    }
+
+    .spacebar-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #000;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 0.4rem 1rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 0 #888;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .cursor-icon {
+      width: 20px;
+      height: 24px;
+      position: relative;
+    }
+
+    .cursor-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: #fff;
+    }
+
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .container {
@@ -119,6 +164,11 @@
       
       .dialogue-area {
         padding-left: 1rem;
+      }
+
+      .spacebar-icon {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.7rem;
       }
     }
 
@@ -139,13 +189,23 @@
 <body>
   <div class="container" id="mainContainer">
     <div class="character" id="character">
-      <img id="characterImg" src="" alt="character">
+      <img id="characterImg" src="images/img2_wave.png" alt="character">
     </div>
 
     <div class="dialogue-area">
+      <!-- Intro prompt shown before dialogue starts -->
+      <div class="intro-prompt" id="introPrompt">
+        <div class="spacebar-icon">SPACE</div>
+        <div class="cursor-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 0 L4 20 L8 16 L12 24 L16 22 L12 14 L18 14 Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Dialogue box shown during conversation -->
       <div class="dialogue-box" id="dialogueBox">
         <p class="dialogue-text" id="dialogueText"></p>
-        <!-- Pixel art space key icon -->
         <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
       </div>
     </div>
@@ -167,15 +227,11 @@
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       
-      // Randomize pitch for variety (Animal Crossing style)
       const baseFreq = 280 + Math.random() * 180;
       oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
       oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, audioCtx.currentTime + 0.06);
-      
-      // Use square wave for that classic sound
       oscillator.type = 'square';
       
-      // Quick envelope
       gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
       
@@ -186,8 +242,7 @@
       oscillator.stop(audioCtx.currentTime + 0.06);
     }
 
-    // Animation sequence: 2,3,6,3,9,1,4,1,(pause),5,6,7,2,8
-    // Pause is now img 5 (embarrassed) with slow dots
+    // Animation sequence
     const sequence = [
       { img: 2, dialogue: "Hey there!" },
       { img: 3, dialogue: "So let me tell you about this thing I've been working on..." },
@@ -197,7 +252,7 @@
       { img: 1, dialogue: "This is EVERYTHING I've been dreaming about!" },
       { img: 4, dialogue: "Years of effort! YEARS!" },
       { img: 1, dialogue: "I could cry right now, this is—" },
-      { img: 5, dialogue: "...", slow: true }, // Slow dots pause
+      { img: 5, dialogue: "...", slow: true },
       { img: 5, dialogue: "...sorry. I got a bit carried away there." },
       { img: 6, dialogue: "Anyway, what I meant to say is..." },
       { img: 7, dialogue: "...there might be more surprises where that came from." },
@@ -218,6 +273,8 @@
     };
 
     let currentFrame = -1;
+    let introComplete = false;
+    let waitingForStart = false;
     let started = false;
     let isTyping = false;
     let isSlowPause = false;
@@ -232,6 +289,7 @@
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     const promptIcon = document.getElementById('promptIcon');
+    const introPrompt = document.getElementById('introPrompt');
 
     // Preload images
     Object.values(imageMap).forEach(src => {
@@ -243,18 +301,14 @@
       if (charIndex < fullText.length) {
         dialogueText.textContent += fullText.charAt(charIndex);
         
-        // Play chatter sound for non-space characters
         if (fullText.charAt(charIndex) !== ' ') {
           playChatter();
         }
         
         charIndex++;
-        
-        // Vary typing speed slightly for more natural feel
         const delay = fullText.charAt(charIndex - 1) === ' ' ? 30 : 35 + Math.random() * 20;
         typewriterTimeout = setTimeout(typeWriter, delay);
       } else {
-        // Done typing - show prompt icon
         isTyping = false;
         promptIcon.classList.add('visible');
       }
@@ -265,11 +319,8 @@
         dialogueText.textContent += fullText.charAt(charIndex);
         playChatter();
         charIndex++;
-        
-        // 500ms per dot (1.5s total for 3 dots)
         typewriterTimeout = setTimeout(slowTypeWriter, 500);
       } else {
-        // Done with slow typing - auto advance after a moment
         isTyping = false;
         isSlowPause = false;
         setTimeout(() => {
@@ -282,24 +333,47 @@
     function endSequence() {
       isFinished = true;
       dialogueBox.classList.remove('visible');
-      character.classList.remove('visible');
+      character.classList.remove('entered');
       promptIcon.classList.remove('visible');
       
       setTimeout(() => {
         mainContainer.classList.add('hidden');
-      }, 300);
+      }, 800);
     }
 
     function restartSequence() {
       isFinished = false;
+      introComplete = false;
+      waitingForStart = false;
       started = false;
       currentFrame = -1;
       mainContainer.classList.remove('hidden');
-      startSequence();
+      character.classList.remove('entered');
+      characterImg.src = imageMap[2]; // Reset to wave
+      introPrompt.classList.remove('visible');
+      dialogueBox.classList.remove('visible');
+      
+      setTimeout(playIntro, 300);
     }
 
-    function startSequence() {
-      if (started) return;
+    function playIntro() {
+      // Character slides up from bottom
+      characterImg.src = imageMap[2]; // Wave image for intro
+      character.classList.add('entered');
+      
+      // After slide-up completes, show the prompt
+      setTimeout(() => {
+        introComplete = true;
+        waitingForStart = true;
+        introPrompt.classList.add('visible');
+      }, 850); // Slightly after the 0.8s transition
+    }
+
+    function startDialogue() {
+      if (!waitingForStart) return;
+      
+      waitingForStart = false;
+      introPrompt.classList.remove('visible');
       started = true;
       currentFrame = 0;
       showFrame(currentFrame);
@@ -313,13 +387,8 @@
 
       const frame = sequence[index];
 
-      // Update character
-      character.classList.remove('visible');
-      
-      setTimeout(() => {
-        characterImg.src = imageMap[frame.img];
-        character.classList.add('visible');
-      }, 100);
+      // Update character image (no need to hide/show, just swap)
+      characterImg.src = imageMap[frame.img];
 
       // Reset and start typewriter
       dialogueBox.classList.remove('visible');
@@ -337,7 +406,6 @@
         dialogueBox.classList.add('visible');
         
         if (frame.slow) {
-          // Slow dots mode
           isSlowPause = true;
           slowTypeWriter();
         } else {
@@ -347,11 +415,19 @@
     }
 
     function advance() {
-      if (isSlowPause) return; // Can't skip slow pause
+      if (isSlowPause) return;
       if (isFinished) return;
 
-      // Initialize audio on first interaction
       initAudio();
+
+      // If waiting for start after intro
+      if (waitingForStart) {
+        startDialogue();
+        return;
+      }
+
+      // If dialogue hasn't started yet, ignore
+      if (!started) return;
 
       // If still typing, complete the text immediately
       if (isTyping) {
@@ -376,7 +452,6 @@
         advance();
       }
       
-      // Press 'J' to restart after finished
       if (e.key === 'j' || e.key === 'J') {
         if (isFinished) {
           restartSequence();
@@ -395,9 +470,9 @@
       advance();
     });
 
-    // Start automatically on page load
+    // Start intro on page load
     window.addEventListener('load', () => {
-      setTimeout(startSequence, 300);
+      setTimeout(playIntro, 300);
     });
   </script>
 </body>
