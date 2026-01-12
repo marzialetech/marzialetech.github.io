@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>marziale.tech</title>
   <style>
     * {
@@ -14,6 +14,7 @@
     body {
       background: #000;
       min-height: 100vh;
+      min-height: 100dvh;
       overflow: hidden;
       font-family: 'Courier New', monospace;
       color: #fff;
@@ -25,6 +26,7 @@
       position: relative;
       width: 100vw;
       height: 100vh;
+      height: 100dvh;
       display: flex;
       align-items: flex-end;
       padding: 2rem;
@@ -119,48 +121,11 @@
       opacity: 0.6;
     }
 
-    /* Start screen */
-    .start-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      transition: opacity 0.5s ease;
-    }
-
-    .start-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .start-screen h1 {
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
-      margin-bottom: 2rem;
-      text-shadow: 0 0 30px rgba(255,255,255,0.4);
-    }
-
-    .start-prompt {
-      font-size: 1rem;
-      opacity: 0.6;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.7; }
-    }
-
     /* Mobile adjustments */
     @media (max-width: 600px) {
       .container {
         padding: 1rem;
+        padding-bottom: 4rem; /* Elevate above mobile address bar */
       }
       
       .character {
@@ -172,14 +137,22 @@
         padding-left: 1rem;
       }
     }
+
+    /* Extra safety for mobile browsers with bottom bars */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .container {
+        padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+      }
+      
+      @media (max-width: 600px) {
+        .container {
+          padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+        }
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="start-screen" id="startScreen">
-    <h1>marziale.tech</h1>
-    <p class="start-prompt">[ press space or tap to begin ]</p>
-  </div>
-
   <div class="container" id="mainContainer">
     <div class="character" id="character">
       <img id="characterImg" src="" alt="character">
@@ -270,7 +243,6 @@
     let fullText = '';
     let charIndex = 0;
 
-    const startScreen = document.getElementById('startScreen');
     const mainContainer = document.getElementById('mainContainer');
     const dialogueBox = document.getElementById('dialogueBox');
     const dialogueText = document.getElementById('dialogueText');
@@ -322,7 +294,15 @@
       started = false;
       currentFrame = -1;
       mainContainer.classList.remove('hidden');
-      startScreen.classList.remove('hidden');
+      // Start immediately
+      startSequence();
+    }
+
+    function startSequence() {
+      if (started) return;
+      started = true;
+      currentFrame = 0;
+      showFrame(currentFrame);
     }
 
     function showFrame(index) {
@@ -383,14 +363,6 @@
       // Initialize audio on first interaction
       initAudio();
 
-      if (!started) {
-        started = true;
-        startScreen.classList.add('hidden');
-        currentFrame = 0;
-        showFrame(currentFrame);
-        return;
-      }
-
       // If still typing, complete the text immediately
       if (isTyping) {
         if (typewriterTimeout) {
@@ -410,6 +382,7 @@
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
+        initAudio();
         advance();
       }
       
@@ -422,10 +395,19 @@
     });
 
     // Touch/click handler
-    document.addEventListener('click', advance);
+    document.addEventListener('click', () => {
+      initAudio();
+      advance();
+    });
     document.addEventListener('touchend', (e) => {
       e.preventDefault();
+      initAudio();
       advance();
+    });
+
+    // Start automatically on page load
+    window.addEventListener('load', () => {
+      setTimeout(startSequence, 300);
     });
   </script>
 </body>
