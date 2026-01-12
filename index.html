@@ -318,89 +318,151 @@
       }
     }
 
-    // 8-bit Jesu Joy of Man's Desiring - from MIDI file
-    const NOTE_FREQS = {
-      'R': 0,
-      'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'C#4': 277.18, 'D4': 293.66,
-      'E4': 329.63, 'F#4': 369.99, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
-      'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'E5': 659.25, 'F#5': 739.99, 'G5': 783.99
-    };
+    // MIDI playback variables
+    let midiData = null;
+    let musicStartTime = 0;
+    let scheduledNotes = [];
 
-    // Melody from MIDI
-    const melody = [
-      'G4', 'A4', 'B4', 'G4', 'D5', 'C5', 'C5', 'G4', 'E5',
-      'D5', 'A4', 'G4', 'D5', 'B4', 'G5', 'F#5', 'A4', 'G5',
-      'B4', 'D5', 'B4', 'G4', 'G4', 'A4', 'B4', 'C5', 'D5',
-      'C#5', 'E5', 'D5', 'G4', 'C5', 'B4', 'A4', 'B4', 'G4',
-      'G4', 'A4', 'A4', 'G4', 'C5', 'B4', 'A4', 'B4', 'G4',
-      'G4', 'A4', 'B4', 'G4', 'D5', 'C5', 'C5', 'G4', 'E5',
-      'D5', 'A4', 'G4', 'D5', 'B4', 'G5', 'F#5', 'A4', 'G5',
-      'B4', 'D5', 'B4', 'G4', 'G4', 'A4', 'G4', 'B4', 'A4',
-    ];
+    // Load and parse MIDI file
+    async function loadMidi() {
+      try {
+        const response = await fetch('music/jesu.mid');
+        const arrayBuffer = await response.arrayBuffer();
+        midiData = parseMidi(new Uint8Array(arrayBuffer));
+      } catch (e) {
+        console.log('MIDI load error:', e);
+      }
+    }
 
-    // Harmony from MIDI
-    const harmony = [
-      'D4', 'G3', 'F#4', 'E4', 'E4', 'B3', 'E4', 'D4', 'E4',
-      'F#4', 'D4', 'D4', 'C4', 'E4', 'B3', 'F#4', 'A3', 'C4',
-      'D4', 'D4', 'A3', 'F#4', 'F#4', 'F#4', 'G3', 'D4', 'F#4',
-      'G3', 'F#4', 'E4', 'E4', 'B3', 'E4', 'C4', 'E4', 'F#4',
-      'E4', 'E4', 'D4', 'A3', 'F#4', 'C4', 'B3', 'D4', 'D4',
-      'G3', 'B3', 'D4', 'B3', 'C4', 'E4', 'G3', 'D4', 'A3',
-      'G3', 'F#4', 'D4', 'B3', 'C4', 'B3', 'D4', 'A3', 'D4',
-      'B3', 'G3', 'F#4', 'A3', 'D4', 'D4', 'E4', 'F#4', 'A3',
-    ];
-
-    function playNote(freq, startTime, duration, type, volume, gainNode) {
-      if (freq === 0) return;
+    // Simple MIDI parser
+    function parseMidi(data) {
+      const notes = [];
+      let pos = 14; // Skip header
       
+      while (pos < data.length) {
+        // Find track chunks
+        if (data[pos] === 0x4D && data[pos+1] === 0x54 && data[pos+2] === 0x72 && data[pos+3] === 0x6B) {
+          const trackLen = (data[pos+4] << 24) | (data[pos+5] << 16) | (data[pos+6] << 8) | data[pos+7];
+          let trackPos = pos + 8;
+          const trackEnd = trackPos + trackLen;
+          let absTime = 0;
+          let runningStatus = 0;
+          
+          while (trackPos < trackEnd) {
+            // Read delta time
+            let delta = 0;
+            let byte;
+            do {
+              byte = data[trackPos++];
+              delta = (delta << 7) | (byte & 0x7F);
+            } while (byte & 0x80);
+            absTime += delta;
+            
+            // Read event
+            let status = data[trackPos];
+            if (status < 0x80) {
+              status = runningStatus;
+            } else {
+              trackPos++;
+              runningStatus = status;
+            }
+            
+            const type = status & 0xF0;
+            if (type === 0x90) { // Note on
+              const note = data[trackPos++];
+              const vel = data[trackPos++];
+              if (vel > 0 && note >= 48) { // Only notes C3 and above
+                notes.push({ time: absTime, note: note, vel: vel });
+              }
+            } else if (type === 0x80) { // Note off
+              trackPos += 2;
+            } else if (type === 0xB0 || type === 0xE0) {
+              trackPos += 2;
+            } else if (type === 0xC0 || type === 0xD0) {
+              trackPos += 1;
+            } else if (status === 0xFF) { // Meta event
+              const metaType = data[trackPos++];
+              let len = 0;
+              do {
+                byte = data[trackPos++];
+                len = (len << 7) | (byte & 0x7F);
+              } while (byte & 0x80);
+              trackPos += len;
+            } else if (status === 0xF0 || status === 0xF7) { // SysEx
+              let len = 0;
+              do {
+                byte = data[trackPos++];
+                len = (len << 7) | (byte & 0x7F);
+              } while (byte & 0x80);
+              trackPos += len;
+            }
+          }
+          pos = trackEnd;
+        } else {
+          pos++;
+        }
+      }
+      return notes.sort((a, b) => a.time - b.time);
+    }
+
+    function midiToFreq(note) {
+      return 440 * Math.pow(2, (note - 69) / 12);
+    }
+
+    function playMidiNote(freq, startTime, duration, oscType) {
       const osc = audioCtx.createOscillator();
-      const noteGain = audioCtx.createGain();
+      const gain = audioCtx.createGain();
       
-      osc.type = type;
+      osc.type = oscType;
       osc.frequency.setValueAtTime(freq, startTime);
       
-      noteGain.gain.setValueAtTime(0, startTime);
-      noteGain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
-      noteGain.gain.setValueAtTime(volume, startTime + duration - 0.02);
-      noteGain.gain.linearRampToValueAtTime(0, startTime + duration);
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.12, startTime + 0.01);
+      gain.gain.setValueAtTime(0.12, startTime + Math.max(0, duration - 0.05));
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
       
-      osc.connect(noteGain);
-      noteGain.connect(gainNode);
+      osc.connect(gain);
+      gain.connect(musicGain);
       
       osc.start(startTime);
       osc.stop(startTime + duration);
+      
+      return osc;
     }
 
     function startMusic() {
-      if (musicPlaying || !audioCtx) return;
+      if (musicPlaying || !audioCtx || !midiData) return;
       musicPlaying = true;
       
       musicGain = audioCtx.createGain();
-      musicGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      musicGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
       musicGain.connect(audioCtx.destination);
       
-      const tempo = 100; // BPM
-      const tripletDuration = (60 / tempo) / 3; // Duration of one triplet note
-      const startTime = audioCtx.currentTime + 0.1;
+      const ticksPerBeat = 384;
+      const bpm = 70;
+      const secondsPerTick = 60 / (bpm * ticksPerBeat);
       
-      // Play melody (square wave)
-      melody.forEach((note, i) => {
-        const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.95, 'square', 0.2, musicGain);
+      musicStartTime = audioCtx.currentTime + 0.1;
+      
+      // Schedule all notes
+      midiData.forEach((noteData, i) => {
+        const startTime = musicStartTime + noteData.time * secondsPerTick;
+        const duration = 0.3; // Fixed duration for 8-bit feel
+        const freq = midiToFreq(noteData.note);
+        
+        // Alternate between square and triangle for 8-bit sound
+        const oscType = noteData.note >= 67 ? 'square' : 'triangle';
+        
+        if (startTime < musicStartTime + 30) { // Only schedule first 30 seconds
+          playMidiNote(freq, startTime, duration, oscType);
+        }
       });
       
-      // Play harmony (triangle wave, slightly softer)
-      harmony.forEach((note, i) => {
-        const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.95, 'triangle', 0.15, musicGain);
-      });
-      
-      // Loop after melody ends
-      const loopDuration = melody.length * tripletDuration * 1000;
+      // Loop after ~25 seconds
       setTimeout(() => {
         musicPlaying = false;
         if (!isFinished) startMusic();
-      }, loopDuration);
+      }, 25000);
     }
 
     function stopMusic() {
@@ -409,6 +471,9 @@
         musicGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
       }
     }
+
+    // Load MIDI on page load
+    loadMidi();
 
     function playChatter() {
       if (!audioCtx) return;
