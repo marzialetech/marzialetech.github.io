@@ -449,11 +449,14 @@
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
+        // Ignore held-down key repeats
+        if (e.repeat) return;
         initAudio();
         advance();
       }
       
       if (e.key === 'j' || e.key === 'J') {
+        if (e.repeat) return;
         if (isFinished) {
           restartSequence();
         }
