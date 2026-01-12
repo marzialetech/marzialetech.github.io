@@ -26,61 +26,15 @@
       width: 100vw;
       height: 100vh;
       display: flex;
-      flex-direction: column;
-    }
-
-    .dialogue-area {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-end;
       padding: 2rem;
-      padding-bottom: 0;
-    }
-
-    .dialogue-box {
-      max-width: 600px;
-      text-align: center;
-      opacity: 0;
-      transform: translateY(10px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-    }
-
-    .dialogue-box.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .dialogue-text {
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
-      line-height: 1.6;
-      text-shadow: 0 0 20px rgba(255,255,255,0.3);
-    }
-
-    .prompt {
-      margin-top: 1.5rem;
-      font-size: 0.9rem;
-      opacity: 0.5;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 0.7; }
-    }
-
-    .character-area {
-      position: relative;
-      height: 45vh;
-      min-height: 250px;
     }
 
     .character {
-      position: absolute;
-      bottom: 0;
-      left: 10%;
-      height: 100%;
-      max-height: 400px;
+      width: 8vw;
+      min-width: 60px;
+      max-width: 100px;
+      flex-shrink: 0;
       opacity: 0;
       transition: opacity 0.15s ease;
     }
@@ -90,10 +44,56 @@
     }
 
     .character img {
-      height: 100%;
-      width: auto;
-      object-fit: contain;
-      object-position: bottom left;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .dialogue-area {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      padding-left: 1.5rem;
+      padding-bottom: 0.5rem;
+      min-height: 80px;
+    }
+
+    .dialogue-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+    }
+
+    .dialogue-text {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      line-height: 1.5;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      max-width: 500px;
+    }
+
+    .prompt-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      flex-shrink: 0;
+      image-rendering: pixelated;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .prompt-icon.visible {
+      opacity: 0.8;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
     }
 
     /* Pause indicator */
@@ -145,15 +145,24 @@
       animation: pulse 2s ease-in-out infinite;
     }
 
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
     /* Mobile adjustments */
     @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+      
       .character {
-        left: 5%;
-        max-height: 300px;
+        width: 15vw;
+        min-width: 50px;
       }
       
       .dialogue-area {
-        padding: 1rem;
+        padding-left: 1rem;
       }
     }
   </style>
@@ -164,17 +173,16 @@
     <p class="start-prompt">[ press space or tap to begin ]</p>
   </div>
 
-  <div class="container" id="mainContainer">
+  <div class="container">
+    <div class="character" id="character">
+      <img id="characterImg" src="" alt="character">
+    </div>
+
     <div class="dialogue-area">
       <div class="dialogue-box" id="dialogueBox">
         <p class="dialogue-text" id="dialogueText"></p>
-        <p class="prompt" id="prompt">[ space / tap ]</p>
-      </div>
-    </div>
-
-    <div class="character-area">
-      <div class="character" id="character">
-        <img id="characterImg" src="" alt="character">
+        <!-- Pixel art space key icon (inline SVG as data URI) -->
+        <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
       </div>
     </div>
   </div>
@@ -182,6 +190,40 @@
   <div class="pause-indicator" id="pauseIndicator">. . .</div>
 
   <script>
+    // Audio context for Animal Crossing style chatter
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playChatter() {
+      if (!audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      // Randomize pitch for variety (Animal Crossing style)
+      const baseFreq = 280 + Math.random() * 180;
+      oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, audioCtx.currentTime + 0.06);
+      
+      // Use square wave for that classic sound
+      oscillator.type = 'square';
+      
+      // Quick envelope
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.06);
+    }
+
     // Animation sequence: 2,3,6,3,9,1,4,1,(pause),5,6,7,2,8
     const sequence = [
       { img: 2, dialogue: "Hey there!" },
@@ -215,6 +257,10 @@
     let currentFrame = -1;
     let started = false;
     let isPaused = false;
+    let isTyping = false;
+    let typewriterTimeout = null;
+    let fullText = '';
+    let charIndex = 0;
 
     const startScreen = document.getElementById('startScreen');
     const dialogueBox = document.getElementById('dialogueBox');
@@ -222,7 +268,7 @@
     const character = document.getElementById('character');
     const characterImg = document.getElementById('characterImg');
     const pauseIndicator = document.getElementById('pauseIndicator');
-    const prompt = document.getElementById('prompt');
+    const promptIcon = document.getElementById('promptIcon');
 
     // Preload images
     Object.values(imageMap).forEach(src => {
@@ -230,10 +276,31 @@
       img.src = src;
     });
 
+    function typeWriter() {
+      if (charIndex < fullText.length) {
+        dialogueText.textContent += fullText.charAt(charIndex);
+        
+        // Play chatter sound for non-space characters
+        if (fullText.charAt(charIndex) !== ' ') {
+          playChatter();
+        }
+        
+        charIndex++;
+        
+        // Vary typing speed slightly for more natural feel
+        const delay = fullText.charAt(charIndex - 1) === ' ' ? 30 : 35 + Math.random() * 20;
+        typewriterTimeout = setTimeout(typeWriter, delay);
+      } else {
+        // Done typing - show prompt icon
+        isTyping = false;
+        promptIcon.classList.add('visible');
+      }
+    }
+
     function showFrame(index) {
       if (index >= sequence.length) {
-        // End of sequence - loop or show final state
-        prompt.textContent = '[ the end - tap to restart ]';
+        // End of sequence
+        promptIcon.classList.remove('visible');
         return;
       }
 
@@ -243,6 +310,7 @@
         // Show pause
         isPaused = true;
         dialogueBox.classList.remove('visible');
+        promptIcon.classList.remove('visible');
         pauseIndicator.classList.add('visible');
         
         setTimeout(() => {
@@ -262,25 +330,46 @@
         character.classList.add('visible');
       }, 100);
 
-      // Update dialogue
+      // Reset and start typewriter
       dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
       
       setTimeout(() => {
-        dialogueText.textContent = frame.dialogue;
+        dialogueText.textContent = '';
+        fullText = frame.dialogue;
+        charIndex = 0;
+        isTyping = true;
         dialogueBox.classList.add('visible');
+        typeWriter();
       }, 150);
-
-      prompt.textContent = '[ space / tap ]';
     }
 
     function advance() {
       if (isPaused) return;
+
+      // Initialize audio on first interaction
+      initAudio();
 
       if (!started) {
         started = true;
         startScreen.classList.add('hidden');
         currentFrame = 0;
         showFrame(currentFrame);
+        return;
+      }
+
+      // If still typing, complete the text immediately
+      if (isTyping) {
+        if (typewriterTimeout) {
+          clearTimeout(typewriterTimeout);
+        }
+        dialogueText.textContent = fullText;
+        isTyping = false;
+        promptIcon.classList.add('visible');
         return;
       }
 
