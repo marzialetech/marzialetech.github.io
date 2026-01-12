@@ -439,7 +439,7 @@
       musicGain.connect(audioCtx.destination);
       
       const ticksPerBeat = 384;
-      const bpm = 70;
+      const bpm = 122.5; // 70 * 1.75x speed
       const secondsPerTick = 60 / (bpm * ticksPerBeat);
       
       musicStartTime = audioCtx.currentTime + 0.1;
@@ -458,11 +458,11 @@
         }
       });
       
-      // Loop after ~25 seconds
+      // Loop after ~14 seconds (25s / 1.75)
       setTimeout(() => {
         musicPlaying = false;
         if (!isFinished) startMusic();
-      }, 25000);
+      }, 14000);
     }
 
     function stopMusic() {
