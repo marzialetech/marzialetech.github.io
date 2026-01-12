@@ -52,10 +52,6 @@
       transform: translateY(0);
     }
 
-    .character.visible {
-      opacity: 1;
-    }
-
     .character img {
       width: 100%;
       height: auto;
@@ -63,7 +59,6 @@
     }
 
     .dialogue-area {
-      flex: 1;
       display: flex;
       align-items: flex-end;
       padding-left: 1.5rem;
@@ -116,7 +111,6 @@
       gap: 0.8rem;
       opacity: 0;
       transition: opacity 0.3s ease;
-      padding-bottom: 0.5rem;
     }
 
     .intro-prompt.visible {
@@ -349,7 +343,7 @@
       currentFrame = -1;
       mainContainer.classList.remove('hidden');
       character.classList.remove('entered');
-      characterImg.src = imageMap[2]; // Reset to wave
+      characterImg.src = imageMap[2];
       introPrompt.classList.remove('visible');
       dialogueBox.classList.remove('visible');
       
@@ -357,16 +351,14 @@
     }
 
     function playIntro() {
-      // Character slides up from bottom
-      characterImg.src = imageMap[2]; // Wave image for intro
+      characterImg.src = imageMap[2];
       character.classList.add('entered');
       
-      // After slide-up completes, show the prompt
       setTimeout(() => {
         introComplete = true;
         waitingForStart = true;
         introPrompt.classList.add('visible');
-      }, 850); // Slightly after the 0.8s transition
+      }, 850);
     }
 
     function startDialogue() {
@@ -386,11 +378,8 @@
       }
 
       const frame = sequence[index];
-
-      // Update character image (no need to hide/show, just swap)
       characterImg.src = imageMap[frame.img];
 
-      // Reset and start typewriter
       dialogueBox.classList.remove('visible');
       promptIcon.classList.remove('visible');
       
@@ -420,16 +409,13 @@
 
       initAudio();
 
-      // If waiting for start after intro
       if (waitingForStart) {
         startDialogue();
         return;
       }
 
-      // If dialogue hasn't started yet, ignore
       if (!started) return;
 
-      // If still typing, complete the text immediately
       if (isTyping) {
         if (typewriterTimeout) {
           clearTimeout(typewriterTimeout);
@@ -444,7 +430,6 @@
       showFrame(currentFrame);
     }
 
-    // Keyboard handler
     document.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
@@ -459,7 +444,6 @@
       }
     });
 
-    // Touch/click handler
     document.addEventListener('click', () => {
       initAudio();
       advance();
@@ -470,7 +454,6 @@
       advance();
     });
 
-    // Start intro on page load
     window.addEventListener('load', () => {
       setTimeout(playIntro, 300);
     });
