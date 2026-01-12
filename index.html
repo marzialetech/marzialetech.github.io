@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>marziale.tech</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dialogue-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      padding-bottom: 0;
+    }
+
+    .dialogue-box {
+      max-width: 600px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .dialogue-text {
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      line-height: 1.6;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    .prompt {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      opacity: 0.5;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    .character-area {
+      position: relative;
+      height: 45vh;
+      min-height: 250px;
+    }
+
+    .character {
+      position: absolute;
+      bottom: 0;
+      left: 10%;
+      height: 100%;
+      max-height: 400px;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .character.visible {
+      opacity: 1;
+    }
+
+    .character img {
+      height: 100%;
+      width: auto;
+      object-fit: contain;
+      object-position: bottom left;
+    }
+
+    /* Pause indicator */
+    .pause-indicator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+
+    .pause-indicator.visible {
+      opacity: 0.6;
+    }
+
+    /* Start screen */
+    .start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.5s ease;
+    }
+
+    .start-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .start-screen h1 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      margin-bottom: 2rem;
+      text-shadow: 0 0 30px rgba(255,255,255,0.4);
+    }
+
+    .start-prompt {
+      font-size: 1rem;
+      opacity: 0.6;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .character {
+        left: 5%;
+        max-height: 300px;
+      }
+      
+      .dialogue-area {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="start-screen" id="startScreen">
+    <h1>marziale.tech</h1>
+    <p class="start-prompt">[ press space or tap to begin ]</p>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <div class="dialogue-area">
+      <div class="dialogue-box" id="dialogueBox">
+        <p class="dialogue-text" id="dialogueText"></p>
+        <p class="prompt" id="prompt">[ space / tap ]</p>
+      </div>
+    </div>
+
+    <div class="character-area">
+      <div class="character" id="character">
+        <img id="characterImg" src="" alt="character">
+      </div>
+    </div>
+  </div>
+
+  <div class="pause-indicator" id="pauseIndicator">. . .</div>
+
+  <script>
+    // Animation sequence: 2,3,6,3,9,1,4,1,(pause),5,6,7,2,8
+    const sequence = [
+      { img: 2, dialogue: "Hey there!" },
+      { img: 3, dialogue: "So let me tell you about this thing I've been working on..." },
+      { img: 6, dialogue: "It's honestly the coolest thing ever!" },
+      { img: 3, dialogue: "Like, you have NO idea how long this took..." },
+      { img: 9, dialogue: "BUT WE DID IT! IT ACTUALLY WORKED!" },
+      { img: 1, dialogue: "This is EVERYTHING I've been dreaming about!" },
+      { img: 4, dialogue: "Years of effort! YEARS!" },
+      { img: 1, dialogue: "I could cry right now, this is—" },
+      { img: 'pause', dialogue: "" },
+      { img: 5, dialogue: "...sorry. I got a bit carried away there." },
+      { img: 6, dialogue: "Anyway, what I meant to say is..." },
+      { img: 7, dialogue: "...there might be more surprises where that came from." },
+      { img: 2, dialogue: "But I'll tell you about that next time!" },
+      { img: 8, dialogue: "See you around!" },
+    ];
+
+    const imageMap = {
+      1: 'images/img1_passion1.png',
+      2: 'images/img2_wave.png',
+      3: 'images/img3_talk1.png',
+      4: 'images/img4_passion2.png',
+      5: 'images/img5_embarassed.png',
+      6: 'images/img6_talk2.png',
+      7: 'images/img7_mischief.png',
+      8: 'images/img8_thumbsup.png',
+      9: 'images/img9_celebrate.png',
+    };
+
+    let currentFrame = -1;
+    let started = false;
+    let isPaused = false;
+
+    const startScreen = document.getElementById('startScreen');
+    const dialogueBox = document.getElementById('dialogueBox');
+    const dialogueText = document.getElementById('dialogueText');
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    const pauseIndicator = document.getElementById('pauseIndicator');
+    const prompt = document.getElementById('prompt');
+
+    // Preload images
+    Object.values(imageMap).forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    function showFrame(index) {
+      if (index >= sequence.length) {
+        // End of sequence - loop or show final state
+        prompt.textContent = '[ the end - tap to restart ]';
+        return;
+      }
+
+      const frame = sequence[index];
+
+      if (frame.img === 'pause') {
+        // Show pause
+        isPaused = true;
+        dialogueBox.classList.remove('visible');
+        pauseIndicator.classList.add('visible');
+        
+        setTimeout(() => {
+          pauseIndicator.classList.remove('visible');
+          isPaused = false;
+          currentFrame++;
+          showFrame(currentFrame);
+        }, 1500);
+        return;
+      }
+
+      // Update character
+      character.classList.remove('visible');
+      
+      setTimeout(() => {
+        characterImg.src = imageMap[frame.img];
+        character.classList.add('visible');
+      }, 100);
+
+      // Update dialogue
+      dialogueBox.classList.remove('visible');
+      
+      setTimeout(() => {
+        dialogueText.textContent = frame.dialogue;
+        dialogueBox.classList.add('visible');
+      }, 150);
+
+      prompt.textContent = '[ space / tap ]';
+    }
+
+    function advance() {
+      if (isPaused) return;
+
+      if (!started) {
+        started = true;
+        startScreen.classList.add('hidden');
+        currentFrame = 0;
+        showFrame(currentFrame);
+        return;
+      }
+
+      if (currentFrame >= sequence.length - 1) {
+        // Restart
+        currentFrame = 0;
+        showFrame(currentFrame);
+        return;
+      }
+
+      currentFrame++;
+      showFrame(currentFrame);
+    }
+
+    // Keyboard handler
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        advance();
+      }
+    });
+
+    // Touch/click handler
+    document.addEventListener('click', advance);
+    document.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      advance();
+    });
+  </script>
+</body>
+</html>
