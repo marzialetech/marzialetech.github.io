@@ -154,16 +154,34 @@
     @media (max-width: 600px) {
       .container {
         padding: 1rem;
-        padding-bottom: 4rem;
+        padding-bottom: 2rem;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-end;
       }
       
       .character {
         width: 25vw;
         min-width: 80px;
+        margin-bottom: 1rem;
       }
       
       .dialogue-area {
-        padding-left: 1rem;
+        padding-left: 0;
+        width: 100%;
+      }
+
+      .dialogue-box {
+        width: 100%;
+      }
+
+      .dialogue-text {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .intro-prompt {
+        width: 100%;
       }
 
       .spacebar-icon {
