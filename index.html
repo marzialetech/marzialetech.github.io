@@ -309,10 +309,97 @@
   <script>
     // Audio context for Animal Crossing style chatter
     let audioCtx = null;
+    let musicPlaying = false;
+    let musicGain = null;
 
     function initAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // 8-bit Jesu Joy of Man's Desiring - 2 part arrangement
+    const NOTE_FREQS = {
+      'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66,
+      'E4': 329.63, 'F#4': 369.99, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+      'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F#5': 739.99, 'G5': 783.99,
+      'G2': 98.00, 'D3': 146.83, 'E3': 164.81, 'F#3': 185.00, 'C3': 130.81,
+      'REST': 0
+    };
+
+    // Melody (triplet feel - each note is 1/3 of a beat)
+    const melody = [
+      'G4','A4','B4','D5','C5','B4','A4','G4','F#4','G4','A4','B4','G4','A4','G4',
+      'F#4','E4','F#4','G4','A4','B4','A4','G4','F#4','E4','D4','E4','F#4','G4','A4',
+      'B4','A4','B4','C5','B4','A4','G4','A4','B4','G4','A4','B4','C5','D5','E5',
+      'D5','C5','B4','A4','B4','C5','B4','A4','G4','F#4','G4','A4','G4','F#4','E4',
+      'D4','E4','F#4','G4','A4','B4','C5','B4','A4','G4','A4','G4','F#4','E4','F#4',
+      'G4','REST','REST'
+    ];
+
+    // Bass line (whole notes, changes every 9 melody notes = 3 beats)
+    const bass = [
+      'G3', 'G3', 'D3', 'D3', 'E3', 'E3', 'B3', 'B3', 'C4', 'C4',
+      'G3', 'G3', 'D3', 'D3', 'G3', 'G3', 'G3'
+    ];
+
+    function playNote(freq, startTime, duration, type, gainNode) {
+      if (freq === 0) return;
+      
+      const osc = audioCtx.createOscillator();
+      const noteGain = audioCtx.createGain();
+      
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      noteGain.gain.setValueAtTime(0, startTime);
+      noteGain.gain.linearRampToValueAtTime(0.15, startTime + 0.01);
+      noteGain.gain.setValueAtTime(0.15, startTime + duration - 0.02);
+      noteGain.gain.linearRampToValueAtTime(0, startTime + duration);
+      
+      osc.connect(noteGain);
+      noteGain.connect(gainNode);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function startMusic() {
+      if (musicPlaying || !audioCtx) return;
+      musicPlaying = true;
+      
+      musicGain = audioCtx.createGain();
+      musicGain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      musicGain.connect(audioCtx.destination);
+      
+      const tempo = 100; // BPM
+      const tripletDuration = (60 / tempo) / 3; // Duration of one triplet note
+      const startTime = audioCtx.currentTime + 0.1;
+      
+      // Play melody
+      melody.forEach((note, i) => {
+        const freq = NOTE_FREQS[note] || 0;
+        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.9, 'square', musicGain);
+      });
+      
+      // Play bass (each bass note spans 9 triplets = 3 beats)
+      bass.forEach((note, i) => {
+        const freq = NOTE_FREQS[note] || 0;
+        playNote(freq, startTime + i * 9 * tripletDuration, tripletDuration * 8.5, 'triangle', musicGain);
+      });
+      
+      // Loop after melody ends
+      const loopDuration = melody.length * tripletDuration * 1000;
+      setTimeout(() => {
+        musicPlaying = false;
+        if (!isFinished) startMusic();
+      }, loopDuration);
+    }
+
+    function stopMusic() {
+      musicPlaying = false;
+      if (musicGain) {
+        musicGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
       }
     }
 
@@ -412,9 +499,10 @@
         // Done typing
         isTyping = false;
         
-        // Show logo when frame 4 finishes typing
+        // Show logo and start music when frame 4 finishes typing
         if (currentFrame === LOGO_FRAME) {
           logoOverlay.classList.add('visible');
+          startMusic();
         }
         
         // If text ends with ellipsis, delay before showing prompt
@@ -447,9 +535,11 @@
 
     function endSequence() {
       isFinished = true;
+      stopMusic();
       dialogueBox.classList.remove('visible');
       character.classList.remove('entered');
       promptIcon.classList.remove('visible');
+      logoOverlay.classList.remove('visible');
       
       setTimeout(() => {
         mainContainer.classList.add('hidden');
@@ -538,9 +628,10 @@
         dialogueText.textContent = fullText;
         isTyping = false;
         
-        // Show logo when skipping frame 4's text
+        // Show logo and start music when skipping frame 4's text
         if (currentFrame === LOGO_FRAME) {
           logoOverlay.classList.add('visible');
+          startMusic();
         }
         
         // If text ends with ellipsis, still do the delay
