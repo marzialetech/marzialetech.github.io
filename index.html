@@ -441,12 +441,16 @@
       const ticksPerBeat = 384;
       const bpm = 122.5; // 70 * 1.75x speed
       const secondsPerTick = 60 / (bpm * ticksPerBeat);
+      const skipSeconds = 1.0; // Skip first 1 second of silence
+      const skipTicks = skipSeconds / secondsPerTick;
       
       musicStartTime = audioCtx.currentTime + 0.1;
       
-      // Schedule all notes
+      // Schedule all notes (offset by skip amount)
       midiData.forEach((noteData, i) => {
-        const startTime = musicStartTime + noteData.time * secondsPerTick;
+        const adjustedTime = noteData.time - skipTicks;
+        if (adjustedTime < 0) return; // Skip notes before our start point
+        const startTime = musicStartTime + adjustedTime * secondsPerTick;
         const duration = 0.3; // Fixed duration for 8-bit feel
         const freq = midiToFreq(noteData.note);
         
