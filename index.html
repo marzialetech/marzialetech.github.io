@@ -152,11 +152,23 @@
               drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
               drop-shadow(0 0 60px rgba(0, 255, 255, 0.4))
               drop-shadow(0 0 80px rgba(255, 0, 255, 0.3));
+      will-change: transform;
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
     }
 
     @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-15px); }
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(0, -15px, 0); }
+    }
+
+    /* Simplified effect for mobile performance */
+    @media (max-width: 600px) {
+      .logo-image {
+        filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.7))
+                drop-shadow(0 0 30px rgba(255, 0, 255, 0.4));
+        animation: float 3s ease-in-out infinite;
+      }
     }
 
     /* Intro prompt - spacebar + cursor */
