@@ -123,6 +123,44 @@
       50% { transform: translateY(-4px); }
     }
 
+    /* Logo overlay */
+    .logo-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .logo-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .logo-image {
+      width: 70vw;
+      max-width: 800px;
+      height: auto;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4))
+              drop-shadow(0 0 80px rgba(255, 0, 255, 0.3));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
     /* Intro prompt - spacebar + cursor */
     .intro-prompt {
       display: flex;
@@ -226,6 +264,11 @@
   </style>
 </head>
 <body>
+  <!-- Logo overlay -->
+  <div class="logo-overlay" id="logoOverlay">
+    <img class="logo-image" id="logoImage" src="images/logo_placeholder.png" alt="MARZIALE TECHNOLOGIES">
+  </div>
+
   <div class="container" id="mainContainer">
     <div class="character" id="character">
       <img id="characterImg" src="images/img2_wave.png" alt="character">
@@ -332,6 +375,10 @@
     const characterImg = document.getElementById('characterImg');
     const promptIcon = document.getElementById('promptIcon');
     const introPrompt = document.getElementById('introPrompt');
+    const logoOverlay = document.getElementById('logoOverlay');
+
+    const LOGO_FRAME = 4; // "BUT WE DID IT!" frame index
+    let showingLogo = false;
 
     // Preload images
     Object.values(imageMap).forEach(src => {
@@ -457,11 +504,30 @@
       }, 150);
     }
 
+    function showLogo() {
+      showingLogo = true;
+      logoOverlay.classList.add('visible');
+    }
+
+    function hideLogo() {
+      showingLogo = false;
+      logoOverlay.classList.remove('visible');
+      // Continue to next frame after logo
+      currentFrame++;
+      showFrame(currentFrame);
+    }
+
     function advance() {
       if (isDelaying) return; // Can't skip during delay
       if (isFinished) return;
 
       initAudio();
+
+      // If showing logo, dismiss it and continue
+      if (showingLogo) {
+        hideLogo();
+        return;
+      }
 
       if (waitingForStart) {
         startDialogue();
@@ -487,6 +553,12 @@
         } else {
           promptIcon.classList.add('visible');
         }
+        return;
+      }
+
+      // Check if we should show logo after this frame
+      if (currentFrame === LOGO_FRAME) {
+        showLogo();
         return;
       }
 
