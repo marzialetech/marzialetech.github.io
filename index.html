@@ -246,7 +246,7 @@
       { img: 1, dialogue: "This is EVERYTHING I've been dreaming about!" },
       { img: 4, dialogue: "Years of effort! YEARS!" },
       { img: 1, dialogue: "I could cry right now, this is—" },
-      { img: 5, dialogue: "...", slow: true },
+      { img: 5, dialogue: "...", autoAdvance: true },
       { img: 5, dialogue: "...sorry. I got a bit carried away there." },
       { img: 6, dialogue: "Anyway, what I meant to say is..." },
       { img: 7, dialogue: "...there might be more surprises where that came from." },
@@ -271,11 +271,12 @@
     let waitingForStart = false;
     let started = false;
     let isTyping = false;
-    let isSlowPause = false;
+    let isEllipsisPause = false;
     let isFinished = false;
     let typewriterTimeout = null;
     let fullText = '';
     let charIndex = 0;
+    let currentAutoAdvance = false;
 
     const mainContainer = document.getElementById('mainContainer');
     const dialogueBox = document.getElementById('dialogueBox');
@@ -291,36 +292,62 @@
       img.src = src;
     });
 
+    // Check if we're about to type an ellipsis (3 dots)
+    function isEllipsisAhead() {
+      return fullText.substring(charIndex, charIndex + 3) === '...';
+    }
+
+    // Check if we just finished typing an ellipsis
+    function justFinishedEllipsis() {
+      return charIndex >= 3 && fullText.substring(charIndex - 3, charIndex) === '...';
+    }
+
     function typeWriter() {
+      // Check if we're about to start an ellipsis - add delay before
+      if (isEllipsisAhead() && !isEllipsisPause) {
+        isEllipsisPause = true;
+        typewriterTimeout = setTimeout(() => {
+          isEllipsisPause = false;
+          typeWriter();
+        }, 500);
+        return;
+      }
+
       if (charIndex < fullText.length) {
-        dialogueText.textContent += fullText.charAt(charIndex);
+        const currentChar = fullText.charAt(charIndex);
+        dialogueText.textContent += currentChar;
         
-        if (fullText.charAt(charIndex) !== ' ') {
+        if (currentChar !== ' ') {
           playChatter();
         }
         
         charIndex++;
-        const delay = fullText.charAt(charIndex - 1) === ' ' ? 30 : 35 + Math.random() * 20;
+        
+        // Check if we just finished an ellipsis - add delay after
+        if (justFinishedEllipsis()) {
+          isEllipsisPause = true;
+          typewriterTimeout = setTimeout(() => {
+            isEllipsisPause = false;
+            typeWriter();
+          }, 500);
+          return;
+        }
+        
+        const delay = currentChar === ' ' ? 30 : 35 + Math.random() * 20;
         typewriterTimeout = setTimeout(typeWriter, delay);
       } else {
+        // Done typing
         isTyping = false;
-        promptIcon.classList.add('visible');
-      }
-    }
-
-    function slowTypeWriter() {
-      if (charIndex < fullText.length) {
-        dialogueText.textContent += fullText.charAt(charIndex);
-        playChatter();
-        charIndex++;
-        typewriterTimeout = setTimeout(slowTypeWriter, 500);
-      } else {
-        isTyping = false;
-        isSlowPause = false;
-        setTimeout(() => {
-          currentFrame++;
-          showFrame(currentFrame);
-        }, 300);
+        
+        // If this frame auto-advances, do that after a moment
+        if (currentAutoAdvance) {
+          setTimeout(() => {
+            currentFrame++;
+            showFrame(currentFrame);
+          }, 300);
+        } else {
+          promptIcon.classList.add('visible');
+        }
       }
     }
 
@@ -379,6 +406,7 @@
 
       const frame = sequence[index];
       characterImg.src = imageMap[frame.img];
+      currentAutoAdvance = frame.autoAdvance || false;
 
       dialogueBox.classList.remove('visible');
       promptIcon.classList.remove('visible');
@@ -392,19 +420,14 @@
         fullText = frame.dialogue;
         charIndex = 0;
         isTyping = true;
+        isEllipsisPause = false;
         dialogueBox.classList.add('visible');
-        
-        if (frame.slow) {
-          isSlowPause = true;
-          slowTypeWriter();
-        } else {
-          typeWriter();
-        }
+        typeWriter();
       }, 150);
     }
 
     function advance() {
-      if (isSlowPause) return;
+      if (isEllipsisPause) return; // Can't skip during ellipsis pause
       if (isFinished) return;
 
       initAudio();
@@ -422,7 +445,16 @@
         }
         dialogueText.textContent = fullText;
         isTyping = false;
-        promptIcon.classList.add('visible');
+        isEllipsisPause = false;
+        
+        if (currentAutoAdvance) {
+          setTimeout(() => {
+            currentFrame++;
+            showFrame(currentFrame);
+          }, 300);
+        } else {
+          promptIcon.classList.add('visible');
+        }
         return;
       }
 
