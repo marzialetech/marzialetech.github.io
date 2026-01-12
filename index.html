@@ -84,6 +84,19 @@
       opacity: 1;
     }
 
+    .dialogue-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .speaker-name {
+      font-weight: bold;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      margin-bottom: 0.25rem;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
     .dialogue-text {
       font-size: clamp(1rem, 2.5vw, 1.4rem);
       line-height: 1.5;
@@ -231,7 +244,10 @@
 
       <!-- Dialogue box shown during conversation -->
       <div class="dialogue-box" id="dialogueBox">
-        <p class="dialogue-text" id="dialogueText"></p>
+        <div class="dialogue-content">
+          <p class="speaker-name">Joseph</p>
+          <p class="dialogue-text" id="dialogueText"></p>
+        </div>
         <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
       </div>
     </div>
