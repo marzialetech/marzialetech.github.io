@@ -318,29 +318,46 @@
       }
     }
 
-    // 8-bit Jesu Joy of Man's Desiring - 2 part arrangement
+    // 8-bit Jesu Joy of Man's Desiring - 2 part arrangement (BWV 147)
     const NOTE_FREQS = {
+      'R': 0,
       'G3': 196.00, 'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66,
       'E4': 329.63, 'F#4': 369.99, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
       'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F#5': 739.99, 'G5': 783.99,
       'G2': 98.00, 'D3': 146.83, 'E3': 164.81, 'F#3': 185.00, 'C3': 130.81,
-      'REST': 0
+      'A2': 110.00, 'B2': 123.47, 'E2': 82.41
     };
 
-    // Melody (triplet feel - each note is 1/3 of a beat)
+    // Melody - the famous flowing triplet line (each note = 1 eighth note in 9/8)
     const melody = [
-      'G4','A4','B4','D5','C5','B4','A4','G4','F#4','G4','A4','B4','G4','A4','G4',
-      'F#4','E4','F#4','G4','A4','B4','A4','G4','F#4','E4','D4','E4','F#4','G4','A4',
-      'B4','A4','B4','C5','B4','A4','G4','A4','B4','G4','A4','B4','C5','D5','E5',
-      'D5','C5','B4','A4','B4','C5','B4','A4','G4','F#4','G4','A4','G4','F#4','E4',
-      'D4','E4','F#4','G4','A4','B4','C5','B4','A4','G4','A4','G4','F#4','E4','F#4',
-      'G4','REST','REST'
+      // Bar 1-2
+      'G4','A4','B4', 'D5','C5','B4', 'A4','B4','G4',
+      'A4','B4','C5', 'B4','A4','G4', 'F#4','G4','A4',
+      // Bar 3-4
+      'G4','F#4','E4', 'D4','E4','F#4', 'G4','A4','B4',
+      'A4','B4','G4', 'F#4','G4','A4', 'D4','E4','F#4',
+      // Bar 5-6
+      'G4','A4','B4', 'D5','C5','B4', 'A4','B4','G4',
+      'A4','B4','C5', 'B4','A4','G4', 'A4','B4','A4',
+      // Bar 7-8
+      'G4','F#4','E4', 'D4','E4','F#4', 'G4','A4','B4',
+      'A4','G4','F#4', 'G4','R','R'
     ];
 
-    // Bass line (whole notes, changes every 9 melody notes = 3 beats)
-    const bass = [
-      'G3', 'G3', 'D3', 'D3', 'E3', 'E3', 'B3', 'B3', 'C4', 'C4',
-      'G3', 'G3', 'D3', 'D3', 'G3', 'G3', 'G3'
+    // Harmony - a third/sixth below melody for 8-bit flavor
+    const harmony = [
+      // Bar 1-2
+      'D4','F#4','G4', 'B4','A4','G4', 'F#4','G4','D4',
+      'F#4','G4','A4', 'G4','F#4','E4', 'D4','E4','F#4',
+      // Bar 3-4
+      'E4','D4','C4', 'B3','C4','D4', 'E4','F#4','G4',
+      'F#4','G4','E4', 'D4','E4','F#4', 'B3','C4','D4',
+      // Bar 5-6
+      'D4','F#4','G4', 'B4','A4','G4', 'F#4','G4','D4',
+      'F#4','G4','A4', 'G4','F#4','E4', 'F#4','G4','F#4',
+      // Bar 7-8
+      'E4','D4','C4', 'B3','C4','D4', 'E4','F#4','G4',
+      'F#4','E4','D4', 'D4','R','R'
     ];
 
     function playNote(freq, startTime, duration, type, volume, gainNode) {
@@ -376,16 +393,16 @@
       const tripletDuration = (60 / tempo) / 3; // Duration of one triplet note
       const startTime = audioCtx.currentTime + 0.1;
       
-      // Play melody (square wave, louder)
+      // Play melody (square wave)
       melody.forEach((note, i) => {
         const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.9, 'square', 0.25, musicGain);
+        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.95, 'square', 0.2, musicGain);
       });
       
-      // Play bass (triangle wave, softer, each bass note spans 9 triplets = 3 beats)
-      bass.forEach((note, i) => {
+      // Play harmony (triangle wave, slightly softer)
+      harmony.forEach((note, i) => {
         const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * 9 * tripletDuration, tripletDuration * 8.5, 'triangle', 0.15, musicGain);
+        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.95, 'triangle', 0.15, musicGain);
       });
       
       // Loop after melody ends
