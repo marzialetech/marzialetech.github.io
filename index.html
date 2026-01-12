@@ -123,26 +123,24 @@
       50% { transform: translateY(-4px); }
     }
 
-    /* Logo overlay */
+    /* Logo overlay - appears behind dialogue */
     .logo-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 200;
+      z-index: 1;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.5s ease;
+      transition: opacity 1s ease;
     }
 
     .logo-overlay.visible {
       opacity: 1;
-      pointer-events: auto;
     }
 
     .logo-image {
@@ -378,7 +376,6 @@
     const logoOverlay = document.getElementById('logoOverlay');
 
     const LOGO_FRAME = 4; // "BUT WE DID IT!" frame index
-    let showingLogo = false;
 
     // Preload images
     Object.values(imageMap).forEach(src => {
@@ -402,6 +399,11 @@
       } else {
         // Done typing
         isTyping = false;
+        
+        // Show logo when frame 4 finishes typing
+        if (currentFrame === LOGO_FRAME) {
+          logoOverlay.classList.add('visible');
+        }
         
         // If text ends with ellipsis, delay before showing prompt
         if (fullText.endsWith('...')) {
@@ -504,30 +506,11 @@
       }, 150);
     }
 
-    function showLogo() {
-      showingLogo = true;
-      logoOverlay.classList.add('visible');
-    }
-
-    function hideLogo() {
-      showingLogo = false;
-      logoOverlay.classList.remove('visible');
-      // Continue to next frame after logo
-      currentFrame++;
-      showFrame(currentFrame);
-    }
-
     function advance() {
       if (isDelaying) return; // Can't skip during delay
       if (isFinished) return;
 
       initAudio();
-
-      // If showing logo, dismiss it and continue
-      if (showingLogo) {
-        hideLogo();
-        return;
-      }
 
       if (waitingForStart) {
         startDialogue();
@@ -543,6 +526,11 @@
         dialogueText.textContent = fullText;
         isTyping = false;
         
+        // Show logo when skipping frame 4's text
+        if (currentFrame === LOGO_FRAME) {
+          logoOverlay.classList.add('visible');
+        }
+        
         // If text ends with ellipsis, still do the delay
         if (fullText.endsWith('...')) {
           isDelaying = true;
@@ -553,12 +541,6 @@
         } else {
           promptIcon.classList.add('visible');
         }
-        return;
-      }
-
-      // Check if we should show logo after this frame
-      if (currentFrame === LOGO_FRAME) {
-        showLogo();
         return;
       }
 
