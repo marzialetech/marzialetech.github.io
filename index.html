@@ -28,12 +28,19 @@
       display: flex;
       align-items: flex-end;
       padding: 2rem;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .container.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .character {
-      width: 8vw;
-      min-width: 60px;
-      max-width: 100px;
+      width: 16vw;
+      min-width: 100px;
+      max-width: 180px;
       flex-shrink: 0;
       opacity: 0;
       transition: opacity 0.15s ease;
@@ -157,8 +164,8 @@
       }
       
       .character {
-        width: 15vw;
-        min-width: 50px;
+        width: 25vw;
+        min-width: 80px;
       }
       
       .dialogue-area {
@@ -173,7 +180,7 @@
     <p class="start-prompt">[ press space or tap to begin ]</p>
   </div>
 
-  <div class="container">
+  <div class="container" id="mainContainer">
     <div class="character" id="character">
       <img id="characterImg" src="" alt="character">
     </div>
@@ -181,7 +188,7 @@
     <div class="dialogue-area">
       <div class="dialogue-box" id="dialogueBox">
         <p class="dialogue-text" id="dialogueText"></p>
-        <!-- Pixel art space key icon (inline SVG as data URI) -->
+        <!-- Pixel art space key icon -->
         <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
       </div>
     </div>
@@ -258,11 +265,13 @@
     let started = false;
     let isPaused = false;
     let isTyping = false;
+    let isFinished = false;
     let typewriterTimeout = null;
     let fullText = '';
     let charIndex = 0;
 
     const startScreen = document.getElementById('startScreen');
+    const mainContainer = document.getElementById('mainContainer');
     const dialogueBox = document.getElementById('dialogueBox');
     const dialogueText = document.getElementById('dialogueText');
     const character = document.getElementById('character');
@@ -297,10 +306,29 @@
       }
     }
 
+    function endSequence() {
+      isFinished = true;
+      dialogueBox.classList.remove('visible');
+      character.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      setTimeout(() => {
+        mainContainer.classList.add('hidden');
+      }, 300);
+    }
+
+    function restartSequence() {
+      isFinished = false;
+      started = false;
+      currentFrame = -1;
+      mainContainer.classList.remove('hidden');
+      startScreen.classList.remove('hidden');
+    }
+
     function showFrame(index) {
       if (index >= sequence.length) {
-        // End of sequence
-        promptIcon.classList.remove('visible');
+        // End of sequence - close everything
+        endSequence();
         return;
       }
 
@@ -350,6 +378,7 @@
 
     function advance() {
       if (isPaused) return;
+      if (isFinished) return;
 
       // Initialize audio on first interaction
       initAudio();
@@ -373,13 +402,6 @@
         return;
       }
 
-      if (currentFrame >= sequence.length - 1) {
-        // Restart
-        currentFrame = 0;
-        showFrame(currentFrame);
-        return;
-      }
-
       currentFrame++;
       showFrame(currentFrame);
     }
@@ -389,6 +411,13 @@
       if (e.code === 'Space') {
         e.preventDefault();
         advance();
+      }
+      
+      // Press 'J' to restart after finished
+      if (e.key === 'j' || e.key === 'J') {
+        if (isFinished) {
+          restartSequence();
+        }
       }
     });
 
