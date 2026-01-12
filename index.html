@@ -343,7 +343,7 @@
       'G3', 'G3', 'D3', 'D3', 'G3', 'G3', 'G3'
     ];
 
-    function playNote(freq, startTime, duration, type, gainNode) {
+    function playNote(freq, startTime, duration, type, volume, gainNode) {
       if (freq === 0) return;
       
       const osc = audioCtx.createOscillator();
@@ -353,8 +353,8 @@
       osc.frequency.setValueAtTime(freq, startTime);
       
       noteGain.gain.setValueAtTime(0, startTime);
-      noteGain.gain.linearRampToValueAtTime(0.15, startTime + 0.01);
-      noteGain.gain.setValueAtTime(0.15, startTime + duration - 0.02);
+      noteGain.gain.linearRampToValueAtTime(volume, startTime + 0.01);
+      noteGain.gain.setValueAtTime(volume, startTime + duration - 0.02);
       noteGain.gain.linearRampToValueAtTime(0, startTime + duration);
       
       osc.connect(noteGain);
@@ -376,16 +376,16 @@
       const tripletDuration = (60 / tempo) / 3; // Duration of one triplet note
       const startTime = audioCtx.currentTime + 0.1;
       
-      // Play melody
+      // Play melody (square wave, louder)
       melody.forEach((note, i) => {
         const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.9, 'square', musicGain);
+        playNote(freq, startTime + i * tripletDuration, tripletDuration * 0.9, 'square', 0.25, musicGain);
       });
       
-      // Play bass (each bass note spans 9 triplets = 3 beats)
+      // Play bass (triangle wave, softer, each bass note spans 9 triplets = 3 beats)
       bass.forEach((note, i) => {
         const freq = NOTE_FREQS[note] || 0;
-        playNote(freq, startTime + i * 9 * tripletDuration, tripletDuration * 8.5, 'triangle', musicGain);
+        playNote(freq, startTime + i * 9 * tripletDuration, tripletDuration * 8.5, 'triangle', 0.15, musicGain);
       });
       
       // Loop after melody ends
