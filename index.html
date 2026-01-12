@@ -22,6 +22,33 @@
       -webkit-user-select: none;
     }
 
+    .version-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 9999;
+      display: none;
+      border: 1px solid #333;
+    }
+
+    .version-display.visible {
+      display: block;
+    }
+
+    .version-number {
+      color: #0f0;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .version-desc {
+      color: #888;
+    }
+
     .container {
       position: relative;
       width: 100vw;
@@ -292,6 +319,11 @@
   </style>
 </head>
 <body>
+  <!-- Version display (toggle with 'v' key) -->
+  <div class="version-display" id="versionDisplay">
+    <span class="version-number">v1.0</span>
+    <span class="version-desc">Add fireworks effect</span>
+  </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
   
@@ -957,6 +989,12 @@
         if (isFinished) {
           restartSequence();
         }
+      }
+      
+      // Toggle version display with 'v'
+      if (e.key === 'v' || e.key === 'V') {
+        if (e.repeat) return;
+        document.getElementById('versionDisplay').classList.toggle('visible');
       }
     });
 
