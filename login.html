@@ -139,6 +139,58 @@
       text-decoration: underline;
     }
 
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #333;
+    }
+
+    .divider::before {
+      margin-right: 1rem;
+    }
+
+    .divider::after {
+      margin-left: 1rem;
+    }
+
+    .github-btn {
+      width: 100%;
+      padding: 12px;
+      background: #24292e;
+      border: 1px solid #444;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .github-btn:hover {
+      background: #2f363d;
+      border-color: #666;
+    }
+
+    .github-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+
     .logged-in-view {
       text-align: center;
     }
@@ -247,6 +299,16 @@
       <h2 id="formTitle" class="form-title">Login</h2>
       <div id="authError" class="auth-error"></div>
       
+      <!-- GitHub OAuth Button -->
+      <button id="githubBtn" class="github-btn">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        Sign in with GitHub
+      </button>
+
+      <div class="divider">or</div>
+      
       <input type="email" id="email" placeholder="Email" autocomplete="email">
       <input type="password" id="password" placeholder="Password" autocomplete="current-password">
       
@@ -272,8 +334,8 @@
 
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v0.4</span>
-    <span class="version-desc">ESM import from esm.sh</span>
+    <span class="version-number">v0.5</span>
+    <span class="version-desc">GitHub OAuth</span>
   </div>
 
   <script type="module">
@@ -298,6 +360,7 @@
     const logoutBtn = document.getElementById('logoutBtn');
     const statusEl = document.getElementById('status');
     const versionDisplay = document.getElementById('versionDisplay');
+    const githubBtn = document.getElementById('githubBtn');
 
     let supabase = null;
     let isSignUpMode = false;
@@ -344,6 +407,36 @@
         submitBtn.textContent = 'Login';
         toggleText.textContent = "Don't have an account? ";
         toggleLink.textContent = 'Sign up';
+      }
+    });
+
+    // Handle GitHub OAuth sign-in
+    githubBtn.addEventListener('click', async () => {
+      if (!supabase) {
+        authError.textContent = 'Supabase not connected - refresh page';
+        authError.className = 'auth-error';
+        return;
+      }
+
+      authError.textContent = '';
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: window.location.origin + '/login'
+          }
+        });
+
+        if (error) {
+          authError.textContent = error.message;
+          authError.className = 'auth-error';
+        }
+        // If successful, user will be redirected to GitHub
+      } catch (err) {
+        authError.textContent = 'Error: ' + err.message;
+        authError.className = 'auth-error';
+        console.error('GitHub auth error:', err);
       }
     });
 
