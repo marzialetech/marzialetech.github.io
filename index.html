@@ -273,6 +273,27 @@
       color: #cc4444;
     }
 
+    /* Mouse follower for logged-in users */
+    .mouse-follower {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #888;
+      white-space: nowrap;
+      z-index: 10000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .mouse-follower .follower-username {
+      color: #cc4444;
+    }
+
+    body.logged-in .mouse-follower {
+      opacity: 1;
+    }
+
     /* Login button for logged-out users */
     .login-prompt-btn {
       display: inline-block;
@@ -361,10 +382,13 @@
   </style>
 </head>
 <body>
+  <!-- Mouse follower for logged-in users -->
+  <div class="mouse-follower" id="mouseFollower">logged in as <span class="follower-username" id="followerUsername"></span></div>
+
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.7</span>
-    <span class="version-desc">Persistent login button</span>
+    <span class="version-number">v1.8</span>
+    <span class="version-desc">Mouse follower username</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -1129,6 +1153,23 @@
       // Delay slightly to let auth module check session
       setTimeout(playIntro, 500);
     });
+
+    // Mouse follower for logged-in users
+    const mouseFollower = document.getElementById('mouseFollower');
+    const followerUsername = document.getElementById('followerUsername');
+    
+    document.addEventListener('mousemove', (e) => {
+      // Position slightly to the top-right of cursor
+      mouseFollower.style.left = (e.clientX + 15) + 'px';
+      mouseFollower.style.top = (e.clientY - 20) + 'px';
+    });
+
+    // Update follower username when auth state changes
+    window.updateMouseFollower = function(user) {
+      if (user) {
+        followerUsername.textContent = user.email.split('@')[0];
+      }
+    };
   </script>
 
   <!-- Supabase Auth (loaded as module, doesn't block animation) -->
@@ -1146,6 +1187,7 @@
       if (data?.session?.user) {
         window.currentUser = data.session.user;
         document.body.classList.add('logged-in');
+        if (window.updateMouseFollower) window.updateMouseFollower(data.session.user);
         console.log('Logged in as:', data.session.user.email);
       }
 
@@ -1154,6 +1196,7 @@
         if (session?.user) {
           window.currentUser = session.user;
           document.body.classList.add('logged-in');
+          if (window.updateMouseFollower) window.updateMouseFollower(session.user);
         } else {
           window.currentUser = null;
           document.body.classList.remove('logged-in');
