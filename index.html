@@ -363,8 +363,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.6</span>
-    <span class="version-desc">Logged-out flow + red cursor</span>
+    <span class="version-number">v1.7</span>
+    <span class="version-desc">Persistent login button</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -931,10 +931,19 @@
       isFinished = true;
       stopMusic();
       stopFireworks();
-      dialogueBox.classList.remove('visible');
-      character.classList.remove('entered');
       promptIcon.classList.remove('visible');
       logoOverlay.classList.remove('visible');
+      
+      // For logged-out users, keep the character and login button visible
+      if (!window.currentUser) {
+        // Keep dialogue box and character visible with login button
+        loginBtn.style.display = 'inline-block';
+        return;
+      }
+      
+      // For logged-in users, fade everything out
+      dialogueBox.classList.remove('visible');
+      character.classList.remove('entered');
       
       setTimeout(() => {
         mainContainer.classList.add('hidden');
