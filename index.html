@@ -564,8 +564,16 @@
     let supabase = null;
     let currentUser = null;
     
-    if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && typeof window.supabase !== 'undefined') {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Initialize Supabase (the CDN exposes it as window.supabase)
+    try {
+      if (window.supabase && window.supabase.createClient) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase initialized successfully');
+      } else {
+        console.warn('Supabase library not loaded yet');
+      }
+    } catch (err) {
+      console.error('Failed to initialize Supabase:', err);
     }
     
     // Auth UI elements
@@ -685,14 +693,18 @@
     }
     
     // Event listeners for auth
-    authButton.addEventListener('click', (e) => {
+    function handleAuthButtonClick(e) {
+      e.preventDefault();
       e.stopPropagation();
       if (currentUser) {
         handleLogout();
       } else {
         showAuthModal();
       }
-    });
+    }
+    
+    authButton.addEventListener('click', handleAuthButtonClick);
+    authButton.addEventListener('touchend', handleAuthButtonClick);
     
     authCancel.addEventListener('click', hideAuthModal);
     authSubmit.addEventListener('click', handleAuthSubmit);
@@ -720,9 +732,11 @@
       }
     });
     
-    // Prevent modal interactions from triggering page advance
+    // Prevent auth interactions from triggering page advance
     authModal.addEventListener('click', (e) => e.stopPropagation());
     authModal.addEventListener('touchend', (e) => e.stopPropagation());
+    document.getElementById('authContainer').addEventListener('click', (e) => e.stopPropagation());
+    document.getElementById('authContainer').addEventListener('touchend', (e) => e.stopPropagation());
     
     // Check for existing session on load
     async function checkAuthSession() {
@@ -739,8 +753,12 @@
       });
     }
     
-    // Initialize auth check
-    checkAuthSession();
+    // Initialize auth check after DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkAuthSession);
+    } else {
+      checkAuthSession();
+    }
     
     // ============================================
     // AUDIO & ANIMATION CODE
