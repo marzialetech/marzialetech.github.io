@@ -257,14 +257,45 @@
       transition: fill 0.3s ease;
     }
 
-    /* Logged-in state: muted red cursor */
+    /* Logged-in state: muted red cursor icon */
     body.logged-in .cursor-icon svg {
       fill: #cc4444;
+    }
+
+    /* Logged-in state: red mouse cursor */
+    body.logged-in,
+    body.logged-in * {
+      cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 20 24"><path fill="%23cc4444" stroke="%23000" stroke-width="1" d="M2 1 L2 17 L5.5 13.5 L9 21 L12 19.5 L8.5 12 L14 12 Z"/></svg>') 0 0, auto;
     }
 
     /* Username highlight in dialogue */
     .username-highlight {
       color: #cc4444;
+    }
+
+    /* Login button for logged-out users */
+    .login-prompt-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 10px 20px;
+      background: transparent;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .login-prompt-btn:hover {
+      background: #0f0;
+      color: #000;
+    }
+
+    body.logged-in .login-prompt-btn {
+      cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 20 24"><path fill="%23cc4444" stroke="%23000" stroke-width="1" d="M2 1 L2 17 L5.5 13.5 L9 21 L12 19.5 L8.5 12 L14 12 Z"/></svg>') 0 0, pointer;
     }
 
     /* Mobile adjustments */
@@ -332,8 +363,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.5</span>
-    <span class="version-desc">Auth integration</span>
+    <span class="version-number">v1.6</span>
+    <span class="version-desc">Logged-out flow + red cursor</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -367,6 +398,7 @@
         <div class="dialogue-content">
           <p class="speaker-name">Joseph</p>
           <p class="dialogue-text" id="dialogueText"></p>
+          <a href="/login" class="login-prompt-btn" id="loginBtn" style="display: none;">Login</a>
         </div>
         <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
       </div>
@@ -761,9 +793,9 @@
       oscillator.stop(audioCtx.currentTime + 0.06);
     }
 
-    // Animation sequence
-    const sequence = [
-      { img: 2, dialogue: "Hey there!" },
+    // Animation sequence for logged-in users
+    const sequenceLoggedIn = [
+      { img: 2, dialogue: "Hey there!" },  // Will be personalized with username
       { img: 3, dialogue: "So let me tell you about this thing I've been working on..." },
       { img: 6, dialogue: "It's honestly the coolest thing ever!" },
       { img: 3, dialogue: "Like, you have NO idea how long this took..." },
@@ -778,6 +810,15 @@
       { img: 2, dialogue: "But I'll tell you about that next time!" },
       { img: 8, dialogue: "See you around!" },
     ];
+
+    // Animation sequence for logged-out users
+    const sequenceLoggedOut = [
+      { img: 2, dialogue: "Oh hey! I don't think we've met yet..." },
+      { img: 7, dialogue: "You'll need to log in first before I can show you the good stuff!", showLogin: true },
+    ];
+
+    // Active sequence (set when dialogue starts)
+    let sequence = sequenceLoggedIn;
 
     const imageMap = {
       1: 'images/img1_passion1.png',
@@ -810,6 +851,7 @@
     const promptIcon = document.getElementById('promptIcon');
     const introPrompt = document.getElementById('introPrompt');
     const logoOverlay = document.getElementById('logoOverlay');
+    const loginBtn = document.getElementById('loginBtn');
 
     const LOGO_FRAME = 4; // "BUT WE DID IT!" frame index
 
@@ -845,8 +887,13 @@
           );
         }
         
-        // Show logo, start music, and fireworks when frame 4 finishes typing
-        if (currentFrame === LOGO_FRAME) {
+        // Show login button if this frame requests it
+        if (window.showLoginAfterTyping) {
+          loginBtn.style.display = 'inline-block';
+        }
+        
+        // Show logo, start music, and fireworks when frame 4 finishes typing (logged-in only)
+        if (currentFrame === LOGO_FRAME && sequence === sequenceLoggedIn) {
           logoOverlay.classList.add('visible');
           startMusic();
           startFireworks();
@@ -927,6 +974,10 @@
       introPrompt.classList.remove('visible');
       started = true;
       currentFrame = 0;
+      
+      // Choose sequence based on auth state
+      sequence = window.currentUser ? sequenceLoggedIn : sequenceLoggedOut;
+      
       showFrame(currentFrame);
     }
 
@@ -941,6 +992,7 @@
 
       dialogueBox.classList.remove('visible');
       promptIcon.classList.remove('visible');
+      loginBtn.style.display = 'none';
       
       if (typewriterTimeout) {
         clearTimeout(typewriterTimeout);
@@ -949,8 +1001,8 @@
       setTimeout(() => {
         dialogueText.textContent = '';
         
-        // Personalize greeting for logged-in users (frame 0)
-        if (index === 0 && window.currentUser) {
+        // Personalize greeting for logged-in users (frame 0 of logged-in sequence)
+        if (index === 0 && window.currentUser && sequence === sequenceLoggedIn) {
           const username = window.currentUser.email.split('@')[0];
           fullText = `Hey there, ${username}!`;
           // Store username for coloring after typewriter finishes
@@ -959,6 +1011,9 @@
           fullText = frame.dialogue;
           window.greetingUsername = null;
         }
+        
+        // Store whether to show login button after typing
+        window.showLoginAfterTyping = frame.showLogin || false;
         
         charIndex = 0;
         isDelaying = false;
@@ -987,8 +1042,21 @@
         dialogueText.textContent = fullText;
         isTyping = false;
         
+        // Apply red color to username in greeting when skipping
+        if (window.greetingUsername) {
+          dialogueText.innerHTML = fullText.replace(
+            window.greetingUsername,
+            `<span class="username-highlight">${window.greetingUsername}</span>`
+          );
+        }
+        
+        // Show login button if this frame requests it
+        if (window.showLoginAfterTyping) {
+          loginBtn.style.display = 'inline-block';
+        }
+        
         // Show logo, start music, and fireworks when skipping frame 4's text
-        if (currentFrame === LOGO_FRAME) {
+        if (currentFrame === LOGO_FRAME && sequence === sequenceLoggedIn) {
           logoOverlay.classList.add('visible');
           startMusic();
           startFireworks();
@@ -1034,18 +1102,23 @@
       }
     });
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
+      // Don't advance if clicking login button
+      if (e.target === loginBtn || e.target.closest('.login-prompt-btn')) return;
       initAudio();
       advance();
     });
     document.addEventListener('touchend', (e) => {
+      // Don't advance if touching login button
+      if (e.target === loginBtn || e.target.closest('.login-prompt-btn')) return;
       e.preventDefault();
       initAudio();
       advance();
     });
 
     window.addEventListener('load', () => {
-      setTimeout(playIntro, 300);
+      // Delay slightly to let auth module check session
+      setTimeout(playIntro, 500);
     });
   </script>
 
