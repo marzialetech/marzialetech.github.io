@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>marziale.tech</title>
+  <!-- Supabase Auth -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       margin: 0;
@@ -254,6 +256,169 @@
       width: 100%;
       height: 100%;
       fill: #fff;
+      transition: fill 0.3s ease;
+    }
+
+    /* Red cursor for logged-in users */
+    body.logged-in .cursor-icon svg {
+      fill: #ff0040;
+    }
+
+    /* Auth button styles */
+    .auth-container {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .auth-button {
+      background: transparent;
+      border: 1px solid #fff;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-radius: 4px;
+    }
+
+    .auth-button:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    .user-greeting {
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    /* Auth modal */
+    .auth-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .auth-modal.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .auth-form {
+      background: #111;
+      border: 1px solid #333;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 320px;
+    }
+
+    .auth-form h2 {
+      margin: 0 0 1.5rem 0;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      color: #fff;
+      text-align: center;
+    }
+
+    .auth-form input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 1rem;
+      background: #000;
+      border: 1px solid #333;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .auth-form input:focus {
+      outline: none;
+      border-color: #0f0;
+    }
+
+    .auth-form input::placeholder {
+      color: #666;
+    }
+
+    .auth-form-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 0.5rem;
+    }
+
+    .auth-form button {
+      flex: 1;
+      padding: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .auth-form .submit-btn {
+      background: #0f0;
+      border: none;
+      color: #000;
+    }
+
+    .auth-form .submit-btn:hover {
+      background: #0c0;
+    }
+
+    .auth-form .cancel-btn {
+      background: transparent;
+      border: 1px solid #666;
+      color: #666;
+    }
+
+    .auth-form .cancel-btn:hover {
+      border-color: #fff;
+      color: #fff;
+    }
+
+    .auth-error {
+      color: #ff4040;
+      font-size: 12px;
+      margin-bottom: 1rem;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .auth-toggle a {
+      color: #0f0;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .auth-toggle a:hover {
+      text-decoration: underline;
     }
 
     /* Mobile adjustments */
@@ -321,8 +486,32 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.4</span>
-    <span class="version-desc">Even fewer fireworks (0.0087)</span>
+    <span class="version-number">v1.5</span>
+    <span class="version-desc">Supabase auth</span>
+  </div>
+
+  <!-- Auth container (top right) -->
+  <div class="auth-container" id="authContainer">
+    <span class="user-greeting" id="userGreeting" style="display: none;"></span>
+    <button class="auth-button" id="authButton">Login</button>
+  </div>
+
+  <!-- Auth modal -->
+  <div class="auth-modal" id="authModal">
+    <div class="auth-form">
+      <h2 id="authFormTitle">Login</h2>
+      <div class="auth-error" id="authError"></div>
+      <input type="email" id="authEmail" placeholder="Email" autocomplete="email">
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+      <div class="auth-form-buttons">
+        <button class="cancel-btn" id="authCancel">Cancel</button>
+        <button class="submit-btn" id="authSubmit">Login</button>
+      </div>
+      <div class="auth-toggle">
+        <span id="authToggleText">Don't have an account? </span>
+        <a id="authToggleLink">Sign up</a>
+      </div>
+    </div>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -363,6 +552,200 @@
   </div>
 
   <script>
+    // ============================================
+    // SUPABASE AUTH CONFIGURATION
+    // ============================================
+    // TODO: Replace these with your Supabase project credentials
+    // Get these from: https://supabase.com/dashboard/project/YOUR_PROJECT/settings/api
+    const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+    
+    // Initialize Supabase client
+    let supabase = null;
+    let currentUser = null;
+    
+    if (SUPABASE_URL !== 'YOUR_SUPABASE_URL' && typeof window.supabase !== 'undefined') {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    
+    // Auth UI elements
+    const authButton = document.getElementById('authButton');
+    const authModal = document.getElementById('authModal');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const authSubmit = document.getElementById('authSubmit');
+    const authCancel = document.getElementById('authCancel');
+    const authError = document.getElementById('authError');
+    const authFormTitle = document.getElementById('authFormTitle');
+    const authToggleLink = document.getElementById('authToggleLink');
+    const authToggleText = document.getElementById('authToggleText');
+    const userGreeting = document.getElementById('userGreeting');
+    
+    let isSignUpMode = false;
+    
+    // Update UI based on auth state
+    function updateAuthUI(user) {
+      currentUser = user;
+      if (user) {
+        const displayName = user.email.split('@')[0];
+        authButton.textContent = 'Logout';
+        userGreeting.textContent = displayName;
+        userGreeting.style.display = 'inline';
+        document.body.classList.add('logged-in');
+      } else {
+        authButton.textContent = 'Login';
+        userGreeting.style.display = 'none';
+        document.body.classList.remove('logged-in');
+      }
+    }
+    
+    // Show/hide modal
+    function showAuthModal() {
+      authModal.classList.add('visible');
+      authEmail.focus();
+      authError.textContent = '';
+    }
+    
+    function hideAuthModal() {
+      authModal.classList.remove('visible');
+      authEmail.value = '';
+      authPassword.value = '';
+      authError.textContent = '';
+    }
+    
+    // Toggle between login and signup
+    function toggleAuthMode() {
+      isSignUpMode = !isSignUpMode;
+      if (isSignUpMode) {
+        authFormTitle.textContent = 'Sign Up';
+        authSubmit.textContent = 'Sign Up';
+        authToggleText.textContent = 'Already have an account? ';
+        authToggleLink.textContent = 'Login';
+      } else {
+        authFormTitle.textContent = 'Login';
+        authSubmit.textContent = 'Login';
+        authToggleText.textContent = "Don't have an account? ";
+        authToggleLink.textContent = 'Sign up';
+      }
+      authError.textContent = '';
+    }
+    
+    // Handle auth submission
+    async function handleAuthSubmit() {
+      const email = authEmail.value.trim();
+      const password = authPassword.value;
+      
+      if (!email || !password) {
+        authError.textContent = 'Please enter email and password';
+        return;
+      }
+      
+      if (!supabase) {
+        authError.textContent = 'Supabase not configured. Check console.';
+        console.error('Supabase credentials not set. Update SUPABASE_URL and SUPABASE_ANON_KEY in index.html');
+        return;
+      }
+      
+      authError.textContent = '';
+      authSubmit.disabled = true;
+      authSubmit.textContent = '...';
+      
+      try {
+        let result;
+        if (isSignUpMode) {
+          result = await supabase.auth.signUp({ email, password });
+        } else {
+          result = await supabase.auth.signInWithPassword({ email, password });
+        }
+        
+        if (result.error) {
+          authError.textContent = result.error.message;
+        } else if (isSignUpMode && result.data.user && !result.data.session) {
+          authError.textContent = 'Check your email to confirm signup!';
+          authError.style.color = '#0f0';
+        } else {
+          hideAuthModal();
+          updateAuthUI(result.data.user);
+        }
+      } catch (err) {
+        authError.textContent = 'An error occurred. Try again.';
+        console.error(err);
+      }
+      
+      authSubmit.disabled = false;
+      authSubmit.textContent = isSignUpMode ? 'Sign Up' : 'Login';
+    }
+    
+    // Handle logout
+    async function handleLogout() {
+      if (supabase) {
+        await supabase.auth.signOut();
+        updateAuthUI(null);
+      }
+    }
+    
+    // Event listeners for auth
+    authButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (currentUser) {
+        handleLogout();
+      } else {
+        showAuthModal();
+      }
+    });
+    
+    authCancel.addEventListener('click', hideAuthModal);
+    authSubmit.addEventListener('click', handleAuthSubmit);
+    authToggleLink.addEventListener('click', toggleAuthMode);
+    
+    // Close modal on background click
+    authModal.addEventListener('click', (e) => {
+      if (e.target === authModal) {
+        hideAuthModal();
+      }
+    });
+    
+    // Handle Enter key in form
+    authPassword.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleAuthSubmit();
+      }
+    });
+    
+    authEmail.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        authPassword.focus();
+      }
+    });
+    
+    // Prevent modal interactions from triggering page advance
+    authModal.addEventListener('click', (e) => e.stopPropagation());
+    authModal.addEventListener('touchend', (e) => e.stopPropagation());
+    
+    // Check for existing session on load
+    async function checkAuthSession() {
+      if (!supabase) return;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        updateAuthUI(session.user);
+      }
+      
+      // Listen for auth changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        updateAuthUI(session?.user || null);
+      });
+    }
+    
+    // Initialize auth check
+    checkAuthSession();
+    
+    // ============================================
+    // AUDIO & ANIMATION CODE
+    // ============================================
+    
     // Audio context for Animal Crossing style chatter
     let audioCtx = null;
     let musicPlaying = false;
@@ -925,7 +1308,15 @@
       
       setTimeout(() => {
         dialogueText.textContent = '';
-        fullText = frame.dialogue;
+        
+        // Personalize greeting for logged-in users
+        let dialogue = frame.dialogue;
+        if (index === 0 && currentUser) {
+          const displayName = currentUser.email.split('@')[0];
+          dialogue = `Hey there, ${displayName}!`;
+        }
+        
+        fullText = dialogue;
         charIndex = 0;
         isDelaying = false;
         dialogueBox.classList.add('visible');
