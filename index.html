@@ -254,6 +254,17 @@
       width: 100%;
       height: 100%;
       fill: #fff;
+      transition: fill 0.3s ease;
+    }
+
+    /* Logged-in state: muted red cursor */
+    body.logged-in .cursor-icon svg {
+      fill: #cc4444;
+    }
+
+    /* Username highlight in dialogue */
+    .username-highlight {
+      color: #cc4444;
     }
 
     /* Mobile adjustments */
@@ -321,8 +332,8 @@
 <body>
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v1.4</span>
-    <span class="version-desc">Even fewer fireworks (0.0087)</span>
+    <span class="version-number">v1.5</span>
+    <span class="version-desc">Auth integration</span>
   </div>
   <!-- Fireworks canvas (background) -->
   <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
@@ -363,6 +374,9 @@
   </div>
 
   <script>
+    // Global auth state (set by auth module)
+    window.currentUser = null;
+
     // Audio context for Animal Crossing style chatter
     let audioCtx = null;
     let musicPlaying = false;
@@ -822,6 +836,15 @@
         // Done typing
         isTyping = false;
         
+        // Apply red color to username in greeting
+        if (window.greetingUsername) {
+          const text = dialogueText.textContent;
+          dialogueText.innerHTML = text.replace(
+            window.greetingUsername,
+            `<span class="username-highlight">${window.greetingUsername}</span>`
+          );
+        }
+        
         // Show logo, start music, and fireworks when frame 4 finishes typing
         if (currentFrame === LOGO_FRAME) {
           logoOverlay.classList.add('visible');
@@ -925,7 +948,18 @@
       
       setTimeout(() => {
         dialogueText.textContent = '';
-        fullText = frame.dialogue;
+        
+        // Personalize greeting for logged-in users (frame 0)
+        if (index === 0 && window.currentUser) {
+          const username = window.currentUser.email.split('@')[0];
+          fullText = `Hey there, ${username}!`;
+          // Store username for coloring after typewriter finishes
+          window.greetingUsername = username;
+        } else {
+          fullText = frame.dialogue;
+          window.greetingUsername = null;
+        }
+        
         charIndex = 0;
         isDelaying = false;
         dialogueBox.classList.add('visible');
@@ -1013,6 +1047,39 @@
     window.addEventListener('load', () => {
       setTimeout(playIntro, 300);
     });
+  </script>
+
+  <!-- Supabase Auth (loaded as module, doesn't block animation) -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      // Check for existing session
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user) {
+        window.currentUser = data.session.user;
+        document.body.classList.add('logged-in');
+        console.log('Logged in as:', data.session.user.email);
+      }
+
+      // Listen for auth changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          window.currentUser = session.user;
+          document.body.classList.add('logged-in');
+        } else {
+          window.currentUser = null;
+          document.body.classList.remove('logged-in');
+        }
+      });
+    } catch (err) {
+      console.log('Auth check skipped:', err.message);
+    }
   </script>
 </body>
 </html>
