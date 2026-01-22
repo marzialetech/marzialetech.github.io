@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - marziale.tech</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -269,18 +269,16 @@
     // Initialize Supabase
     function initSupabase() {
       try {
-        // Try different ways the CDN might expose Supabase
-        const sb = window.supabase || window.Supabase;
-        if (sb && sb.createClient) {
-          supabase = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          statusEl.textContent = 'Connected to Supabase';
+        // UMD bundle exposes as window.supabase
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          statusEl.textContent = 'Connected';
           statusEl.className = 'status connected';
-          console.log('Supabase initialized:', supabase);
+          console.log('Supabase client created successfully');
           return true;
         } else {
-          console.log('window.supabase:', window.supabase);
-          console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('supa')));
-          throw new Error('Supabase library not found on window');
+          console.log('Supabase not ready yet, window.supabase =', window.supabase);
+          return false;
         }
       } catch (err) {
         statusEl.textContent = 'Error: ' + err.message;
@@ -290,12 +288,18 @@
       }
     }
     
-    // Try to init immediately, retry if CDN hasn't loaded yet
-    if (!initSupabase()) {
-      setTimeout(() => {
-        if (!supabase) initSupabase();
-      }, 500);
+    // Retry initialization until it works (CDN might be slow)
+    function tryInit(attempts) {
+      if (initSupabase()) return;
+      if (attempts > 0) {
+        setTimeout(() => tryInit(attempts - 1), 300);
+      } else {
+        statusEl.textContent = 'Failed to load Supabase';
+        statusEl.className = 'status error';
+      }
     }
+    
+    tryInit(10); // Try up to 10 times over 3 seconds
 
     // Update UI based on auth state
     function showLoggedIn(user) {
