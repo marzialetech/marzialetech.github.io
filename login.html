@@ -296,7 +296,7 @@
 
     <!-- Login Form (shown when logged out) -->
     <div id="authForm" class="auth-form">
-      <h2 id="formTitle" class="form-title">Login</h2>
+      <h2 class="form-title">Sign In</h2>
       <div id="authError" class="auth-error"></div>
       
       <!-- GitHub OAuth Button -->
@@ -306,18 +306,6 @@
         </svg>
         Sign in with GitHub
       </button>
-
-      <div class="divider">or</div>
-      
-      <input type="email" id="email" placeholder="Email" autocomplete="email">
-      <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-      
-      <button id="submitBtn" class="submit-btn">Login</button>
-      
-      <div class="auth-toggle">
-        <span id="toggleText">Don't have an account? </span>
-        <a id="toggleLink">Sign up</a>
-      </div>
     </div>
 
     <!-- Logged In View (shown when logged in) -->
@@ -334,8 +322,8 @@
 
   <!-- Version display (toggle with 'v' key) -->
   <div class="version-display" id="versionDisplay">
-    <span class="version-number">v0.5</span>
-    <span class="version-desc">GitHub OAuth</span>
+    <span class="version-number">v0.6</span>
+    <span class="version-desc">GitHub only</span>
   </div>
 
   <script type="module">
@@ -349,21 +337,13 @@
     // Elements
     const authForm = document.getElementById('authForm');
     const loggedInView = document.getElementById('loggedInView');
-    const formTitle = document.getElementById('formTitle');
     const authError = document.getElementById('authError');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const submitBtn = document.getElementById('submitBtn');
-    const toggleText = document.getElementById('toggleText');
-    const toggleLink = document.getElementById('toggleLink');
     const userEmail = document.getElementById('userEmail');
     const logoutBtn = document.getElementById('logoutBtn');
     const statusEl = document.getElementById('status');
-    const versionDisplay = document.getElementById('versionDisplay');
     const githubBtn = document.getElementById('githubBtn');
 
     let supabase = null;
-    let isSignUpMode = false;
 
     // Initialize Supabase
     try {
@@ -390,25 +370,6 @@
       authError.textContent = '';
       authError.className = 'auth-error';
     }
-
-    // Toggle signup/login mode
-    toggleLink.addEventListener('click', () => {
-      isSignUpMode = !isSignUpMode;
-      authError.textContent = '';
-      authError.className = 'auth-error';
-      
-      if (isSignUpMode) {
-        formTitle.textContent = 'Sign Up';
-        submitBtn.textContent = 'Sign Up';
-        toggleText.textContent = 'Already have an account? ';
-        toggleLink.textContent = 'Login';
-      } else {
-        formTitle.textContent = 'Login';
-        submitBtn.textContent = 'Login';
-        toggleText.textContent = "Don't have an account? ";
-        toggleLink.textContent = 'Sign up';
-      }
-    });
 
     // Handle GitHub OAuth sign-in
     githubBtn.addEventListener('click', async () => {
@@ -437,81 +398,6 @@
         authError.textContent = 'Error: ' + err.message;
         authError.className = 'auth-error';
         console.error('GitHub auth error:', err);
-      }
-    });
-
-    // Handle form submission
-    submitBtn.addEventListener('click', async () => {
-      console.log('Submit clicked, isSignUpMode:', isSignUpMode);
-      
-      const email = emailInput.value.trim();
-      const password = passwordInput.value;
-
-      if (!email || !password) {
-        authError.textContent = 'Please enter email and password';
-        authError.className = 'auth-error';
-        return;
-      }
-
-      if (password.length < 6) {
-        authError.textContent = 'Password must be at least 6 characters';
-        authError.className = 'auth-error';
-        return;
-      }
-
-      if (!supabase) {
-        authError.textContent = 'Supabase not connected - refresh page';
-        authError.className = 'auth-error';
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Please wait...';
-      authError.textContent = '';
-
-      try {
-        let result;
-        
-        if (isSignUpMode) {
-          console.log('Attempting signup for:', email);
-          result = await supabase.auth.signUp({ email, password });
-          console.log('Signup result:', result);
-        } else {
-          console.log('Attempting login for:', email);
-          result = await supabase.auth.signInWithPassword({ email, password });
-          console.log('Login result:', result);
-        }
-
-        if (result.error) {
-          authError.textContent = result.error.message;
-          authError.className = 'auth-error';
-        } else if (isSignUpMode && result.data.user && !result.data.session) {
-          // Email confirmation required
-          authError.textContent = 'Check your email to confirm your account!';
-          authError.className = 'auth-error success';
-        } else if (result.data.user) {
-          showLoggedIn(result.data.user);
-        }
-      } catch (err) {
-        authError.textContent = 'Error: ' + err.message;
-        authError.className = 'auth-error';
-        console.error('Auth error:', err);
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = isSignUpMode ? 'Sign Up' : 'Login';
-    });
-
-    // Handle Enter key
-    passwordInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        submitBtn.click();
-      }
-    });
-
-    emailInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        passwordInput.focus();
       }
     });
 
