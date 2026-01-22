@@ -692,73 +692,96 @@
       }
     }
     
-    // Event listeners for auth
-    function handleAuthButtonClick(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (currentUser) {
-        handleLogout();
-      } else {
-        showAuthModal();
+    // Event listeners for auth (wrapped in try-catch to not break animation)
+    try {
+      function handleAuthButtonClick(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (currentUser) {
+          handleLogout();
+        } else {
+          showAuthModal();
+        }
       }
+      
+      if (authButton) {
+        authButton.addEventListener('click', handleAuthButtonClick);
+        authButton.addEventListener('touchend', handleAuthButtonClick);
+      }
+      
+      if (authCancel) authCancel.addEventListener('click', hideAuthModal);
+      if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
+      if (authToggleLink) authToggleLink.addEventListener('click', toggleAuthMode);
+      
+      // Close modal on background click
+      if (authModal) {
+        authModal.addEventListener('click', (e) => {
+          if (e.target === authModal) {
+            hideAuthModal();
+          }
+        });
+      }
+      
+      // Handle Enter key in form
+      if (authPassword) {
+        authPassword.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAuthSubmit();
+          }
+        });
+      }
+      
+      if (authEmail) {
+        authEmail.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            authPassword.focus();
+          }
+        });
+      }
+      
+      // Prevent auth interactions from triggering page advance
+      if (authModal) {
+        authModal.addEventListener('click', (e) => e.stopPropagation());
+        authModal.addEventListener('touchend', (e) => e.stopPropagation());
+      }
+      
+      const authContainer = document.getElementById('authContainer');
+      if (authContainer) {
+        authContainer.addEventListener('click', (e) => e.stopPropagation());
+        authContainer.addEventListener('touchend', (e) => e.stopPropagation());
+      }
+    } catch (err) {
+      console.error('Error setting up auth listeners:', err);
     }
-    
-    authButton.addEventListener('click', handleAuthButtonClick);
-    authButton.addEventListener('touchend', handleAuthButtonClick);
-    
-    authCancel.addEventListener('click', hideAuthModal);
-    authSubmit.addEventListener('click', handleAuthSubmit);
-    authToggleLink.addEventListener('click', toggleAuthMode);
-    
-    // Close modal on background click
-    authModal.addEventListener('click', (e) => {
-      if (e.target === authModal) {
-        hideAuthModal();
-      }
-    });
-    
-    // Handle Enter key in form
-    authPassword.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        handleAuthSubmit();
-      }
-    });
-    
-    authEmail.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        authPassword.focus();
-      }
-    });
-    
-    // Prevent auth interactions from triggering page advance
-    authModal.addEventListener('click', (e) => e.stopPropagation());
-    authModal.addEventListener('touchend', (e) => e.stopPropagation());
-    document.getElementById('authContainer').addEventListener('click', (e) => e.stopPropagation());
-    document.getElementById('authContainer').addEventListener('touchend', (e) => e.stopPropagation());
     
     // Check for existing session on load
     async function checkAuthSession() {
-      if (!supabase) return;
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        updateAuthUI(session.user);
+      if (!supabase) {
+        console.log('Supabase not available, skipping auth check');
+        return;
       }
       
-      // Listen for auth changes
-      supabase.auth.onAuthStateChange((event, session) => {
-        updateAuthUI(session?.user || null);
-      });
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          updateAuthUI(data.session.user);
+        }
+        
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+          updateAuthUI(session?.user || null);
+        });
+      } catch (err) {
+        console.error('Auth session check failed:', err);
+      }
     }
     
-    // Initialize auth check after DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', checkAuthSession);
-    } else {
-      checkAuthSession();
-    }
+    // Initialize auth check after DOM is ready (don't block animation)
+    setTimeout(() => {
+      checkAuthSession().catch(err => console.error('Auth error:', err));
+    }, 100);
     
     // ============================================
     // AUDIO & ANIMATION CODE
