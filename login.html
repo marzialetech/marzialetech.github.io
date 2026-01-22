@@ -267,18 +267,34 @@
     let isSignUpMode = false;
 
     // Initialize Supabase
-    try {
-      if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        statusEl.textContent = 'Connected to Supabase';
-        statusEl.className = 'status connected';
-      } else {
-        throw new Error('Supabase library not loaded');
+    function initSupabase() {
+      try {
+        // Try different ways the CDN might expose Supabase
+        const sb = window.supabase || window.Supabase;
+        if (sb && sb.createClient) {
+          supabase = sb.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          statusEl.textContent = 'Connected to Supabase';
+          statusEl.className = 'status connected';
+          console.log('Supabase initialized:', supabase);
+          return true;
+        } else {
+          console.log('window.supabase:', window.supabase);
+          console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('supa')));
+          throw new Error('Supabase library not found on window');
+        }
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+        statusEl.className = 'status error';
+        console.error('Supabase init error:', err);
+        return false;
       }
-    } catch (err) {
-      statusEl.textContent = 'Failed to connect: ' + err.message;
-      statusEl.className = 'status error';
-      console.error(err);
+    }
+    
+    // Try to init immediately, retry if CDN hasn't loaded yet
+    if (!initSupabase()) {
+      setTimeout(() => {
+        if (!supabase) initSupabase();
+      }, 500);
     }
 
     // Update UI based on auth state
@@ -316,6 +332,8 @@
 
     // Handle form submission
     submitBtn.addEventListener('click', async () => {
+      console.log('Submit clicked, isSignUpMode:', isSignUpMode);
+      
       const email = emailInput.value.trim();
       const password = passwordInput.value;
 
@@ -325,8 +343,14 @@
         return;
       }
 
+      if (password.length < 6) {
+        authError.textContent = 'Password must be at least 6 characters';
+        authError.className = 'auth-error';
+        return;
+      }
+
       if (!supabase) {
-        authError.textContent = 'Supabase not connected';
+        authError.textContent = 'Supabase not connected - refresh page';
         authError.className = 'auth-error';
         return;
       }
@@ -339,9 +363,13 @@
         let result;
         
         if (isSignUpMode) {
+          console.log('Attempting signup for:', email);
           result = await supabase.auth.signUp({ email, password });
+          console.log('Signup result:', result);
         } else {
+          console.log('Attempting login for:', email);
           result = await supabase.auth.signInWithPassword({ email, password });
+          console.log('Login result:', result);
         }
 
         if (result.error) {
@@ -355,9 +383,9 @@
           showLoggedIn(result.data.user);
         }
       } catch (err) {
-        authError.textContent = 'An error occurred: ' + err.message;
+        authError.textContent = 'Error: ' + err.message;
         authError.className = 'auth-error';
-        console.error(err);
+        console.error('Auth error:', err);
       }
 
       submitBtn.disabled = false;
