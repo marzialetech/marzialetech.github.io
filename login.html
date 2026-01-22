@@ -207,6 +207,33 @@
     .status.error {
       color: #ff4040;
     }
+
+    .version-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 9999;
+      display: none;
+      border: 1px solid #333;
+    }
+
+    .version-display.visible {
+      display: block;
+    }
+
+    .version-number {
+      color: #0f0;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .version-desc {
+      color: #888;
+    }
   </style>
 </head>
 <body>
@@ -243,6 +270,12 @@
   </div>
 
   <div id="status" class="status">Connecting...</div>
+
+  <!-- Version display (toggle with 'v' key) -->
+  <div class="version-display" id="versionDisplay">
+    <span class="version-number">v0.3</span>
+    <span class="version-desc">unpkg CDN + retry logic</span>
+  </div>
 
   <script>
     // Supabase Configuration
@@ -441,6 +474,13 @@
     }
 
     checkSession();
+
+    // Toggle version display with 'v' key
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'v' || e.key === 'V') && !e.repeat) {
+        document.getElementById('versionDisplay').classList.toggle('visible');
+      }
+    });
   </script>
 </body>
 </html>
