@@ -2959,10 +2959,7 @@
                 e.preventDefault();
                 if (gameState === 'start') resetGame();
             }
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (gameState === 'result') resetGame();
-            }
+            // Space key removed - allow normal typing in name input field
         });
 
         // Car selection
