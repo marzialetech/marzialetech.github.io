@@ -788,14 +788,27 @@
         let supabase = null;
         let lastSubmittedId = null;
         
-        try {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch (e) {
-            console.warn('Supabase init failed:', e);
+        // Initialize Supabase (defensive check for CDN loading)
+        function initSupabase() {
+            if (supabase) return;
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            } catch (e) {
+                console.warn('Supabase init failed:', e);
+            }
+        }
+        
+        // Try to init now, and also when DOM is ready
+        initSupabase();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSupabase);
         }
         
         // Leaderboard functions
         async function submitScore(name, timeSeconds) {
+            initSupabase();
             if (!supabase || !name.trim()) return null;
             
             try {
@@ -820,6 +833,7 @@
         }
         
         async function fetchLeaderboard() {
+            initSupabase();
             if (!supabase) return [];
             
             try {
