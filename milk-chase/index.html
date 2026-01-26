@@ -240,6 +240,15 @@
             background: #fff;
         }
 
+        /* Cow print design */
+        .car-option[data-car="cow"] .car-design {
+            background: #fff;
+            background-image: url('cow.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
         /* South Lewis design */
         .car-option[data-car="southlewis"] .car-design {
             background: #cc2222;
@@ -904,6 +913,10 @@
                         <div class="car-design"></div>
                         <div class="car-name">Classic Red</div>
                     </div>
+                    <div class="car-option" data-car="cow">
+                        <div class="car-design"></div>
+                        <div class="car-name">Cow Print</div>
+                    </div>
                 </div>
                 </div>
 
@@ -1262,13 +1275,15 @@
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         
-        // Load school logos, USA flag, and Stewart's logo for car skins and truck
+        // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
         const southLewisLogo = new Image();
         southLewisLogo.src = 'southlewis-logo.png';
         const lowvilleLogo = new Image();
         lowvilleLogo.src = 'lowville-logo.png';
         const usaFlag = new Image();
         usaFlag.src = 'usa.png';
+        const cowPrint = new Image();
+        cowPrint.src = 'cow.png';
         const stewartsLogo = new Image();
         stewartsLogo.src = 'stewarts-logo.png';
         
@@ -1744,6 +1759,15 @@
                 // Racing stripe
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(-3, -player.height/2, 6, player.height);
+            } else if (player.design === 'cow') {
+                // Draw cow print image
+                if (cowPrint && cowPrint.complete) {
+                    ctx.drawImage(cowPrint, -player.width/2, -player.height/2, player.width, player.height);
+                } else {
+                    // Fallback: white background if image not loaded
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                }
             } else if (player.design === 'southlewis') {
                 // Red background with South Lewis logo
                 ctx.fillStyle = '#cc2222';
