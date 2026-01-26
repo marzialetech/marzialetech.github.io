@@ -1079,6 +1079,12 @@
         let lastSubmittedId = null;
         let selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
         
+        // School selection validation function (stub - no validation needed currently)
+        function validateSchoolSelection() {
+            // Function exists but does nothing - school selection is handled by buttons
+            return true;
+        }
+        
         // Initialize school selection validation
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
@@ -1429,6 +1435,7 @@
             }
             
             const schoolNames = { lowville: 'LV', southlewis: 'SL' };
+            const deleteBtn = ''; // No delete functionality currently
             
             list.innerHTML = entries.map((entry, i) => {
                 const isHighlight = entry.id === highlightId;
@@ -1473,6 +1480,7 @@
             }
             
             const schoolNames = { lowville: 'Lowville', southlewis: 'South Lewis' };
+            const deleteBtn = ''; // No delete functionality currently
             
             list.innerHTML = entries.slice(0, 10).map((entry, i) => {
                 const schoolTag = entry.school ? `<span class="school">${schoolNames[entry.school] || entry.school}</span>` : '';
