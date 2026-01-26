@@ -960,8 +960,6 @@
             validateSchoolSelection();
         }
         let leaderboardFilter = 'all';
-        let isAdmin = false;
-        let currentUser = null;
         
         // Initialize Supabase (defensive check for CDN loading)
         function initSupabase() {
@@ -969,158 +967,17 @@
             try {
                 if (window.supabase && window.supabase.createClient) {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    // Check auth state
-                    checkAuthState();
                 }
             } catch (e) {
                 console.warn('Supabase init failed:', e);
             }
         }
-
-        // Check authentication state
-        async function checkAuthState() {
-            if (!supabaseClient) return;
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) {
-                    currentUser = session.user;
-                    // Check if user's GitHub username is "marzialetech"
-                    const userMetadata = session.user.user_metadata;
-                    const githubUsername = userMetadata?.user_name || userMetadata?.preferred_username;
-                    isAdmin = githubUsername === 'marzialetech';
-                    updateLoginUI();
-                } else {
-                    currentUser = null;
-                    isAdmin = false;
-                    updateLoginUI();
-                }
-            } catch (e) {
-                console.warn('Auth check failed:', e);
-            }
-        }
-
-        // Update login UI
-        function updateLoginUI() {
-            const loginBtn = document.getElementById('github-login-btn');
-            const adminLogin = document.getElementById('admin-login');
-            if (!loginBtn || !adminLogin) return;
-
-            if (currentUser) {
-                const userMetadata = currentUser.user_metadata;
-                const githubUsername = userMetadata?.user_name || userMetadata?.preferred_username || 'User';
-                loginBtn.textContent = isAdmin ? `Admin: ${githubUsername} (Logout)` : `${githubUsername} (Logout)`;
-                adminLogin.classList.toggle('admin-authenticated', isAdmin);
-            } else {
-                loginBtn.textContent = 'developer mode';
-                adminLogin.classList.remove('admin-authenticated');
-            }
-            
-            // Update school selector based on admin status
-            updateSchoolSelector();
-        }
-
-        // Update school selector UI based on admin status
-        function updateSchoolSelector() {
-            const noAffiliationBtn = document.querySelector('.school-btn[data-school="none"]');
-            if (noAffiliationBtn) {
-                noAffiliationBtn.style.display = isAdmin ? 'inline-block' : 'none';
-            }
-            
-            // If admin just logged in and no school selected, select "No Affiliation"
-            if (isAdmin && !selectedSchool) {
-                selectedSchool = 'none';
-                document.querySelectorAll('.school-btn').forEach(btn => {
-                    btn.classList.toggle('selected', btn.dataset.school === 'none');
-                });
-            }
-            
-            // Validate school selection for submit button
-            validateSchoolSelection();
-        }
-
-        // Validate school selection (required for non-admins)
-        function validateSchoolSelection() {
-            const submitBtn = document.getElementById('submit-score-btn');
-            if (!submitBtn) return;
-            
-            // For non-admins, school must be selected (not 'none')
-            if (!isAdmin && (!selectedSchool || selectedSchool === 'none')) {
-                submitBtn.disabled = true;
-                submitBtn.title = 'Please select a school';
-            } else {
-                submitBtn.disabled = false;
-                submitBtn.title = '';
-            }
-        }
-
-        // GitHub login
-        async function loginWithGitHub() {
-            if (!supabaseClient) {
-                initSupabase();
-                if (!supabaseClient) {
-                    alert('Supabase not initialized. Please refresh the page.');
-                    return;
-                }
-            }
-
-            if (currentUser) {
-                // Logout
-                await supabaseClient.auth.signOut();
-                currentUser = null;
-                isAdmin = false;
-                updateLoginUI();
-                // Reload leaderboards to remove delete buttons
-                await showLeaderboard();
-                await loadStartLeaderboard();
-            } else {
-                // Login
-                const { data, error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'github',
-                    options: {
-                        redirectTo: window.location.origin + window.location.pathname
-                    }
-                });
-                if (error) {
-                    console.error('Login error:', error);
-                    alert('Login failed: ' + error.message);
-                }
-            }
-        }
-
-        // Handle auth state changes (set up after Supabase is initialized)
-        function setupAuthListener() {
-            if (supabaseClient) {
-                supabaseClient.auth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                        checkAuthState().then(() => {
-                            updateSchoolSelector();
-                            showLeaderboard();
-                            loadStartLeaderboard();
-                        });
-                    } else if (event === 'SIGNED_OUT') {
-                        currentUser = null;
-                        isAdmin = false;
-                        updateLoginUI();
-                        // Reset to default school selection
-                        selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
-                        document.querySelectorAll('.school-btn').forEach(btn => {
-                            btn.classList.toggle('selected', btn.dataset.school === selectedSchool);
-                        });
-                        validateSchoolSelection();
-                        showLeaderboard();
-                        loadStartLeaderboard();
-                    }
-                });
-            }
-        }
         
         // Try to init now, and also when DOM is ready
         initSupabase();
-        setupAuthListener();
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 initSupabase();
-                setupAuthListener();
                 // Load start screen leaderboard after a short delay to ensure Supabase is ready
                 setTimeout(loadStartLeaderboard, 500);
             });
