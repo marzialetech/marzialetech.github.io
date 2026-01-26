@@ -1175,9 +1175,9 @@
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
             // Position: 40% to the right of logo (logo is 400px, container is 400px)
-            // Car should be at right edge, centered vertically, then moved down 25%
+            // Car should be at right edge, centered vertically, then moved down 15% (was 25%, now 15%)
             const centerX = previewCanvas.width * 0.4; // 40% to the right
-            const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.25; // Moved down 25%
+            const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
             
             // Rotate 45 degrees to face northeast (top right)
             const rotation = Math.PI / 4; // 45 degrees
