@@ -218,31 +218,11 @@
 
         /* USA flag design */
         .car-option[data-car="usa"] .car-design {
-            background: linear-gradient(
-                to bottom,
-                #B22234 0%, #B22234 7.7%,
-                #fff 7.7%, #fff 15.4%,
-                #B22234 15.4%, #B22234 23.1%,
-                #fff 23.1%, #fff 30.8%,
-                #B22234 30.8%, #B22234 38.5%,
-                #fff 38.5%, #fff 46.2%,
-                #B22234 46.2%, #B22234 53.9%,
-                #fff 53.9%, #fff 61.6%,
-                #B22234 61.6%, #B22234 69.3%,
-                #fff 69.3%, #fff 77%,
-                #B22234 77%, #B22234 84.7%,
-                #fff 84.7%, #fff 92.4%,
-                #B22234 92.4%, #B22234 100%
-            );
-        }
-        .car-option[data-car="usa"] .car-design::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 40%;
-            height: 54%;
-            background: #3C3B6E;
+            background: #fff;
+            background-image: url('usa.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         /* Classic red design */
@@ -258,16 +238,6 @@
             width: 8px;
             height: 100%;
             background: #fff;
-        }
-
-        /* Cow print design */
-        .car-option[data-car="cow"] .car-design {
-            background: #fff;
-            background-image: 
-                radial-gradient(ellipse 25px 20px at 20% 30%, #111 100%, transparent 100%),
-                radial-gradient(ellipse 18px 22px at 70% 25%, #111 100%, transparent 100%),
-                radial-gradient(ellipse 22px 18px at 45% 70%, #111 100%, transparent 100%),
-                radial-gradient(ellipse 15px 20px at 80% 75%, #111 100%, transparent 100%);
         }
 
         /* South Lewis design */
@@ -908,7 +878,7 @@
 
         <div id="start-screen">
             <div id="admin-login">
-                <button id="github-login-btn">Login with GitHub</button>
+                <button id="github-login-btn">developer mode</button>
             </div>
             <div id="start-screen-content">
                 <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
@@ -930,15 +900,11 @@
                             <div class="car-design"></div>
                             <div class="car-name">USA</div>
                         </div>
-                        <div class="car-option" data-car="red">
-                            <div class="car-design"></div>
-                            <div class="car-name">Classic Red</div>
-                        </div>
-                        <div class="car-option" data-car="cow">
-                            <div class="car-design"></div>
-                            <div class="car-name">Cow Print</div>
-                        </div>
+                    <div class="car-option" data-car="red">
+                        <div class="car-design"></div>
+                        <div class="car-name">Classic Red</div>
                     </div>
+                </div>
                 </div>
 
                 <div class="button-row">
@@ -1049,7 +1015,7 @@
                 loginBtn.textContent = isAdmin ? `Admin: ${githubUsername} (Logout)` : `${githubUsername} (Logout)`;
                 adminLogin.classList.toggle('admin-authenticated', isAdmin);
             } else {
-                loginBtn.textContent = 'Login with GitHub';
+                loginBtn.textContent = 'developer mode';
                 adminLogin.classList.remove('admin-authenticated');
             }
         }
@@ -1296,11 +1262,13 @@
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         
-        // Load school logos for car skins
+        // Load school logos and USA flag for car skins
         const southLewisLogo = new Image();
         southLewisLogo.src = 'southlewis-logo.png';
         const lowvilleLogo = new Image();
         lowvilleLogo.src = 'lowville-logo.png';
+        const usaFlag = new Image();
+        usaFlag.src = 'usa.png';
         
         // Dynamic canvas sizing
         let W, H;
@@ -1760,49 +1728,13 @@
 
             // Car body based on design
             if (player.design === 'usa') {
-                // Full USA flag covering entire car top
-                const w = player.width;
-                const h = player.height;
-                const stripeHeight = h / 13;
-                
-                // Draw 13 stripes (7 red, 6 white)
-                for (let i = 0; i < 13; i++) {
-                    ctx.fillStyle = i % 2 === 0 ? '#B22234' : '#ffffff';
-                    ctx.fillRect(-w/2, -h/2 + i * stripeHeight, w, stripeHeight + 1);
-                }
-                
-                // Blue canton (union) - top left, spans 7 stripes
-                const cantonWidth = w * 0.4;
-                const cantonHeight = 7 * stripeHeight;
-                ctx.fillStyle = '#3C3B6E';
-                ctx.fillRect(-w/2, -h/2, cantonWidth, cantonHeight);
-                
-                // Stars in the canton (simplified 5x4 + 4x3 pattern = 50 stars approximated)
-                ctx.fillStyle = '#ffffff';
-                const starRows = 5;
-                const starCols = 4;
-                const starSpacingX = cantonWidth / (starCols + 1);
-                const starSpacingY = cantonHeight / (starRows + 1);
-                
-                for (let row = 0; row < starRows; row++) {
-                    for (let col = 0; col < starCols; col++) {
-                        const sx = -w/2 + starSpacingX * (col + 1);
-                        const sy = -h/2 + starSpacingY * (row + 1);
-                        // Draw small star
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-                // Offset row of stars
-                for (let row = 0; row < starRows - 1; row++) {
-                    for (let col = 0; col < starCols - 1; col++) {
-                        const sx = -w/2 + starSpacingX * (col + 1.5);
-                        const sy = -h/2 + starSpacingY * (row + 1.5);
-                        ctx.beginPath();
-                        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+                // Draw USA flag image
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, -player.width/2, -player.height/2, player.width, player.height);
+                } else {
+                    // Fallback: red background if image not loaded
+                    ctx.fillStyle = '#B22234';
+                    ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 }
             } else if (player.design === 'red') {
                 ctx.fillStyle = '#cc2222';
@@ -1810,37 +1742,6 @@
                 // Racing stripe
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(-3, -player.height/2, 6, player.height);
-            } else if (player.design === 'cow') {
-                // White base
-                ctx.fillStyle = '#fff';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                // Black spots (more spots for cow print)
-                ctx.fillStyle = '#111';
-                // Front face spots
-                ctx.beginPath();
-                ctx.arc(-15, -25, 10, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(5, -30, 8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(-8, -15, 9, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(12, -10, 7, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(-5, 5, 11, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(15, 10, 9, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(-10, 25, 8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(8, 30, 6, 0, Math.PI * 2);
-                ctx.fill();
             } else if (player.design === 'southlewis') {
                 // Red background with South Lewis logo
                 ctx.fillStyle = '#cc2222';
