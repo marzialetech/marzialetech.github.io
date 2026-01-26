@@ -1167,16 +1167,16 @@
             }
         }
         
-        // Draw static car preview on start screen (positioned 70% right of logo, facing northeast)
+        // Draw static car preview on start screen (positioned 40% right of logo, facing northeast)
         function drawStartCarPreview() {
             if (!previewCtx || !previewCanvas) return;
             
             // Clear canvas
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
-            // Position: 70% to the right of logo (logo is 400px, container is 400px)
+            // Position: 40% to the right of logo (logo is 400px, container is 400px)
             // Car should be at right edge, centered vertically
-            const centerX = previewCanvas.width * 0.7; // 70% to the right
+            const centerX = previewCanvas.width * 0.4; // 40% to the right
             const centerY = previewCanvas.height / 2;
             
             // Rotate 45 degrees to face northeast (top right)
@@ -1186,10 +1186,10 @@
             previewCtx.translate(centerX, centerY);
             previewCtx.rotate(rotation);
             
-            // Scale for preview
-            const scale = 0.6;
-            const w = 50 * scale; // 30
-            const h = 80 * scale; // 48
+            // Scale for preview (2x larger)
+            const scale = 1.2; // 2x the original 0.6
+            const w = 50 * scale; // 60
+            const h = 80 * scale; // 96
             
             // Shadow
             previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
