@@ -978,14 +978,14 @@
             100% { opacity: 1; }
         }
 
-        /* Show desktop instructions on desktop ONLY during gameplay before first key press */
-        body:not(.is-mobile).game-playing.show-hints #desktop-instructions {
+        /* Show mobile instructions on ALL devices during gameplay before first tap/click */
+        body.game-playing.show-hints #mobile-instructions {
             display: block;
         }
-
-        /* Show mobile instructions on mobile ONLY during gameplay before first tap */
-        body.is-mobile.game-playing.show-hints #mobile-instructions {
-            display: block;
+        
+        /* Hide desktop instructions - everyone uses mobile controls */
+        #desktop-instructions {
+            display: none !important;
         }
 
         /* Smaller displays on mobile */
@@ -1727,18 +1727,14 @@
         // Input
         let keys = { up: false, left: false, right: false };
         
-        // Mobile detection and controls
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                         ('ontouchstart' in window) || 
-                         (window.innerWidth <= 768);
+        // Mobile detection - FORCE MOBILE MODE FOR ALL DEVICES
+        const isMobile = true; // Always use mobile mechanics
         
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
-        let mobileHintsShown = true; // Show hints until first tap (mobile)
-        let desktopHintsShown = true; // Show hints until first key press (desktop)
+        let hintsShown = true; // Show hints until first tap/click
         
-        if (isMobile) {
-            document.body.classList.add('is-mobile');
-        }
+        // Always add mobile class for styling
+        document.body.classList.add('is-mobile');
         
         // Get lane X positions
         function getLaneX(lane) {
@@ -2430,32 +2426,18 @@
 
             gameTime += dt;
 
-            // Player acceleration (auto on mobile)
+            // Player acceleration (always auto-accelerate like mobile)
             // Increase max speed every 20 seconds (slowly ramps up difficulty)
             currentMaxSpeed = BASE_MAX_SPEED + Math.floor(gameTime / SPEED_INCREASE_INTERVAL) * SPEED_INCREASE_AMOUNT;
             
-            if (keys.up || isMobile) {
-                player.speed += ACCELERATION * dt;
-                if (player.speed > currentMaxSpeed) player.speed = currentMaxSpeed;
-            } else {
-                player.speed -= FRICTION * dt;
-                if (player.speed < 0) player.speed = 0;
-            }
+            // Always auto-accelerate (mobile behavior)
+            player.speed += ACCELERATION * dt;
+            if (player.speed > currentMaxSpeed) player.speed = currentMaxSpeed;
 
-            // Horizontal movement
-            if (isMobile) {
-                // Smooth lane-based movement on mobile
-                const targetX = getLaneX(playerLane);
-                const diff = targetX - player.x;
-                player.x += diff * 12 * dt; // Smooth interpolation to lane
-            } else {
-                if (keys.left) {
-                    player.x -= LANE_SPEED * dt;
-                }
-                if (keys.right) {
-                    player.x += LANE_SPEED * dt;
-                }
-            }
+            // Horizontal movement - always use lane-based (mobile behavior)
+            const targetX = getLaneX(playerLane);
+            const diff = targetX - player.x;
+            player.x += diff * 12 * dt; // Smooth interpolation to lane
 
             // Clamp to road
             player.x = Math.max(ROAD_LEFT + player.width/2 + 10, 
@@ -2831,11 +2813,7 @@
             // Reset lane and hints
             playerLane = 1; // Start in center lane
             player.x = getLaneX(1);
-            if (isMobile) {
-                mobileHintsShown = true;
-            } else {
-                desktopHintsShown = true;
-            }
+            hintsShown = true;
             document.body.classList.add('show-hints');
             
             // Reset crash state
@@ -2965,41 +2943,16 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Input handlers
+        // Input handlers - only handle up arrow for starting game
         document.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowUp') {
                 e.preventDefault();
-                keys.up = true;
                 if (gameState === 'start') resetGame();
-            }
-            if (e.code === 'ArrowLeft') {
-                e.preventDefault();
-                keys.left = true;
-                // Hide desktop hints after first arrow key press
-                if (!isMobile && desktopHintsShown && gameState === 'playing') {
-                    desktopHintsShown = false;
-                    document.body.classList.remove('show-hints');
-                }
-            }
-            if (e.code === 'ArrowRight') {
-                e.preventDefault();
-                keys.right = true;
-                // Hide desktop hints after first arrow key press
-                if (!isMobile && desktopHintsShown && gameState === 'playing') {
-                    desktopHintsShown = false;
-                    document.body.classList.remove('show-hints');
-                }
             }
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (gameState === 'result') resetGame();
             }
-        });
-
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'ArrowUp') keys.up = false;
-            if (e.code === 'ArrowLeft') keys.left = false;
-            if (e.code === 'ArrowRight') keys.right = false;
         });
 
         // Car selection
@@ -3083,29 +3036,58 @@
             gameState = 'start';
         });
 
-        // Mobile tap controls - tap left/right side of screen to change lanes
-        if (isMobile) {
-            document.addEventListener('touchstart', (e) => {
-                if (gameState !== 'playing') return;
-                
-                // Hide hints after first tap
-                if (mobileHintsShown) {
-                    mobileHintsShown = false;
-                    document.body.classList.remove('show-hints');
-                }
-                
-                const touch = e.touches[0];
-                const screenMidX = window.innerWidth / 2;
-                
-                if (touch.clientX < screenMidX) {
-                    // Tap on left side - move left
-                    playerLane = Math.max(0, playerLane - 1);
-                } else {
-                    // Tap on right side - move right
-                    playerLane = Math.min(2, playerLane + 1);
-                }
-            }, { passive: true });
-        }
+        // Tap/Click controls - work on both mobile and desktop
+        // Click left/right side of screen to change lanes
+        document.addEventListener('touchstart', (e) => {
+            if (gameState !== 'playing') return;
+            
+            // Hide hints after first tap
+            if (hintsShown) {
+                hintsShown = false;
+                document.body.classList.remove('show-hints');
+            }
+            
+            const touch = e.touches[0];
+            const screenMidX = window.innerWidth / 2;
+            
+            if (touch.clientX < screenMidX) {
+                // Tap on left side - move left
+                playerLane = Math.max(0, playerLane - 1);
+            } else {
+                // Tap on right side - move right
+                playerLane = Math.min(2, playerLane + 1);
+            }
+        }, { passive: true });
+        
+        // Click controls for desktop (same as mobile tap)
+        document.addEventListener('click', (e) => {
+            if (gameState !== 'playing') return;
+            
+            // Don't trigger on UI elements
+            if (e.target.closest('#start-screen') || 
+                e.target.closest('#result-screen') || 
+                e.target.closest('button') ||
+                e.target.closest('input') ||
+                e.target.closest('.car-option')) {
+                return;
+            }
+            
+            // Hide hints after first click
+            if (hintsShown) {
+                hintsShown = false;
+                document.body.classList.remove('show-hints');
+            }
+            
+            const screenMidX = window.innerWidth / 2;
+            
+            if (e.clientX < screenMidX) {
+                // Click on left side - move left
+                playerLane = Math.max(0, playerLane - 1);
+            } else {
+                // Click on right side - move right
+                playerLane = Math.min(2, playerLane + 1);
+            }
+        });
 
         // Start
         console.log('Milk Chase: Script loaded successfully');
