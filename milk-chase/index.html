@@ -1729,6 +1729,10 @@
         
         // Mobile detection - FORCE MOBILE MODE FOR ALL DEVICES
         const isMobile = true; // Always use mobile mechanics
+        // But detect actual device for speed adjustments
+        const isActualDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) && 
+                                  !('ontouchstart' in window) && 
+                                  (window.innerWidth > 768);
         
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
         let hintsShown = true; // Show hints until first tap/click
@@ -2515,7 +2519,9 @@
             }
 
             // Update obstacles
-            const obstacleSpeed = player.speed * 0.12; // Slightly slower obstacles
+            // Desktop cows move 2x faster relative to car (to match mobile timing: 0.5s vs 1s)
+            const baseObstacleSpeed = player.speed * 0.12; // Slightly slower obstacles
+            const obstacleSpeed = isActualDesktop ? baseObstacleSpeed * 2 : baseObstacleSpeed;
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 const obs = obstacles[i];
                 obs.y += obstacleSpeed * dt * 60;
