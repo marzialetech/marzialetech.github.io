@@ -414,8 +414,8 @@
             display: none;
         }
 
-        /* Show mobile controls on mobile */
-        body.is-mobile #mobile-controls {
+        /* Show mobile controls on mobile ONLY during gameplay */
+        body.is-mobile.game-playing #mobile-controls {
             display: block;
         }
 
@@ -744,31 +744,49 @@
 
             // Car body based on design
             if (player.design === 'usa') {
-                // Blue body
-                ctx.fillStyle = '#0044aa';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                // Red stripe
-                ctx.fillStyle = '#cc0000';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, 20);
-                // White stripe
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(-player.width/2, -player.height/2 + 20, player.width, 10);
+                // Full USA flag covering entire car top
+                const w = player.width;
+                const h = player.height;
+                const stripeHeight = h / 13;
                 
-                // American flag on front face (the side we're viewing)
-                // Blue field with stars
-                ctx.fillStyle = '#002868';
-                ctx.fillRect(-player.width/2, -player.height/2, 20, 15);
-                // White stars (simplified as dots)
-                ctx.fillStyle = '#fff';
-                for (let i = 0; i < 5; i++) {
-                    ctx.beginPath();
-                    ctx.arc(-player.width/2 + 5 + (i % 2) * 8, -player.height/2 + 3 + Math.floor(i/2) * 4, 1.5, 0, Math.PI * 2);
-                    ctx.fill();
+                // Draw 13 stripes (7 red, 6 white)
+                for (let i = 0; i < 13; i++) {
+                    ctx.fillStyle = i % 2 === 0 ? '#B22234' : '#ffffff';
+                    ctx.fillRect(-w/2, -h/2 + i * stripeHeight, w, stripeHeight + 1);
                 }
-                // Red and white stripes
-                for (let i = 0; i < 7; i++) {
-                    ctx.fillStyle = i % 2 === 0 ? '#cc0000' : '#ffffff';
-                    ctx.fillRect(-player.width/2 + 20, -player.height/2 + i * 2, player.width - 20, 2);
+                
+                // Blue canton (union) - top left, spans 7 stripes
+                const cantonWidth = w * 0.4;
+                const cantonHeight = 7 * stripeHeight;
+                ctx.fillStyle = '#3C3B6E';
+                ctx.fillRect(-w/2, -h/2, cantonWidth, cantonHeight);
+                
+                // Stars in the canton (simplified 5x4 + 4x3 pattern = 50 stars approximated)
+                ctx.fillStyle = '#ffffff';
+                const starRows = 5;
+                const starCols = 4;
+                const starSpacingX = cantonWidth / (starCols + 1);
+                const starSpacingY = cantonHeight / (starRows + 1);
+                
+                for (let row = 0; row < starRows; row++) {
+                    for (let col = 0; col < starCols; col++) {
+                        const sx = -w/2 + starSpacingX * (col + 1);
+                        const sy = -h/2 + starSpacingY * (row + 1);
+                        // Draw small star
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+                // Offset row of stars
+                for (let row = 0; row < starRows - 1; row++) {
+                    for (let col = 0; col < starCols - 1; col++) {
+                        const sx = -w/2 + starSpacingX * (col + 1.5);
+                        const sy = -h/2 + starSpacingY * (row + 1.5);
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
                 }
             } else if (player.design === 'red') {
                 ctx.fillStyle = '#cc2222';
@@ -1256,6 +1274,7 @@
         // Show crash result after animation
         function showCrashResult() {
             gameState = 'result';
+            document.body.classList.remove('game-playing');
             
             const { m1, v1, m2, v1f, v2f, initialMomentum, finalMomentum } = crashData;
 
@@ -1285,6 +1304,7 @@
         // Handle getting busted by cops
         function handleBusted() {
             gameState = 'result';
+            document.body.classList.remove('game-playing');
 
             document.getElementById('result-title').textContent = '🚔 BUSTED!';
             document.getElementById('result-title').className = 'crash';
@@ -1310,6 +1330,7 @@
         
         function handleWin() {
             gameState = 'result';
+            document.body.classList.remove('game-playing');
 
             document.getElementById('result-title').textContent = '🥛 GOT THE MILK!';
             document.getElementById('result-title').className = 'win';
@@ -1337,6 +1358,7 @@
             lastObstacleTime = 0;
             roadOffset = 0;
             gameState = 'playing';
+            document.body.classList.add('game-playing');
             
             // Reset cop chase state
             speedingTime = 0;
@@ -1553,6 +1575,7 @@
         document.getElementById('retry-btn').addEventListener('click', () => {
             document.getElementById('start-screen').classList.remove('hidden');
             document.getElementById('result-screen').classList.remove('visible');
+            document.body.classList.remove('game-playing');
             gameState = 'start';
         });
 
