@@ -112,23 +112,32 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: #000;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             border-radius: 10px;
             padding: 30px;
+            overflow-y: auto;
         }
 
         #start-screen.hidden {
             display: none;
         }
 
+        #start-logo {
+            max-width: 90%;
+            width: 400px;
+            margin-bottom: 20px;
+            filter: invert(1); /* Convert black logo to white */
+        }
+
         #start-screen h1 {
             font-size: 42px;
             color: #fff;
             margin-bottom: 10px;
+            display: none; /* Hidden - logo replaces it */
         }
 
         #start-screen h1 span {
@@ -253,13 +262,47 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             border-radius: 10px;
             padding: 30px;
+            padding-top: 40px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         #result-screen.visible {
             display: flex;
+        }
+        
+        /* Mobile result screen fixes */
+        @media (max-width: 768px) {
+            #result-screen {
+                padding: 20px;
+                padding-top: 20px;
+            }
+            
+            #result-title {
+                font-size: 28px !important;
+            }
+            
+            #physics-explanation {
+                max-width: 100% !important;
+                padding: 15px !important;
+                font-size: 14px;
+            }
+            
+            #physics-explanation .formula {
+                font-size: 16px !important;
+            }
+            
+            #physics-explanation .values {
+                font-size: 12px;
+            }
+            
+            #retry-btn {
+                margin-top: 15px;
+                margin-bottom: 30px;
+            }
         }
 
         #result-title {
@@ -464,6 +507,7 @@
         </div>
 
         <div id="start-screen">
+            <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
             <h1>🥛 <span>Milk Truck</span> Chase!</h1>
             <div class="subtitle">Catch the milk truck! But watch out for obstacles...</div>
 
@@ -1074,9 +1118,8 @@
 
             // Horizontal movement
             if (isMobile && mobileTargetX !== null) {
-                // Smooth movement towards target X based on slider
-                const diff = mobileTargetX - player.x;
-                player.x += diff * 8 * dt; // Smooth interpolation
+                // Direct 1:1 control - car position matches slider position exactly
+                player.x = mobileTargetX;
             } else {
                 if (keys.left) {
                     player.x -= LANE_SPEED * dt;
@@ -1281,6 +1324,9 @@
             document.getElementById('result-title').textContent = '💥 CRASH!';
             document.getElementById('result-title').className = 'crash';
 
+            // Calculate mass ratio for explanation
+            const massRatio = m1 / m2;
+            
             document.getElementById('collision-math').innerHTML = `
                 <strong>Before collision:</strong><br>
                 <span class="values">Your car: ${m1} kg × ${v1.toFixed(1)} km/h = ${(m1 * v1).toFixed(0)} kg·km/h</span><br>
@@ -1294,7 +1340,29 @@
                 
                 <strong>Total momentum after:</strong> <span class="values">${finalMomentum.toFixed(0)} kg·km/h</span><br><br>
                 
-                <em>Momentum is conserved! ✓</em>
+                <em>Momentum is conserved! ✓</em><br><br>
+                
+                <strong>Why these exact speeds?</strong><br>
+                Two laws must be satisfied simultaneously:<br><br>
+                
+                <span class="values">1. <b>Conservation of Momentum:</b><br>
+                m₁v₁ = m₁v₁' + m₂v₂'</span><br><br>
+                
+                <span class="values">2. <b>Conservation of Energy</b> (elastic collision):<br>
+                ½m₁v₁² = ½m₁v₁'² + ½m₂v₂'²</span><br><br>
+                
+                Solving both equations together gives us the <em>only</em> pair of final velocities that satisfy both constraints:<br><br>
+                
+                <span class="values">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂) = ${v1.toFixed(1)} × ${((m1 - m2)/(m1 + m2)).toFixed(2)} = <b>${v1f.toFixed(1)} km/h</b></span><br><br>
+                
+                <span class="values">v₂' = v₁ × 2m₁/(m₁ + m₂) = ${v1.toFixed(1)} × ${((2*m1)/(m1 + m2)).toFixed(2)} = <b>${v2f.toFixed(1)} km/h</b></span><br><br>
+                
+                ${m1 > m2 ? 
+                    `<em>Your car (${m1} kg) is heavier than the obstacle (${m2.toFixed(0)} kg), so you kept moving forward while transferring some momentum.</em>` : 
+                    m1 < m2 ? 
+                    `<em>The obstacle (${m2.toFixed(0)} kg) is heavier than your car (${m1} kg), so you bounced backward while the obstacle moved forward slowly.</em>` :
+                    `<em>Equal masses! Your car transferred ALL its momentum to the obstacle, stopping completely while the obstacle moved at your original speed.</em>`
+                }
             `;
 
             document.getElementById('result-screen').classList.add('visible');
