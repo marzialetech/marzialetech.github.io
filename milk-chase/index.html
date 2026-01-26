@@ -348,6 +348,81 @@
             border-radius: 3px;
             border: 1px solid #555;
         }
+
+        /* Mobile controls */
+        #mobile-controls {
+            display: none;
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            z-index: 100;
+        }
+
+        .mobile-slider-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00aaff;
+            border-radius: 30px;
+            padding: 15px 20px;
+            touch-action: none;
+        }
+
+        .mobile-slider-track {
+            position: relative;
+            height: 50px;
+            background: linear-gradient(90deg, #ff6600 0%, #333 50%, #00aaff 100%);
+            border-radius: 25px;
+            overflow: hidden;
+        }
+
+        .mobile-slider-thumb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            pointer-events: none;
+        }
+
+        .mobile-slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .mobile-auto-accel {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #0f0;
+        }
+
+        /* Hide desktop instructions on mobile */
+        body.is-mobile #instructions {
+            display: none;
+        }
+
+        /* Show mobile controls on mobile */
+        body.is-mobile #mobile-controls {
+            display: block;
+        }
+
+        /* Adjust speedometer position on mobile */
+        body.is-mobile #speedometer {
+            bottom: 140px;
+        }
     </style>
 </head>
 <body>
@@ -372,6 +447,20 @@
 
         <div id="instructions">
             <p><kbd>↑</kbd> Accelerate &nbsp; <kbd>←</kbd> <kbd>→</kbd> Dodge</p>
+        </div>
+
+        <!-- Mobile controls -->
+        <div id="mobile-controls">
+            <div class="mobile-slider-container" id="mobileSlider">
+                <div class="mobile-slider-track">
+                    <div class="mobile-slider-thumb" id="sliderThumb">🚗</div>
+                </div>
+                <div class="mobile-slider-labels">
+                    <span>← LEFT</span>
+                    <span>RIGHT →</span>
+                </div>
+            </div>
+            <div class="mobile-auto-accel">AUTO-ACCELERATING</div>
         </div>
 
         <div id="start-screen">
@@ -479,6 +568,18 @@
 
         // Input
         let keys = { up: false, left: false, right: false };
+        
+        // Mobile detection and controls
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                         ('ontouchstart' in window) || 
+                         (window.innerWidth <= 768);
+        
+        let mobileSliderValue = 0.5; // 0 = full left, 0.5 = center, 1 = full right
+        let mobileTargetX = null; // Target X position based on slider
+        
+        if (isMobile) {
+            document.body.classList.add('is-mobile');
+        }
         
         // Cop chase state
         let speedingTime = 0;
@@ -944,8 +1045,8 @@
 
             gameTime += dt;
 
-            // Player acceleration
-            if (keys.up) {
+            // Player acceleration (auto on mobile)
+            if (keys.up || isMobile) {
                 player.speed += ACCELERATION * dt;
                 if (player.speed > MAX_SPEED) player.speed = MAX_SPEED;
             } else {
@@ -954,11 +1055,17 @@
             }
 
             // Horizontal movement
-            if (keys.left) {
-                player.x -= LANE_SPEED * dt;
-            }
-            if (keys.right) {
-                player.x += LANE_SPEED * dt;
+            if (isMobile && mobileTargetX !== null) {
+                // Smooth movement towards target X based on slider
+                const diff = mobileTargetX - player.x;
+                player.x += diff * 8 * dt; // Smooth interpolation
+            } else {
+                if (keys.left) {
+                    player.x -= LANE_SPEED * dt;
+                }
+                if (keys.right) {
+                    player.x += LANE_SPEED * dt;
+                }
             }
 
             // Clamp to road
@@ -1448,6 +1555,56 @@
             document.getElementById('result-screen').classList.remove('visible');
             gameState = 'start';
         });
+
+        // Mobile slider controls
+        if (isMobile) {
+            const mobileSlider = document.getElementById('mobileSlider');
+            const sliderThumb = document.getElementById('sliderThumb');
+            
+            function updateSliderFromTouch(e) {
+                e.preventDefault();
+                const touch = e.touches ? e.touches[0] : e;
+                const rect = mobileSlider.querySelector('.mobile-slider-track').getBoundingClientRect();
+                
+                // Calculate position as 0-1
+                let x = (touch.clientX - rect.left) / rect.width;
+                x = Math.max(0, Math.min(1, x));
+                
+                mobileSliderValue = x;
+                
+                // Update thumb position
+                sliderThumb.style.left = (x * 100) + '%';
+                
+                // Calculate target X position on road
+                const roadWidth = ROAD_RIGHT - ROAD_LEFT - player.width - 20;
+                mobileTargetX = ROAD_LEFT + player.width/2 + 10 + (x * roadWidth);
+            }
+            
+            mobileSlider.addEventListener('touchstart', (e) => {
+                updateSliderFromTouch(e);
+                if (gameState === 'start') resetGame();
+            }, { passive: false });
+            
+            mobileSlider.addEventListener('touchmove', updateSliderFromTouch, { passive: false });
+            
+            mobileSlider.addEventListener('touchend', () => {
+                // Keep the last position (don't spring back to center)
+            });
+            
+            // Also support mouse for testing on desktop
+            let mouseDown = false;
+            mobileSlider.addEventListener('mousedown', (e) => {
+                mouseDown = true;
+                updateSliderFromTouch(e);
+                if (gameState === 'start') resetGame();
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (mouseDown) updateSliderFromTouch(e);
+            });
+            document.addEventListener('mouseup', () => {
+                mouseDown = false;
+            });
+        }
 
         // Start
         gameLoop(0);
