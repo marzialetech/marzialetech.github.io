@@ -931,8 +931,8 @@
             ctx.fillStyle = '#333';
             ctx.fillRect(ROAD_LEFT, 0, ROAD_RIGHT - ROAD_LEFT, H);
 
-            // Road lines (animated)
-            roadOffset = (roadOffset + player.speed * 0.1) % 80;
+            // Road lines (animated) - speed matches obstacles (player.speed * 0.12 * 60 / 60fps = 0.12 per frame at 60fps)
+            roadOffset = (roadOffset + player.speed * 0.12) % 80;
 
             // Center lines
             ctx.strokeStyle = '#ffcc00';
@@ -1220,7 +1220,7 @@
             ctx.restore();
         }
         
-        // Draw obstacle (cows)
+        // Draw obstacle (cows) - proper cow shapes viewed from above
         function drawObstacle(obs) {
             ctx.save();
             ctx.translate(obs.x, obs.y);
@@ -1229,41 +1229,114 @@
             const cowSpacing = obs.width / (obs.numCows + 1);
             for (let i = 0; i < obs.numCows; i++) {
                 const cowX = -obs.width/2 + cowSpacing * (i + 1);
-                const cowY = (i % 2) * 8 - 4; // Slight offset for variety
+                const cowY = (i % 2) * 10 - 5; // Slight offset for variety
+                const facing = (i % 2 === 0) ? 1 : -1; // Alternate facing direction
                 
-                // Cow body (white with black spots)
-                ctx.fillStyle = '#fff';
+                ctx.save();
+                ctx.translate(cowX, cowY);
+                ctx.scale(facing, 1);
+                
+                // Body (main oval) - white base
+                ctx.fillStyle = '#f5f5f5';
                 ctx.beginPath();
-                ctx.ellipse(cowX, cowY, 12, 8, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, 14, 9, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+                
+                // Black spots on body
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.ellipse(-6, -3, 5, 4, 0.4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(4, 3, 4, 3, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(-2, 5, 3, 2, 0.2, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Black spots
-                ctx.fillStyle = '#111';
+                // Head (smaller oval at front)
+                ctx.fillStyle = '#f5f5f5';
                 ctx.beginPath();
-                ctx.ellipse(cowX - 5, cowY - 2, 4, 3, 0.3, 0, Math.PI * 2);
+                ctx.ellipse(12, -1, 6, 5, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#333';
+                ctx.stroke();
+                
+                // Ears
+                ctx.fillStyle = '#e8d4c4';
+                ctx.beginPath();
+                ctx.ellipse(14, -5, 3, 2, -0.5, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.beginPath();
-                ctx.ellipse(cowX + 4, cowY + 2, 3, 4, -0.2, 0, Math.PI * 2);
+                ctx.ellipse(14, 3, 3, 2, 0.5, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Head
-                ctx.fillStyle = '#fff';
+                // Snout/nose
+                ctx.fillStyle = '#e8bfa8';
                 ctx.beginPath();
-                ctx.ellipse(cowX + 10, cowY - 2, 5, 4, 0, 0, Math.PI * 2);
+                ctx.ellipse(17, -1, 3, 2.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Nostrils
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.arc(17.5, -2, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(17.5, 0, 0.8, 0, Math.PI * 2);
                 ctx.fill();
                 
                 // Eyes
                 ctx.fillStyle = '#000';
                 ctx.beginPath();
-                ctx.arc(cowX + 11, cowY - 3, 1.5, 0, Math.PI * 2);
+                ctx.arc(11, -3, 1.2, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.beginPath();
+                ctx.arc(11, 1, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Legs (4 small ovals underneath)
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.ellipse(-8, -7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(-8, 7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(6, -7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(6, 7, 2, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Tail (curved line at back)
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(-14, 0);
+                ctx.quadraticCurveTo(-18, 5, -16, 10);
+                ctx.stroke();
+                // Tail tuft
+                ctx.fillStyle = '#222';
+                ctx.beginPath();
+                ctx.arc(-16, 10, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
             }
 
             // Mass label (number of cows)
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 11px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`${obs.numCows} cow${obs.numCows > 1 ? 's' : ''}`, 0, obs.height/2 + 12);
+            ctx.shadowColor = '#000';
+            ctx.shadowBlur = 3;
+            ctx.fillText(`${obs.numCows} cow${obs.numCows > 1 ? 's' : ''}`, 0, obs.height/2 + 15);
+            ctx.shadowBlur = 0;
 
             ctx.restore();
         }
@@ -1305,26 +1378,31 @@
             // Calculate distance before updating positions
             distance = truck.worldY - player.worldY;
             
-            // Dynamic truck speed for fast catch-up and pull-away
-            // At 600m: truck at ~25% speed -> closes 300m in ~8-12s at full speed
-            // At 300m: truck at ~170% speed -> opens 300m in ~4-6s
+            // Dynamic truck speed - direct linear control for fast transitions
+            // 600m -> 300m in ~5s, 300m -> 600m in ~3s
             let truckSpeedRatio;
             const distRange = MAX_DISTANCE - MIN_DISTANCE; // 300m
+            const playerSpeedMPS = player.speed / 3.6; // m/s
             
-            if (distance <= MIN_DISTANCE + 5) {
-                // At minimum distance - truck runs very fast to escape
-                truckSpeedRatio = 1.7;
-            } else if (distance >= MAX_DISTANCE - 5) {
-                // At maximum distance - truck crawls to let player catch up
-                truckSpeedRatio = 0.25;
+            // To close 300m in 5s at player speed, need relative speed of 60 m/s
+            // To open 300m in 3s, need relative speed of 100 m/s  
+            // These are direct speed differentials, not ratios
+            
+            if (distance >= MAX_DISTANCE - 10) {
+                // At max distance - truck nearly stops to let player catch up fast
+                // Relative closing speed should be ~60m/s, so truck at (playerSpeed - 60*3.6) km/h
+                truck.speed = Math.max(0, player.speed - 200); // Much slower
+            } else if (distance <= MIN_DISTANCE + 10) {
+                // At min distance - truck sprints away
+                // Relative opening speed should be ~100m/s
+                truck.speed = player.speed + 300; // Much faster
             } else {
-                // Smooth exponential transition based on distance
+                // Linear transition: closer = faster truck
                 const t = (distance - MIN_DISTANCE) / distRange; // 0=close, 1=far
-                // Use exponential curve for more dramatic changes near edges
-                // t=0 (close): 1.5, t=1 (far): 0.3
-                truckSpeedRatio = 0.3 + (1.2 * Math.pow(1 - t, 2));
+                // t=0: truck at +200 km/h above player, t=1: truck at -150 km/h below player
+                const speedDiff = 200 - (t * 350); // +200 to -150
+                truck.speed = player.speed + speedDiff;
             }
-            truck.speed = player.speed * truckSpeedRatio;
             
             // Update world positions (convert km/h to m/s: divide by 3.6)
             const playerSpeedMS = player.speed / 3.6;
