@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Milk Truck Chase!</title>
     <!-- KaTeX for LaTeX math rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -24,6 +24,17 @@
             font-family: 'Segoe UI', system-ui, sans-serif;
             color: white;
             overflow: hidden;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        html, body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overscroll-behavior: none;
         }
 
         #game-container {
@@ -304,7 +315,7 @@
             transform: scale(1.05);
         }
 
-        /* Result screen - full black background for step-by-step physics */
+        /* Result screen - full black background, single slide format */
         #result-screen {
             position: absolute;
             top: 0;
@@ -315,133 +326,144 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             padding: 20px;
-            padding-top: 30px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            overflow: hidden;
+            touch-action: manipulation;
         }
 
         #result-screen.visible {
             display: flex;
         }
-        
-        /* Mobile result screen fixes */
-        @media (max-width: 768px) {
-            #result-screen {
-                padding: 15px;
-                padding-top: 20px;
-            }
-            
-            #result-title {
-                font-size: 22px !important;
-            }
-            
-            #physics-explanation {
-                padding: 10px !important;
-            }
-            
-            .physics-step {
-                font-size: 13px !important;
-                padding: 8px 10px !important;
-            }
-            
-            #retry-btn {
-                margin-top: 15px;
-                margin-bottom: 30px;
-            }
-            
-            .tap-to-continue {
-                font-size: 11px !important;
-            }
-        }
 
         #result-title {
-            font-size: 28px;
-            margin-bottom: 15px;
+            font-size: 24px;
+            margin-bottom: 10px;
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            text-align: center;
         }
 
         #result-title.crash {
             color: #ff4444;
         }
 
-        #physics-explanation {
-            background: transparent;
-            padding: 10px;
-            max-width: 600px;
-            width: 100%;
-            margin-bottom: 15px;
-        }
-
-        #physics-explanation h3 {
-            color: #ffcc00;
-            margin-bottom: 15px;
+        #physics-steps {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
+            max-width: 90%;
+            width: 100%;
         }
         
-        /* Step-by-step physics styling */
+        /* Single slide physics styling */
         .physics-step {
-            padding: 12px 15px;
-            margin: 8px 0;
-            border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #666; /* Dimmed by default */
-            transition: all 0.3s ease;
+            display: none;
+            padding: 20px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
         }
         
         .physics-step.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-text {
+            font-size: 20px;
             color: #00ddff;
-            text-shadow: 0 0 10px #00ddff, 0 0 20px #00ddff;
-            background: rgba(0, 200, 255, 0.1);
-            border: 1px solid rgba(0, 200, 255, 0.3);
+            margin-bottom: 20px;
+            line-height: 1.6;
+            text-shadow: 0 0 10px rgba(0, 221, 255, 0.5);
         }
         
-        .physics-step.completed {
-            color: #888;
+        .step-text b {
+            color: #ffcc00;
         }
         
-        .physics-step .formula {
-            font-family: 'Courier New', monospace;
+        .step-label {
+            display: inline-block;
+            background: rgba(0, 200, 255, 0.2);
+            border: 1px solid rgba(0, 200, 255, 0.4);
+            border-radius: 6px;
+            padding: 3px 10px;
+            margin: 2px 4px;
             font-weight: bold;
+            color: #00ffaa;
+        }
+        
+        .step-latex {
+            margin: 12px 0;
+            font-size: 18px;
+        }
+        
+        .step-latex .katex {
+            color: #fff;
         }
         
         .tap-to-continue {
             color: #00ff88;
-            font-size: 12px;
-            margin-top: 10px;
+            font-size: 14px;
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            text-align: center;
             animation: flashHint 0.8s ease-in-out infinite alternate;
         }
         
-        .step-text {
-            margin-bottom: 8px;
-        }
-        
-        .step-latex {
-            margin: 6px 0;
-            font-size: 14px;
-            overflow-x: auto;
-        }
-        
-        .physics-step.active .step-latex .katex {
-            color: #00ddff;
-        }
-        
-        .physics-step.completed .step-latex .katex {
+        .step-counter {
+            position: absolute;
+            bottom: 110px;
+            left: 0;
+            right: 0;
+            text-align: center;
             color: #666;
+            font-size: 12px;
         }
-
-        #physics-explanation p {
-            color: #ccc;
-            line-height: 1.6;
-            margin-bottom: 10px;
+        
+        #retry-btn {
+            position: absolute;
+            bottom: 30px;
         }
-
-        #physics-explanation .formula {
-            background: rgba(0, 170, 255, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 20px;
+        
+        /* Mobile result screen */
+        @media (max-width: 768px) {
+            #result-title {
+                font-size: 20px;
+                top: 10px;
+            }
+            
+            .step-text {
+                font-size: 16px;
+            }
+            
+            .step-latex {
+                font-size: 14px;
+            }
+            
+            .step-label {
+                font-size: 12px;
+                padding: 2px 6px;
+            }
+            
+            .tap-to-continue {
+                font-size: 12px;
+                bottom: 70px;
+            }
+            
+            .step-counter {
+                bottom: 95px;
+            }
+        }
             color: #00aaff;
             text-align: center;
             margin: 15px 0;
@@ -621,11 +643,9 @@
 
         <div id="result-screen">
             <div id="result-title">CRASH!</div>
-            <div id="physics-explanation">
-                <h3>📚 Physics of the Collision</h3>
-                <div id="physics-steps"></div>
-                <div class="tap-to-continue" id="tapPrompt">TAP TO CONTINUE</div>
-            </div>
+            <div id="physics-steps"></div>
+            <div class="step-counter" id="stepCounter">1 / 18</div>
+            <div class="tap-to-continue" id="tapPrompt">TAP TO CONTINUE</div>
             <button id="retry-btn" style="display: none;">🔄 Try Again</button>
         </div>
     </div>
@@ -1596,71 +1616,86 @@
             // Number of cows for display
             const numCows = dm2;
             
-            // Build step-by-step physics explanation with LaTeX
-            // Using mcar, mcow, vcar, vcow notation
+            // Build step-by-step physics explanation - kid-friendly with labeled terms
+            const cowWord = numCows === 1 ? 'cow' : 'cows';
+            
             physicsSteps = [
                 {
-                    text: `<b>THE SETUP</b>`,
-                    latex: `m_{\\text{car}} = ${dm1} \\text{ lbs}, \\quad v_{\\text{car}} = ${dv1} \\text{ mph}`,
-                    latex2: `m_{\\text{cow}} = ${numCows} \\text{ lb${numCows > 1 ? 's' : ''}}, \\quad v_{\\text{cow}} = 0 \\text{ mph}`
+                    text: `<b>What just happened?</b><br>Your car crashed into ${numCows} ${cowWord}! Let's figure out how fast everything moves after the crash.`
                 },
                 {
-                    text: `<b>TWO CONSERVATION LAWS</b> must both hold:`,
-                    latex: null
+                    text: `<b>Before the crash:</b>`,
+                    latex: `\\underbrace{${dm1} \\text{ lbs}}_{\\text{car mass}} \\quad \\underbrace{${dv1} \\text{ mph}}_{\\text{car speed}}`,
+                    latex2: `\\underbrace{${numCows} \\text{ lb${numCows > 1 ? 's' : ''}}}_{\\text{cow mass}} \\quad \\underbrace{0 \\text{ mph}}_{\\text{cow speed}}`
                 },
                 {
-                    text: `<b>1. Conservation of Momentum</b>`,
-                    latex: `m_{\\text{car}} v_{\\text{car}} + m_{\\text{cow}} v_{\\text{cow}} = m_{\\text{car}} v'_{\\text{car}} + m_{\\text{cow}} v'_{\\text{cow}}`,
-                    latex2: `${dm1} \\cdot ${dv1} + ${numCows} \\cdot 0 = ${dm1} \\cdot v'_{\\text{car}} + ${numCows} \\cdot v'_{\\text{cow}}`,
-                    latex3: `${pBefore} = ${dm1} v'_{\\text{car}} + ${numCows} v'_{\\text{cow}}`
+                    text: `<b>The Big Rule #1: Momentum is Conserved</b><br>Momentum = mass × speed. The total "oomph" before and after the crash stays the same!`
                 },
                 {
-                    text: `<b>2. Conservation of Kinetic Energy</b>`,
-                    latex: `\\frac{1}{2} m_{\\text{car}} v_{\\text{car}}^2 = \\frac{1}{2} m_{\\text{car}} v'^2_{\\text{car}} + \\frac{1}{2} m_{\\text{cow}} v'^2_{\\text{cow}}`,
-                    latex2: `\\frac{1}{2}(${dm1})(${dv1})^2 = \\frac{1}{2}(${dm1}) v'^2_{\\text{car}} + \\frac{1}{2}(${numCows}) v'^2_{\\text{cow}}`,
-                    latex3: `${Math.round(keBefore)} = ${dm1/2} v'^2_{\\text{car}} + ${numCows/2} v'^2_{\\text{cow}}`
+                    text: `<b>Let's find the</b> <span class="step-label">momentum of car before crash</span>`,
+                    latex: `${dm1} \\text{ lbs} \\times ${dv1} \\text{ mph} = \\boxed{${pBefore}}`,
+                    latex2: `\\text{(This is the car's "oomph")}`
                 },
                 {
-                    text: `<b>SOLVING</b> — Two equations, two unknowns...`,
-                    latex: null
+                    text: `<b>The</b> <span class="step-label">momentum of ${cowWord} before crash</span> is easy:`,
+                    latex: `${numCows} \\text{ lb${numCows > 1 ? 's' : ''}} \\times 0 \\text{ mph} = \\boxed{0}`,
+                    latex2: `\\text{(The ${cowWord} ${numCows === 1 ? "wasn't" : "weren't"} moving!)}`
                 },
                 {
-                    text: `<b>From momentum:</b>`,
-                    latex: `v'_{\\text{cow}} = \\frac{${pBefore} - ${dm1} v'_{\\text{car}}}{${numCows}}`,
-                    latex2: `\\text{Substitute into energy equation...}`
+                    text: `<b>So the</b> <span class="step-label">total momentum before</span> is:`,
+                    latex: `${pBefore} + 0 = \\boxed{${pBefore}}`
                 },
                 {
-                    text: `<b>Solving gives the elastic collision formulas:</b>`,
-                    latex: `v'_{\\text{car}} = v_{\\text{car}} \\cdot \\frac{m_{\\text{car}} - m_{\\text{cow}}}{m_{\\text{car}} + m_{\\text{cow}}}`,
-                    latex2: `v'_{\\text{cow}} = v_{\\text{car}} \\cdot \\frac{2 m_{\\text{car}}}{m_{\\text{car}} + m_{\\text{cow}}}`
+                    text: `<b>The Big Rule #2: Energy is Conserved</b><br>In a perfect "bouncy" crash, no energy is lost — it just gets shared!`
                 },
                 {
-                    text: `<b>CALCULATE v'<sub>car</sub>:</b>`,
-                    latex: `v'_{\\text{car}} = ${dv1} \\cdot \\frac{${dm1} - ${numCows}}{${dm1} + ${numCows}} = ${dv1} \\cdot \\frac{${dm1 - numCows}}{${dm1 + numCows}}`,
-                    latex2: `v'_{\\text{car}} = \\boxed{${dv1f} \\text{ mph}}`
+                    text: `<b>Here's the magic formula for the</b> <span class="step-label">car's speed after crash</span>`,
+                    latex: `v'_{\\text{car}} = v_{\\text{car}} \\times \\frac{m_{\\text{car}} - m_{\\text{cow}}}{m_{\\text{car}} + m_{\\text{cow}}}`
                 },
                 {
-                    text: `<b>CALCULATE v'<sub>cow</sub>:</b>`,
-                    latex: `v'_{\\text{cow}} = ${dv1} \\cdot \\frac{2 \\cdot ${dm1}}{${dm1} + ${numCows}} = ${dv1} \\cdot \\frac{${2*dm1}}{${dm1 + numCows}}`,
-                    latex2: `v'_{\\text{cow}} = \\boxed{${dv2f} \\text{ mph}}`
+                    text: `<b>Let's plug in our numbers:</b>`,
+                    latex: `v'_{\\text{car}} = ${dv1} \\times \\frac{${dm1} - ${numCows}}{${dm1} + ${numCows}}`,
+                    latex2: `v'_{\\text{car}} = ${dv1} \\times \\frac{${dm1 - numCows}}{${dm1 + numCows}}`
                 },
                 {
-                    text: `<b>VERIFY MOMENTUM:</b>`,
-                    latex: `p_{\\text{after}} = ${dm1}(${dv1f}) + ${numCows}(${dv2f}) = ${pAfter}`,
-                    latex2: `p_{\\text{before}} = ${pBefore} \\quad \\checkmark`
+                    text: `<b>The</b> <span class="step-label">car's speed after crash</span>`,
+                    latex: `v'_{\\text{car}} = \\boxed{${dv1f} \\text{ mph}}`
                 },
                 {
-                    text: `<b>VERIFY ENERGY:</b>`,
-                    latex: `KE_{\\text{after}} = \\frac{1}{2}(${dm1})(${dv1f})^2 + \\frac{1}{2}(${numCows})(${dv2f})^2 = ${Math.round(keAfter)}`,
-                    latex2: `KE_{\\text{before}} = ${Math.round(keBefore)} \\quad \\checkmark`
+                    text: `<b>Now the formula for the</b> <span class="step-label">${cowWord}'s speed after crash</span>`,
+                    latex: `v'_{\\text{cow}} = v_{\\text{car}} \\times \\frac{2 \\times m_{\\text{car}}}{m_{\\text{car}} + m_{\\text{cow}}}`
+                },
+                {
+                    text: `<b>Plug in the numbers:</b>`,
+                    latex: `v'_{\\text{cow}} = ${dv1} \\times \\frac{2 \\times ${dm1}}{${dm1} + ${numCows}}`,
+                    latex2: `v'_{\\text{cow}} = ${dv1} \\times \\frac{${2 * dm1}}{${dm1 + numCows}}`
+                },
+                {
+                    text: `<b>The</b> <span class="step-label">${cowWord}'s speed after crash</span>`,
+                    latex: `v'_{\\text{cow}} = \\boxed{${dv2f} \\text{ mph}}`
+                },
+                {
+                    text: `<b>Let's check!</b> Does <span class="step-label">total momentum after</span> = <span class="step-label">total momentum before</span>?`
+                },
+                {
+                    text: `<b>Momentum of car after:</b>`,
+                    latex: `${dm1} \\times ${dv1f} = ${dm1 * dv1f}`
+                },
+                {
+                    text: `<b>Momentum of ${cowWord} after:</b>`,
+                    latex: `${numCows} \\times ${dv2f} = ${numCows * dv2f}`
+                },
+                {
+                    text: `<span class="step-label">Total momentum after</span>`,
+                    latex: `${dm1 * dv1f} + ${numCows * dv2f} = \\boxed{${pAfter}}`,
+                    latex2: `\\text{Before it was } ${pBefore} \\text{ — same! } \\checkmark`
                 },
                 {
                     text: dm1 > numCows ? 
-                        `<b>RESULT:</b> Your heavier car kept moving at ${dv1f} mph. The ${numCows} cow${numCows > 1 ? 's' : ''} flew off at ${dv2f} mph!` : 
+                        `<b>What happened?</b><br>Your heavier car kept going at <b>${dv1f} mph</b>.<br>The lighter ${cowWord} went flying at <b>${dv2f} mph</b>!` : 
                         dm1 < numCows ? 
-                        `<b>RESULT:</b> The ${numCows} cows absorbed momentum. Your lighter car bounced back at ${Math.abs(dv1f)} mph!` :
-                        `<b>RESULT:</b> Equal masses! Your car stopped completely, transferring ALL momentum to the cows.`,
-                    latex: null
+                        `<b>What happened?</b><br>The ${cowWord} ${numCows === 1 ? 'was' : 'were'} heavier! Your car bounced back at <b>${Math.abs(dv1f)} mph</b>.<br>The ${cowWord} started moving at <b>${dv2f} mph</b>.` :
+                        `<b>What happened?</b><br>The masses were equal! Your car stopped completely and transferred ALL its momentum to the ${cowWord}, which now moves at <b>${dv2f} mph</b>!`
                 }
             ];
             
@@ -1674,26 +1709,34 @@
         
         function renderPhysicsSteps() {
             const container = document.getElementById('physics-steps');
-            container.innerHTML = physicsSteps.map((step, i) => {
-                let className = 'physics-step';
-                if (i < currentStep) className += ' completed';
-                if (i === currentStep) className += ' active';
-                if (i > currentStep) return ''; // Don't show future steps
-                
-                let html = `<div class="${className}">`;
-                html += `<div class="step-text">${step.text}</div>`;
-                if (step.latex) {
-                    html += `<div class="step-latex" data-latex="${step.latex.replace(/"/g, '&quot;')}"></div>`;
-                }
-                if (step.latex2) {
-                    html += `<div class="step-latex" data-latex="${step.latex2.replace(/"/g, '&quot;')}"></div>`;
-                }
-                if (step.latex3) {
-                    html += `<div class="step-latex" data-latex="${step.latex3.replace(/"/g, '&quot;')}"></div>`;
-                }
-                html += '</div>';
-                return html;
-            }).join('');
+            
+            // Only render the current step (slide format)
+            const step = physicsSteps[currentStep];
+            if (!step) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = `<div class="physics-step active">`;
+            html += `<div class="step-text">${step.text}</div>`;
+            if (step.latex) {
+                html += `<div class="step-latex" data-latex="${step.latex.replace(/"/g, '&quot;')}"></div>`;
+            }
+            if (step.latex2) {
+                html += `<div class="step-latex" data-latex="${step.latex2.replace(/"/g, '&quot;')}"></div>`;
+            }
+            if (step.latex3) {
+                html += `<div class="step-latex" data-latex="${step.latex3.replace(/"/g, '&quot;')}"></div>`;
+            }
+            html += '</div>';
+            
+            container.innerHTML = html;
+            
+            // Update step counter
+            const counter = document.getElementById('stepCounter');
+            if (counter) {
+                counter.textContent = `${currentStep + 1} / ${physicsSteps.length}`;
+            }
             
             // Render LaTeX with KaTeX
             container.querySelectorAll('.step-latex').forEach(el => {
@@ -1706,12 +1749,6 @@
                     }
                 }
             });
-            
-            // Scroll to current step
-            const activeStep = container.querySelector('.active');
-            if (activeStep) {
-                activeStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
         }
         
         function advancePhysicsStep() {
