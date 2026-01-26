@@ -1186,21 +1186,8 @@
             previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
             
             // Car body (always use selected car color)
-            // For cow design, fill entire car with cow pattern
-            if (selectedCar === 'cow') {
-                if (cowPrint && cowPrint.complete) {
-                    previewCtx.fillStyle = selectedCarColor;
-                    previewCtx.fillRect(-w/2, -h/2, w, h);
-                    // Fill entire car with cow pattern
-                    previewCtx.drawImage(cowPrint, -w/2, -h/2, w, h);
-                } else {
-                    previewCtx.fillStyle = selectedCarColor;
-                    previewCtx.fillRect(-w/2, -h/2, w, h);
-                }
-            } else {
-                previewCtx.fillStyle = selectedCarColor;
-                previewCtx.fillRect(-w/2, -h/2, w, h);
-            }
+            previewCtx.fillStyle = selectedCarColor;
+            previewCtx.fillRect(-w/2, -h/2, w, h);
             
             // Design patterns
             if (selectedCar === 'stripe') {
@@ -1246,17 +1233,20 @@
                 previewCtx.stroke();
             }
             
-            // Skin design as patch in bottom left corner (except cow, which fills entire car)
-            if (selectedCar !== 'cow') {
-                const patchSize = Math.min(w, h) * 0.4;
-                const patchX = -w/2 + 4;
-                const patchY = h/2 - patchSize - 4;
-                
-                if (selectedCar === 'usa') {
-                    if (usaFlag && usaFlag.complete) {
-                        previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
-                    }
-                } else if (selectedCar === 'southlewis') {
+            // Skin design as patch in bottom left corner
+            const patchSize = Math.min(w, h) * 0.4;
+            const patchX = -w/2 + 4;
+            const patchY = h/2 - patchSize - 4;
+            
+            if (selectedCar === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (selectedCar === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (selectedCar === 'southlewis') {
                 if (southLewisLogo && southLewisLogo.complete) {
                     previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
                 }
@@ -1302,18 +1292,8 @@
             ctx.translate(-h / 2, -w / 2);
             
             // Car body (always use car color)
-            // For cow design, fill entire car with cow pattern
-            if (design === 'cow') {
-                ctx.fillStyle = carColor || '#cc2222';
-                ctx.fillRect(0, 0, h, w);
-                if (cowPrint && cowPrint.complete) {
-                    // Fill entire car with cow pattern
-                    ctx.drawImage(cowPrint, 0, 0, h, w);
-                }
-            } else {
-                ctx.fillStyle = carColor || '#cc2222';
-                ctx.fillRect(0, 0, h, w);
-            }
+            ctx.fillStyle = carColor || '#cc2222';
+            ctx.fillRect(0, 0, h, w);
             
             // Design patterns
             if (design === 'stripe') {
@@ -1359,17 +1339,20 @@
                 ctx.stroke();
             }
             
-            // Skin design as patch in bottom left corner (except cow, which fills entire car)
-            if (design !== 'cow') {
-                const patchSize = Math.min(h, w) * 0.4;
-                const patchX = 5 * scale;
-                const patchY = w - patchSize - 5 * scale; // Bottom when rotated
-                
-                if (design === 'usa') {
-                    if (usaFlag && usaFlag.complete) {
-                        ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
-                    }
-                } else if (design === 'southlewis') {
+            // Skin design as patch in bottom left corner (when rotated, bottom left is at h - patchSize, w - patchSize)
+            const patchSize = Math.min(h, w) * 0.4;
+            const patchX = 5 * scale;
+            const patchY = w - patchSize - 5 * scale; // Bottom when rotated
+            
+            if (design === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (design === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    ctx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (design === 'southlewis') {
                 if (southLewisLogo && southLewisLogo.complete) {
                     ctx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
                 }
@@ -1963,18 +1946,8 @@
             ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
 
             // Car body (always use selected car color)
-            // For cow design, fill entire car with cow pattern
-            if (player.design === 'cow') {
-                ctx.fillStyle = selectedCarColor;
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                if (cowPrint && cowPrint.complete) {
-                    // Fill entire car with cow pattern
-                    ctx.drawImage(cowPrint, -player.width/2, -player.height/2, player.width, player.height);
-                }
-            } else {
-                ctx.fillStyle = selectedCarColor;
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-            }
+            ctx.fillStyle = selectedCarColor;
+            ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
             
             // Design patterns (drawn on car body)
             if (player.design === 'stripe') {
@@ -2020,17 +1993,20 @@
                 ctx.stroke();
             }
 
-            // Skin design as patch in bottom left corner (except cow, which fills entire car)
-            if (player.design !== 'cow') {
-                const patchSize = Math.min(player.width, player.height) * 0.4;
-                const patchX = -player.width/2 + 5;
-                const patchY = player.height/2 - patchSize - 5;
-                
-                if (player.design === 'usa') {
-                    if (usaFlag && usaFlag.complete) {
-                        ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
-                    }
-                } else if (player.design === 'southlewis') {
+            // Skin design as patch in bottom left corner
+            const patchSize = Math.min(player.width, player.height) * 0.4;
+            const patchX = -player.width/2 + 5;
+            const patchY = player.height/2 - patchSize - 5;
+            
+            if (player.design === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (player.design === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    ctx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (player.design === 'southlewis') {
                 if (southLewisLogo && southLewisLogo.complete) {
                     ctx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
                 }
