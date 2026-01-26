@@ -116,6 +116,23 @@
       50% { transform: translateY(-4px); }
     }
 
+    /* Animation canvases */
+    .slide-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide-animation.active {
+      opacity: 1;
+    }
+
     /* Final slide - logo and button */
     .final-slide {
       position: fixed;
@@ -235,6 +252,11 @@
     </div>
   </div>
 
+  <!-- Animation canvases for different slides -->
+  <canvas class="slide-animation" id="rocketAnimation"></canvas>
+  <canvas class="slide-animation" id="codeAnimation"></canvas>
+  <canvas class="slide-animation" id="physicsAnimation"></canvas>
+
   <!-- Final slide with logo and button -->
   <div class="final-slide" id="finalSlide">
     <img class="final-logo" src="../milk-chase/logo.png" alt="Lewis County Milk Chase">
@@ -275,9 +297,9 @@
     // Dialogue sequence - 5 slides for middle school audience
     const sequence = [
       { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
-      { img: 3, dialogue: "I studied physics in school and got my PhD. My research was all about rockets!" },
-      { img: 1, dialogue: "I used computers to simulate how rockets move through space." },
-      { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy." },
+      { img: 3, dialogue: "I studied physics in school and got my PhD. My research was all about rockets!", animation: 'rockets' },
+      { img: 1, dialogue: "I used computers to simulate how rockets move through space.", animation: 'code' },
+      { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
       { img: 7, dialogue: "These ideas help us understand how things move and crash into each other..." },
       { img: 8, dialogue: "And that's exactly what I want to show you!" },
     ];
@@ -312,6 +334,21 @@
     const characterImg = document.getElementById('characterImg');
     const promptIcon = document.getElementById('promptIcon');
     const finalSlide = document.getElementById('finalSlide');
+    
+    // Animation canvases
+    const rocketCanvas = document.getElementById('rocketAnimation');
+    const codeCanvas = document.getElementById('codeAnimation');
+    const physicsCanvas = document.getElementById('physicsAnimation');
+    const rocketCtx = rocketCanvas.getContext('2d');
+    const codeCtx = codeCanvas.getContext('2d');
+    const physicsCtx = physicsCanvas.getContext('2d');
+    
+    function resizeCanvases() {
+      rocketCanvas.width = codeCanvas.width = physicsCanvas.width = window.innerWidth;
+      rocketCanvas.height = codeCanvas.height = physicsCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
 
     // Preload images
     Object.values(imageMap).forEach(src => {
@@ -363,6 +400,7 @@
 
     function endSequence() {
       isFinished = true;
+      stopAllAnimations();
       promptIcon.classList.remove('visible');
       dialogueBox.classList.remove('visible');
       character.classList.remove('entered');
@@ -392,6 +430,257 @@
       showFrame(currentFrame);
     }
 
+    // Animation systems
+    let rocketAnimationActive = false;
+    let codeAnimationActive = false;
+    let physicsAnimationActive = false;
+    let rockets = [];
+    let codeLines = [];
+    let physicsParticles = [];
+    
+    // Rocket animation (slide 2)
+    function initRocketAnimation() {
+      rockets = [];
+      rocketAnimationActive = true;
+      rocketCanvas.classList.add('active');
+      animateRockets();
+    }
+    
+    function animateRockets() {
+      if (!rocketAnimationActive) return;
+      
+      rocketCtx.fillStyle = '#000';
+      rocketCtx.fillRect(0, 0, rocketCanvas.width, rocketCanvas.height);
+      
+      // Spawn new rockets occasionally
+      if (Math.random() < 0.02) {
+        rockets.push({
+          x: Math.random() * rocketCanvas.width,
+          y: rocketCanvas.height + 20,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -2 - Math.random() * 1.5,
+          size: 8 + Math.random() * 6,
+          trail: []
+        });
+      }
+      
+      // Update and draw rockets
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        
+        // Add to trail
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 8) r.trail.shift();
+        
+        // Update position
+        r.x += r.vx;
+        r.y += r.vy;
+        
+        // Draw trail
+        r.trail.forEach((t, idx) => {
+          const alpha = idx / r.trail.length;
+          rocketCtx.fillStyle = `rgba(255, ${100 + idx * 20}, 0, ${alpha * 0.8})`;
+          rocketCtx.beginPath();
+          rocketCtx.arc(t.x, t.y, r.size * alpha * 0.5, 0, Math.PI * 2);
+          rocketCtx.fill();
+        });
+        
+        // Draw rocket
+        rocketCtx.fillStyle = '#ff6600';
+        rocketCtx.beginPath();
+        rocketCtx.arc(r.x, r.y, r.size, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        // Flame
+        rocketCtx.fillStyle = '#ffff00';
+        rocketCtx.beginPath();
+        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.6, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        // Remove if off screen
+        if (r.y < -50) {
+          rockets.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animateRockets);
+    }
+    
+    // Code animation (slide 3)
+    const codeSnippets = [
+      'function simulateRocket() {',
+      '  let velocity = 0;',
+      '  let position = 0;',
+      '  for (let t = 0; t < 100; t++) {',
+      '    velocity += acceleration * dt;',
+      '    position += velocity * dt;',
+      '  }',
+      '  return position;',
+      '}'
+    ];
+    
+    function initCodeAnimation() {
+      codeLines = [];
+      codeAnimationActive = true;
+      codeCanvas.classList.add('active');
+      let lineIndex = 0;
+      let charIndex = 0;
+      
+      function addNextChar() {
+        if (!codeAnimationActive) return;
+        
+        if (lineIndex < codeSnippets.length) {
+          const line = codeSnippets[lineIndex];
+          if (charIndex < line.length) {
+            codeLines.push({
+              text: line.substring(0, charIndex + 1),
+              y: 100 + lineIndex * 30,
+              complete: false
+            });
+            charIndex++;
+            setTimeout(addNextChar, 50 + Math.random() * 30);
+          } else {
+            codeLines[codeLines.length - 1].complete = true;
+            lineIndex++;
+            charIndex = 0;
+            if (lineIndex < codeSnippets.length) {
+              setTimeout(addNextChar, 200);
+            }
+          }
+        }
+        
+        animateCode();
+      }
+      
+      addNextChar();
+    }
+    
+    function animateCode() {
+      if (!codeAnimationActive) return;
+      
+      codeCtx.fillStyle = '#000';
+      codeCtx.fillRect(0, 0, codeCanvas.width, codeCanvas.height);
+      
+      // Draw terminal background
+      codeCtx.fillStyle = '#0a0a0a';
+      codeCtx.fillRect(50, 50, codeCanvas.width - 100, codeCanvas.height - 100);
+      
+      // Draw terminal border
+      codeCtx.strokeStyle = '#00ff00';
+      codeCtx.lineWidth = 2;
+      codeCtx.strokeRect(50, 50, codeCanvas.width - 100, codeCanvas.height - 100);
+      
+      // Draw code lines
+      codeCtx.font = '16px "Courier New", monospace';
+      codeCtx.fillStyle = '#00ff00';
+      
+      codeLines.forEach((line, idx) => {
+        codeCtx.fillText(line.text, 70, line.y);
+        
+        // Blinking cursor
+        if (!line.complete && idx === codeLines.length - 1) {
+          const metrics = codeCtx.measureText(line.text);
+          const cursorX = 70 + metrics.width;
+          if (Math.floor(Date.now() / 500) % 2) {
+            codeCtx.fillRect(cursorX, line.y - 14, 8, 18);
+          }
+        }
+      });
+      
+      if (codeAnimationActive) {
+        requestAnimationFrame(animateCode);
+      }
+    }
+    
+    // Physics animation (slide 4) - particles representing momentum and energy
+    function initPhysicsAnimation() {
+      physicsParticles = [];
+      physicsAnimationActive = true;
+      physicsCanvas.classList.add('active');
+      
+      // Create particles representing momentum (blue) and energy (yellow)
+      for (let i = 0; i < 30; i++) {
+        physicsParticles.push({
+          x: Math.random() * physicsCanvas.width,
+          y: Math.random() * physicsCanvas.height,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          type: Math.random() > 0.5 ? 'momentum' : 'energy',
+          size: 3 + Math.random() * 4,
+          angle: Math.random() * Math.PI * 2
+        });
+      }
+      
+      animatePhysics();
+    }
+    
+    function animatePhysics() {
+      if (!physicsAnimationActive) return;
+      
+      physicsCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      physicsCtx.fillRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+      
+      physicsParticles.forEach(p => {
+        // Update position
+        p.x += p.vx;
+        p.y += p.vy;
+        p.angle += 0.05;
+        
+        // Bounce off edges
+        if (p.x < 0 || p.x > physicsCanvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > physicsCanvas.height) p.vy *= -1;
+        
+        // Draw particle
+        if (p.type === 'momentum') {
+          physicsCtx.fillStyle = '#0080ff';
+        } else {
+          physicsCtx.fillStyle = '#ffcc00';
+        }
+        
+        physicsCtx.save();
+        physicsCtx.translate(p.x, p.y);
+        physicsCtx.rotate(p.angle);
+        physicsCtx.beginPath();
+        physicsCtx.arc(0, 0, p.size, 0, Math.PI * 2);
+        physicsCtx.fill();
+        
+        // Draw arrow for momentum
+        if (p.type === 'momentum') {
+          physicsCtx.strokeStyle = '#0080ff';
+          physicsCtx.lineWidth = 2;
+          physicsCtx.beginPath();
+          physicsCtx.moveTo(p.size, 0);
+          physicsCtx.lineTo(p.size * 0.6, -p.size * 0.3);
+          physicsCtx.lineTo(p.size * 0.6, p.size * 0.3);
+          physicsCtx.closePath();
+          physicsCtx.fill();
+        }
+        
+        physicsCtx.restore();
+      });
+      
+      // Draw labels
+      physicsCtx.font = 'bold 20px "Courier New", monospace';
+      physicsCtx.fillStyle = '#0080ff';
+      physicsCtx.fillText('Momentum', 50, 50);
+      physicsCtx.fillStyle = '#ffcc00';
+      physicsCtx.fillText('Energy', 50, 80);
+      
+      requestAnimationFrame(animatePhysics);
+    }
+    
+    function stopAllAnimations() {
+      rocketAnimationActive = false;
+      codeAnimationActive = false;
+      physicsAnimationActive = false;
+      rocketCanvas.classList.remove('active');
+      codeCanvas.classList.remove('active');
+      physicsCanvas.classList.remove('active');
+      rocketCtx.clearRect(0, 0, rocketCanvas.width, rocketCanvas.height);
+      codeCtx.clearRect(0, 0, codeCanvas.width, codeCanvas.height);
+      physicsCtx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+    }
+
     function showFrame(index) {
       if (index >= sequence.length) {
         endSequence();
@@ -400,6 +689,18 @@
 
       const frame = sequence[index];
       characterImg.src = imageMap[frame.img];
+      
+      // Stop all animations first
+      stopAllAnimations();
+      
+      // Start appropriate animation
+      if (frame.animation === 'rockets') {
+        setTimeout(() => initRocketAnimation(), 300);
+      } else if (frame.animation === 'code') {
+        setTimeout(() => initCodeAnimation(), 300);
+      } else if (frame.animation === 'physics') {
+        setTimeout(() => initPhysicsAnimation(), 300);
+      }
 
       dialogueBox.classList.remove('visible');
       promptIcon.classList.remove('visible');
