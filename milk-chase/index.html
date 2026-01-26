@@ -164,7 +164,23 @@
 
         #start-screen .subtitle {
             color: #888;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+        }
+
+        #car-preview-container {
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #car-preview-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
         }
 
         .option-group {
@@ -859,6 +875,10 @@
                 <h1><span>Milk Truck</span> Chase!</h1>
                 <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
 
+                <div id="car-preview-container">
+                    <canvas id="car-preview-canvas"></canvas>
+                </div>
+
                 <div class="option-group">
                     <label>Choose Your Car Skin</label>
                     <div class="car-options">
@@ -1219,6 +1239,17 @@
 
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
+        
+        // Car preview canvas
+        const previewCanvas = document.getElementById('car-preview-canvas');
+        const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+        let previewRotation = 0;
+        
+        // Set preview canvas size
+        if (previewCanvas) {
+            previewCanvas.width = 200;
+            previewCanvas.height = 200;
+        }
         
         // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
         const southLewisLogo = new Image();
@@ -1747,6 +1778,86 @@
             ctx.fillRect(player.width/2 - 3, player.height/2 - 30, 8, 20);
 
             ctx.restore();
+        }
+
+        // Draw car preview on start screen (rotating)
+        function drawCarPreview() {
+            if (!previewCtx || !previewCanvas) return;
+            
+            // Clear canvas
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            
+            // Update rotation (slow rotation)
+            previewRotation += 0.005; // Slow rotation speed
+            
+            previewCtx.save();
+            // Center of canvas
+            previewCtx.translate(previewCanvas.width / 2, previewCanvas.height / 2);
+            // Rotate
+            previewCtx.rotate(previewRotation);
+            
+            // Scale for preview (car is 50x80, scale to fit nicely in 200x200)
+            const scale = 1.5;
+            const w = 50 * scale;
+            const h = 80 * scale;
+            
+            // Shadow
+            previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
+            previewCtx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
+
+            // Car body based on design
+            if (selectedCar === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    previewCtx.drawImage(usaFlag, -w/2, -h/2, w, h);
+                } else {
+                    previewCtx.fillStyle = '#B22234';
+                    previewCtx.fillRect(-w/2, -h/2, w, h);
+                }
+            } else if (selectedCar === 'red') {
+                previewCtx.fillStyle = '#cc2222';
+                previewCtx.fillRect(-w/2, -h/2, w, h);
+                previewCtx.fillStyle = '#fff';
+                previewCtx.fillRect(-3 * scale, -h/2, 6 * scale, h);
+            } else if (selectedCar === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    previewCtx.drawImage(cowPrint, -w/2, -h/2, w, h);
+                } else {
+                    previewCtx.fillStyle = '#fff';
+                    previewCtx.fillRect(-w/2, -h/2, w, h);
+                }
+            } else if (selectedCar === 'southlewis') {
+                previewCtx.fillStyle = '#cc2222';
+                previewCtx.fillRect(-w/2, -h/2, w, h);
+                if (southLewisLogo && southLewisLogo.complete) {
+                    const logoSize = Math.min(w, h) * 0.8;
+                    previewCtx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                }
+            } else if (selectedCar === 'lowville') {
+                previewCtx.fillStyle = '#cc2222';
+                previewCtx.fillRect(-w/2, -h/2, w, h);
+                if (lowvilleLogo && lowvilleLogo.complete) {
+                    const logoSize = Math.min(w, h) * 0.8;
+                    previewCtx.drawImage(lowvilleLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                }
+            }
+
+            // Windshield
+            previewCtx.fillStyle = selectedWindshieldColor;
+            previewCtx.fillRect(-w/2 + 8 * scale, -h/2, w - 16 * scale, 20 * scale);
+
+            // Wheels
+            previewCtx.fillStyle = selectedWheelsColor;
+            previewCtx.fillRect(-w/2 - 5 * scale, -h/2 + 10 * scale, 8 * scale, 20 * scale);
+            previewCtx.fillRect(w/2 - 3 * scale, -h/2 + 10 * scale, 8 * scale, 20 * scale);
+            previewCtx.fillRect(-w/2 - 5 * scale, h/2 - 30 * scale, 8 * scale, 20 * scale);
+            previewCtx.fillRect(w/2 - 3 * scale, h/2 - 30 * scale, 8 * scale, 20 * scale);
+
+            previewCtx.restore();
+            
+            // Continue animation if on start screen
+            if (gameState === 'start') {
+                requestAnimationFrame(drawCarPreview);
+            }
         }
 
         // Draw milk truck
@@ -2537,6 +2648,7 @@
                 document.querySelectorAll('.car-option').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedCar = option.dataset.car;
+                // Preview will update automatically on next frame
             });
         });
 
@@ -2545,6 +2657,7 @@
         if (wheelsColorPicker) {
             wheelsColorPicker.addEventListener('input', (e) => {
                 selectedWheelsColor = e.target.value;
+                // Preview will update automatically on next frame
             });
         }
 
@@ -2552,7 +2665,13 @@
         if (windshieldColorPicker) {
             windshieldColorPicker.addEventListener('input', (e) => {
                 selectedWindshieldColor = e.target.value;
+                // Preview will update automatically on next frame
             });
+        }
+
+        // Start car preview animation
+        if (previewCanvas && gameState === 'start') {
+            drawCarPreview();
         }
 
         // Start button
@@ -2609,6 +2728,11 @@
         // Start
         console.log('Milk Chase: Script loaded successfully');
         gameLoop(0);
+        
+        // Start car preview animation on start screen
+        if (previewCanvas) {
+            drawCarPreview();
+        }
     </script>
 </body>
 </html>
