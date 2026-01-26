@@ -2007,17 +2007,25 @@
         }
         
         // Math modal handlers
-        document.getElementById('math-btn').addEventListener('click', () => {
-            renderMathModal();
-            document.getElementById('math-modal').classList.add('visible');
-        });
+        const mathBtn = document.getElementById('math-btn');
+        const mathModal = document.getElementById('math-modal');
         
-        document.getElementById('math-modal').addEventListener('click', () => {
-            document.getElementById('math-modal').classList.remove('visible');
-        });
+        if (mathBtn) {
+            mathBtn.addEventListener('click', () => {
+                renderMathModal();
+                if (mathModal) mathModal.classList.add('visible');
+            });
+        }
+        
+        if (mathModal) {
+            mathModal.addEventListener('click', () => {
+                mathModal.classList.remove('visible');
+            });
+        }
         
         // Submit score button
-        document.getElementById('submit-score-btn').addEventListener('click', async () => {
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) submitBtn.addEventListener('click', async () => {
             const nameInput = document.getElementById('player-name');
             const name = nameInput.value.trim();
             const btn = document.getElementById('submit-score-btn');
@@ -2232,22 +2240,33 @@
         });
 
         // Mass slider
-        document.getElementById('mass-input').addEventListener('input', (e) => {
-            selectedMass = parseInt(e.target.value);
-            document.getElementById('mass-preview').textContent = toDisplayMass(selectedMass);
-        });
+        const massInput = document.getElementById('mass-input');
+        const massPreview = document.getElementById('mass-preview');
+        if (massInput) {
+            massInput.addEventListener('input', (e) => {
+                selectedMass = parseInt(e.target.value);
+                if (massPreview) massPreview.textContent = toDisplayMass(selectedMass);
+            });
+        }
 
         // Start button
-        document.getElementById('start-btn').addEventListener('click', resetGame);
-        document.getElementById('retry-btn').addEventListener('click', () => {
+        const startBtn = document.getElementById('start-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        
+        if (startBtn) startBtn.addEventListener('click', resetGame);
+        if (retryBtn) retryBtn.addEventListener('click', () => {
             // Reset leaderboard state
             lastSubmittedId = null;
-            document.getElementById('submit-score-btn').disabled = false;
-            document.getElementById('submit-score-btn').textContent = 'Submit Score';
-            document.getElementById('player-name').disabled = false;
+            const submitScoreBtn = document.getElementById('submit-score-btn');
+            const playerName = document.getElementById('player-name');
+            if (submitScoreBtn) {
+                submitScoreBtn.disabled = false;
+                submitScoreBtn.textContent = 'Submit Score';
+            }
+            if (playerName) playerName.disabled = false;
             
-            document.getElementById('start-screen').classList.remove('hidden');
-            document.getElementById('result-screen').classList.remove('visible');
+            document.getElementById('start-screen')?.classList.remove('hidden');
+            document.getElementById('result-screen')?.classList.remove('visible');
             document.body.classList.remove('game-playing');
             gameState = 'start';
         });
@@ -2277,6 +2296,7 @@
         }
 
         // Start
+        console.log('Milk Chase: Script loaded successfully');
         gameLoop(0);
     </script>
 </body>
