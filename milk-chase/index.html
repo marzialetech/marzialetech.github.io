@@ -299,10 +299,15 @@
             margin-top: 10px;
         }
 
-        #start-btn, #retry-btn {
+        .button-row {
+            display: flex;
+            gap: 15px;
             margin-top: 20px;
-            padding: 15px 50px;
-            font-size: 20px;
+        }
+        
+        #start-btn, #retry-btn, #math-btn {
+            padding: 15px 30px;
+            font-size: 18px;
             background: #000;
             border: 2px solid #00ff88;
             border-radius: 8px;
@@ -311,13 +316,86 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+        
+        #math-btn {
+            border-color: #00aaff;
+            color: #00aaff;
+        }
 
         #start-btn:hover, #retry-btn:hover {
             background: rgba(0, 255, 136, 0.1);
             box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
         }
+        
+        #math-btn:hover {
+            background: rgba(0, 170, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.3);
+        }
+        
+        /* Math Modal */
+        #math-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        #math-modal.visible {
+            display: flex;
+        }
+        
+        .math-modal-content {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .math-modal-title {
+            font-size: 22px;
+            color: #00aaff;
+            margin-bottom: 20px;
+        }
+        
+        .math-modal-body {
+            text-align: left;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #ccc;
+        }
+        
+        .math-modal-body .math-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 170, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .math-modal-body .math-section-title {
+            color: #ffcc00;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .math-modal-body .math-formula {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .math-modal-hint {
+            margin-top: 20px;
+            color: #666;
+            font-size: 12px;
+        }
 
-        /* Result screen - continuous text that fits on one screen */
+        /* Result screen - leaderboard focused */
         #result-screen {
             position: absolute;
             top: 0;
@@ -328,9 +406,8 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            padding: 10px 15px;
-            padding-top: 50px;
+            justify-content: center;
+            padding: 20px;
             overflow: hidden;
             touch-action: manipulation;
         }
@@ -340,98 +417,21 @@
         }
 
         #result-title {
-            font-size: 18px;
-            position: absolute;
-            top: 8px;
-            left: 0;
-            right: 0;
+            font-size: 24px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
         #result-title.crash {
             color: #ff4444;
         }
-
-        #physics-steps {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            width: 100%;
-            max-width: 500px;
-            font-size: 11px;
-            line-height: 1.4;
-        }
-        
-        /* Continuous text with highlighting */
-        .physics-line {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            margin: 2px 0;
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: #555;
-            transition: all 0.2s ease;
-            width: 100%;
-        }
-        
-        .physics-line.active {
-            color: #00ddff;
-            background: rgba(0, 200, 255, 0.15);
-            text-shadow: 0 0 8px rgba(0, 221, 255, 0.5);
-        }
-        
-        .physics-line.completed {
-            color: #888;
-        }
-        
-        .physics-line b {
-            color: inherit;
-        }
-        
-        .physics-line.active b {
-            color: #ffcc00;
-        }
-        
-        .physics-line .math-inline {
-            display: inline-block;
-            margin: 0 3px;
-            font-size: 10px;
-        }
-        
-        .physics-line.active .katex {
-            color: #fff;
-        }
-        
-        .physics-line .katex {
-            color: #666;
-        }
-        
-        .tap-hint {
-            position: absolute;
-            bottom: 55px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 10px;
-            color: #444;
-        }
-        
-        .tap-hint span {
-            color: #00ff88;
-        }
         
         #retry-btn {
-            position: absolute;
-            bottom: 15px;
+            margin-top: 20px;
         }
         
         /* Leaderboard section */
         #leaderboard-section {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             width: 90%;
             max-width: 350px;
             text-align: center;
@@ -743,16 +743,26 @@
                 </div>
             </div>
 
-            <button id="start-btn">Start Chase</button>
+            <div class="button-row">
+                <button id="start-btn">Start Chase</button>
+                <button id="math-btn">The Math</button>
+            </div>
+        </div>
+        
+        <!-- Math Review Modal -->
+        <div id="math-modal">
+            <div class="math-modal-content">
+                <div class="math-modal-title">The Physics of Collisions</div>
+                <div class="math-modal-body" id="math-modal-body"></div>
+                <div class="math-modal-hint">Tap anywhere to close</div>
+            </div>
         </div>
 
         <div id="result-screen">
             <div id="result-title">CRASH!</div>
-            <div id="physics-steps"></div>
-            <div class="tap-hint" id="tapHint">Tap <span>RIGHT</span> = next | Tap <span>LEFT</span> = back</div>
             
-            <!-- Leaderboard section (hidden until physics review done) -->
-            <div id="leaderboard-section" style="display: none;">
+            <!-- Leaderboard section (shown immediately) -->
+            <div id="leaderboard-section">
                 <div id="score-entry">
                     <div class="score-label">Your Time: <span id="final-time">0:00</span></div>
                     <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
@@ -1900,8 +1910,6 @@
         }
         
         // Step-by-step physics state
-        let physicsSteps = [];
-        let currentStep = 0;
         
         // Show crash result after animation
         function showCrashResult() {
@@ -1909,93 +1917,72 @@
             document.body.classList.remove('game-playing');
             stopBackgroundMusic();
             
-            const { m1, v1, m2 } = crashData;
             const survivalTime = formatTime(gameTime);
 
             document.getElementById('result-title').textContent = `CRASHED! Time: ${survivalTime}`;
             document.getElementById('result-title').className = 'crash';
-
-            // Convert to display units for nice round numbers
-            const dm1 = toDisplayMass(m1);
-            const dm2 = toDisplayObstacleMass(m2);
-            const dv1 = toDisplaySpeed(v1);
             
-            // Calculate using physics formulas
-            const massRatio = (dm1 - dm2) / (dm1 + dm2);
-            const dv1f = Math.round(dv1 * massRatio);
-            const dv2f = Math.round(dv1 * 2 * dm1 / (dm1 + dm2));
+            // Set final time for leaderboard
+            document.getElementById('final-time').textContent = survivalTime;
             
-            const pBefore = dm1 * dv1;
-            const pAfter = dm1 * dv1f + dm2 * dv2f;
+            // Load saved name from localStorage
+            const savedName = localStorage.getItem('milkChasePlayerName') || '';
+            document.getElementById('player-name').value = savedName;
             
-            const keBefore = 0.5 * dm1 * dv1 * dv1;
-            const keAfter = 0.5 * dm1 * dv1f * dv1f + 0.5 * dm2 * dv2f * dv2f;
-            
-            // Number of cows for display
-            const numCows = dm2;
-            
-            // Build continuous physics explanation - all visible, highlight current
-            const cowWord = numCows === 1 ? 'cow' : 'cows';
-            
-            physicsSteps = [
-                { text: `You crashed into <b>${numCows} ${cowWord}</b>!` },
-                { text: `Car: <b>${dm1} lbs</b> at <b>${dv1} mph</b>`, math: `m_{car}=${dm1}, v_{car}=${dv1}` },
-                { text: `Cow: <b>${numCows} lb${numCows > 1 ? 's' : ''}</b> at <b>0 mph</b>`, math: `m_{cow}=${numCows}, v_{cow}=0` },
-                { text: `<b>Rule 1:</b> Momentum is conserved (total "oomph" stays same)` },
-                { text: `Car momentum before:`, math: `${dm1} \\times ${dv1} = ${pBefore}` },
-                { text: `Cow momentum before:`, math: `${numCows} \\times 0 = 0` },
-                { text: `<b>Total momentum before = ${pBefore}</b>` },
-                { text: `<b>Rule 2:</b> Energy is conserved (bouncy crash)` },
-                { text: `Formula for car's new speed:`, math: `v'_{car} = v_{car} \\times \\frac{m_{car} - m_{cow}}{m_{car} + m_{cow}}` },
-                { text: `Plug in:`, math: `v'_{car} = ${dv1} \\times \\frac{${dm1}-${numCows}}{${dm1}+${numCows}} = ${dv1} \\times \\frac{${dm1 - numCows}}{${dm1 + numCows}}` },
-                { text: `<b>Car's new speed = ${dv1f} mph</b>` },
-                { text: `Formula for cow's new speed:`, math: `v'_{cow} = v_{car} \\times \\frac{2 \\times m_{car}}{m_{car} + m_{cow}}` },
-                { text: `Plug in:`, math: `v'_{cow} = ${dv1} \\times \\frac{2 \\times ${dm1}}{${dm1}+${numCows}} = ${dv1} \\times \\frac{${2*dm1}}{${dm1 + numCows}}` },
-                { text: `<b>Cow's new speed = ${dv2f} mph</b>` },
-                { text: `Check: momentum after =`, math: `${dm1}(${dv1f}) + ${numCows}(${dv2f}) = ${pAfter}` },
-                { text: `<b>Before was ${pBefore} — same!</b>` },
-                { text: dm1 > numCows ? 
-                    `<b>Result:</b> Heavier car kept going (${dv1f} mph), lighter cow flew off (${dv2f} mph)!` : 
-                    dm1 < numCows ? 
-                    `<b>Result:</b> Heavier cow absorbed momentum! Car bounced back (${Math.abs(dv1f)} mph).` :
-                    `<b>Result:</b> Equal masses! Car stopped, cow got ALL the momentum (${dv2f} mph)!`
-                }
-            ];
-            
-            currentStep = 0;
-            renderPhysicsSteps();
-            
+            // Show result screen with leaderboard
             document.getElementById('result-screen').classList.add('visible');
             document.getElementById('retry-btn').style.display = 'inline-block';
+            
+            // Fetch and display leaderboard
+            showLeaderboard();
         }
         
-        function renderPhysicsSteps() {
-            const container = document.getElementById('physics-steps');
+        // Math modal content (conceptual, using variables)
+        function renderMathModal() {
+            const body = document.getElementById('math-modal-body');
             
-            // Render all lines, highlight current
-            let html = '';
-            for (let i = 0; i < physicsSteps.length; i++) {
-                const step = physicsSteps[i];
-                let className = 'physics-line';
-                if (i < currentStep) className += ' completed';
-                if (i === currentStep) className += ' active';
+            let html = `
+                <div class="math-section">
+                    <div class="math-section-title">What is Momentum?</div>
+                    Momentum is mass times velocity — how hard it is to stop something moving.
+                    <div class="math-formula" data-latex="p = m \\times v"></div>
+                </div>
                 
-                html += `<div class="${className}">`;
-                html += step.text;
-                if (step.math) {
-                    html += ` <span class="math-inline" data-latex="${step.math.replace(/"/g, '&quot;')}"></span>`;
-                }
-                html += '</div>';
-            }
+                <div class="math-section">
+                    <div class="math-section-title">Conservation of Momentum</div>
+                    In a collision, total momentum before = total momentum after.
+                    <div class="math-formula" data-latex="m_{car} v_{car} + m_{cow} v_{cow} = m_{car} v'_{car} + m_{cow} v'_{cow}"></div>
+                </div>
+                
+                <div class="math-section">
+                    <div class="math-section-title">Conservation of Energy</div>
+                    In an elastic (bouncy) collision, kinetic energy is also conserved.
+                    <div class="math-formula" data-latex="\\frac{1}{2}m_{car}v_{car}^2 = \\frac{1}{2}m_{car}v'^2_{car} + \\frac{1}{2}m_{cow}v'^2_{cow}"></div>
+                </div>
+                
+                <div class="math-section">
+                    <div class="math-section-title">The Collision Formulas</div>
+                    Solving both equations together gives us:
+                    <div class="math-formula" data-latex="v'_{car} = v_{car} \\times \\frac{m_{car} - m_{cow}}{m_{car} + m_{cow}}"></div>
+                    <div class="math-formula" data-latex="v'_{cow} = v_{car} \\times \\frac{2 m_{car}}{m_{car} + m_{cow}}"></div>
+                </div>
+                
+                <div class="math-section">
+                    <div class="math-section-title">What does this mean?</div>
+                    <b>If car is heavier:</b> Car keeps moving forward, cow flies off fast.<br>
+                    <b>If cow is heavier:</b> Car bounces backward, cow moves slowly.<br>
+                    <b>If equal mass:</b> Car stops completely, cow gets all the momentum!
+                </div>
+            `;
             
-            container.innerHTML = html;
+            body.innerHTML = html;
             
-            // Render LaTeX with KaTeX
-            container.querySelectorAll('.math-inline').forEach(el => {
+            // Render LaTeX
+            body.querySelectorAll('.math-formula').forEach(el => {
                 const latex = el.dataset.latex;
                 if (latex && window.katex) {
                     try {
-                        katex.render(latex, el, { displayMode: false, throwOnError: false });
+                        katex.render(latex, el, { displayMode: true, throwOnError: false });
                     } catch (e) {
                         el.textContent = latex;
                     }
@@ -2003,49 +1990,15 @@
             });
         }
         
-        let leaderboardShown = false;
+        // Math modal handlers
+        document.getElementById('math-btn').addEventListener('click', () => {
+            renderMathModal();
+            document.getElementById('math-modal').classList.add('visible');
+        });
         
-        function changePhysicsStep(delta) {
-            if (gameState !== 'result') return;
-            if (leaderboardShown) return; // Already showing leaderboard
-            
-            currentStep += delta;
-            if (currentStep < 0) currentStep = 0;
-            
-            if (currentStep >= physicsSteps.length) {
-                // Show leaderboard
-                currentStep = physicsSteps.length - 1;
-                showLeaderboardSection();
-                return;
-            }
-            
-            renderPhysicsSteps();
-        }
-        
-        function showLeaderboardSection() {
-            leaderboardShown = true;
-            
-            // Hide physics steps and tap hint
-            document.getElementById('physics-steps').style.display = 'none';
-            document.getElementById('tapHint').style.display = 'none';
-            
-            // Show leaderboard section
-            const section = document.getElementById('leaderboard-section');
-            section.style.display = 'block';
-            
-            // Set final time
-            document.getElementById('final-time').textContent = formatTime(gameTime);
-            
-            // Load saved name from localStorage
-            const savedName = localStorage.getItem('milkChasePlayerName') || '';
-            document.getElementById('player-name').value = savedName;
-            
-            // Show retry button
-            document.getElementById('retry-btn').style.display = 'inline-block';
-            
-            // Fetch and display leaderboard
-            showLeaderboard();
-        }
+        document.getElementById('math-modal').addEventListener('click', () => {
+            document.getElementById('math-modal').classList.remove('visible');
+        });
         
         // Submit score button
         document.getElementById('submit-score-btn').addEventListener('click', async () => {
@@ -2072,34 +2025,6 @@
             
             // Refresh leaderboard
             await showLeaderboard();
-        });
-        
-        // Tap left/right to navigate physics steps (prevent double-fire)
-        let lastTapTime = 0;
-        document.getElementById('result-screen').addEventListener('click', (e) => {
-            if (e.target.id === 'retry-btn') return;
-            const now = Date.now();
-            if (now - lastTapTime < 100) return; // Debounce
-            lastTapTime = now;
-            
-            const screenMidX = window.innerWidth / 2;
-            if (e.clientX > screenMidX) {
-                changePhysicsStep(1); // Right = next
-            } else {
-                changePhysicsStep(-1); // Left = back
-            }
-        });
-        document.getElementById('result-screen').addEventListener('touchend', (e) => {
-            if (e.target.id === 'retry-btn') return;
-            e.preventDefault(); // Prevent click from also firing
-            
-            const touch = e.changedTouches[0];
-            const screenMidX = window.innerWidth / 2;
-            if (touch.clientX > screenMidX) {
-                changePhysicsStep(1);
-            } else {
-                changePhysicsStep(-1);
-            }
         });
 
         // Reset game
@@ -2300,11 +2225,7 @@
         document.getElementById('start-btn').addEventListener('click', resetGame);
         document.getElementById('retry-btn').addEventListener('click', () => {
             // Reset leaderboard state
-            leaderboardShown = false;
             lastSubmittedId = null;
-            document.getElementById('leaderboard-section').style.display = 'none';
-            document.getElementById('physics-steps').style.display = 'flex';
-            document.getElementById('tapHint').style.display = 'block';
             document.getElementById('submit-score-btn').disabled = false;
             document.getElementById('submit-score-btn').textContent = 'Submit Score';
             document.getElementById('player-name').disabled = false;
