@@ -1858,7 +1858,7 @@
                     ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 }
             } else if (player.design === 'red') {
-                ctx.fillStyle = '#cc2222';
+                ctx.fillStyle = selectedColor;
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Racing stripe
                 ctx.fillStyle = '#fff';
@@ -1873,8 +1873,8 @@
                     ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 }
             } else if (player.design === 'southlewis') {
-                // Red background with South Lewis logo
-                ctx.fillStyle = '#cc2222';
+                // Background with South Lewis logo (uses selected color)
+                ctx.fillStyle = selectedColor;
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Draw logo image
                 if (southLewisLogo && southLewisLogo.complete) {
@@ -1882,8 +1882,8 @@
                     ctx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
                 }
             } else if (player.design === 'lowville') {
-                // Red background with Lowville logo
-                ctx.fillStyle = '#cc2222';
+                // Background with Lowville logo (uses selected color)
+                ctx.fillStyle = selectedColor;
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Draw logo image
                 if (lowvilleLogo && lowvilleLogo.complete) {
