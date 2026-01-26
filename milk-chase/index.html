@@ -1210,8 +1210,8 @@
                 previewCtx.translate(centerX, centerY);
                 previewCtx.rotate(rotation);
                 
-                // Scale for preview
-                const scale = 0.9;
+                // Scale for preview (reduced by 0.85x)
+                const scale = 0.9 * 0.85; // 0.765
                 const w = 50 * scale; // 45
                 const h = 80 * scale; // 72
                 
