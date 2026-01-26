@@ -1181,7 +1181,7 @@
                 // Use from() with explicit schema to ensure it works regardless of auth state
                 let query = supabaseClient
                     .from('milk_chase_scores')
-                    .select('id, player_name, time_seconds, school, car_design, car_color, car_wheels_color, car_effect, created_at')
+                    .select('id, player_name, time_seconds, school, car_design, car_color, car_wheels_color, created_at')
                     .order('time_seconds', { ascending: false })
                     .limit(50);
                 
@@ -1385,7 +1385,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000', entry.car_effect || 'none');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1428,7 +1428,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000', entry.car_effect || 'none');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
                 
                 return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
