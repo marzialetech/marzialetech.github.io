@@ -675,6 +675,52 @@
             font-size: 11px;
             padding: 4px 8px;
         }
+
+        /* Admin controls */
+        #admin-login {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+
+        #admin-login button {
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #111;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #admin-login button:hover {
+            border-color: #00aaff;
+            color: #00aaff;
+        }
+
+        #admin-login.admin-authenticated button {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .delete-btn {
+            padding: 2px 6px;
+            font-size: 9px;
+            background: #cc2222;
+            border: 1px solid #aa0000;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ff3333;
+            border-color: #cc0000;
+        }
         
         /* Mobile result screen */
         @media (max-width: 768px) {
@@ -853,6 +899,9 @@
         </div>
 
         <div id="start-screen">
+            <div id="admin-login">
+                <button id="github-login-btn">Login with GitHub</button>
+            </div>
             <div id="start-screen-content">
                 <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
                 <h1><span>Milk Truck</span> Chase!</h1>
@@ -941,6 +990,8 @@
         let lastSubmittedId = null;
         let selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
         let leaderboardFilter = 'all';
+        let isAdmin = false;
+        let currentUser = null;
         
         // Initialize Supabase (defensive check for CDN loading)
         function initSupabase() {
@@ -948,17 +999,114 @@
             try {
                 if (window.supabase && window.supabase.createClient) {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    // Check auth state
+                    checkAuthState();
                 }
             } catch (e) {
                 console.warn('Supabase init failed:', e);
             }
         }
+
+        // Check authentication state
+        async function checkAuthState() {
+            if (!supabaseClient) return;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    currentUser = session.user;
+                    // Check if user's GitHub username is "marzialetech"
+                    const userMetadata = session.user.user_metadata;
+                    const githubUsername = userMetadata?.user_name || userMetadata?.preferred_username;
+                    isAdmin = githubUsername === 'marzialetech';
+                    updateLoginUI();
+                } else {
+                    currentUser = null;
+                    isAdmin = false;
+                    updateLoginUI();
+                }
+            } catch (e) {
+                console.warn('Auth check failed:', e);
+            }
+        }
+
+        // Update login UI
+        function updateLoginUI() {
+            const loginBtn = document.getElementById('github-login-btn');
+            const adminLogin = document.getElementById('admin-login');
+            if (!loginBtn || !adminLogin) return;
+
+            if (currentUser) {
+                const userMetadata = currentUser.user_metadata;
+                const githubUsername = userMetadata?.user_name || userMetadata?.preferred_username || 'User';
+                loginBtn.textContent = isAdmin ? `Admin: ${githubUsername} (Logout)` : `${githubUsername} (Logout)`;
+                adminLogin.classList.toggle('admin-authenticated', isAdmin);
+            } else {
+                loginBtn.textContent = 'Login with GitHub';
+                adminLogin.classList.remove('admin-authenticated');
+            }
+        }
+
+        // GitHub login
+        async function loginWithGitHub() {
+            if (!supabaseClient) {
+                initSupabase();
+                if (!supabaseClient) {
+                    alert('Supabase not initialized. Please refresh the page.');
+                    return;
+                }
+            }
+
+            if (currentUser) {
+                // Logout
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                isAdmin = false;
+                updateLoginUI();
+                // Reload leaderboards to remove delete buttons
+                await showLeaderboard();
+                await loadStartLeaderboard();
+            } else {
+                // Login
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'github',
+                    options: {
+                        redirectTo: window.location.origin + window.location.pathname
+                    }
+                });
+                if (error) {
+                    console.error('Login error:', error);
+                    alert('Login failed: ' + error.message);
+                }
+            }
+        }
+
+        // Handle auth state changes (set up after Supabase is initialized)
+        function setupAuthListener() {
+            if (supabaseClient) {
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                        checkAuthState().then(() => {
+                            showLeaderboard();
+                            loadStartLeaderboard();
+                        });
+                    } else if (event === 'SIGNED_OUT') {
+                        currentUser = null;
+                        isAdmin = false;
+                        updateLoginUI();
+                        showLeaderboard();
+                        loadStartLeaderboard();
+                    }
+                });
+            }
+        }
         
         // Try to init now, and also when DOM is ready
         initSupabase();
+        setupAuthListener();
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 initSupabase();
+                setupAuthListener();
                 // Load start screen leaderboard after a short delay to ensure Supabase is ready
                 setTimeout(loadStartLeaderboard, 500);
             });
@@ -1040,11 +1188,13 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                const deleteBtn = isAdmin ? `<button class="delete-btn" onclick="deleteScore(${entry.id})" title="Delete this entry">×</button>` : '';
                 
-                return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}">
+                return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
                     <span class="name">${entry.player_name}${schoolTag}</span>
                     <span class="time">${timeStr}</span>
+                    ${deleteBtn}
                 </div>`;
             }).join('');
             
@@ -1078,11 +1228,13 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                const deleteBtn = isAdmin ? `<button class="delete-btn" onclick="deleteScore(${entry.id})" title="Delete this entry">×</button>` : '';
                 
-                return `<div class="leaderboard-entry">
+                return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
                     <span class="name">${entry.player_name}${schoolTag}</span>
                     <span class="time">${timeStr}</span>
+                    ${deleteBtn}
                 </div>`;
             }).join('');
         }
@@ -1091,6 +1243,47 @@
             const entries = await fetchLeaderboard('all');
             renderStartLeaderboard(entries);
         }
+
+        // Delete score (admin only)
+        async function deleteScore(entryId) {
+            if (!isAdmin) {
+                alert('You do not have permission to delete scores.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this score?')) {
+                return;
+            }
+
+            initSupabase();
+            if (!supabaseClient) {
+                alert('Supabase not initialized.');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('milk_chase_scores')
+                    .delete()
+                    .eq('id', entryId);
+
+                if (error) {
+                    console.error('Delete error:', error);
+                    alert('Failed to delete score: ' + error.message);
+                    return;
+                }
+
+                // Reload leaderboards
+                await showLeaderboard();
+                await loadStartLeaderboard();
+            } catch (e) {
+                console.error('Delete failed:', e);
+                alert('Failed to delete score.');
+            }
+        }
+
+        // Make deleteScore available globally for onclick handlers
+        window.deleteScore = deleteScore;
 
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
@@ -2507,6 +2700,12 @@
                 selectedCar = option.dataset.car;
             });
         });
+
+        // GitHub login button
+        const githubLoginBtn = document.getElementById('github-login-btn');
+        if (githubLoginBtn) {
+            githubLoginBtn.addEventListener('click', loginWithGitHub);
+        }
 
         // Start button
         const startBtn = document.getElementById('start-btn');
