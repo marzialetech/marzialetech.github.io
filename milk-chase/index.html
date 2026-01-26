@@ -7,6 +7,8 @@
     <!-- KaTeX for LaTeX math rendering -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <!-- Supabase for leaderboard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -424,6 +426,115 @@
             bottom: 15px;
         }
         
+        /* Leaderboard section */
+        #leaderboard-section {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        
+        #score-entry {
+            margin-bottom: 15px;
+        }
+        
+        .score-label {
+            font-size: 18px;
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+        
+        #player-name {
+            width: 100%;
+            padding: 10px 15px;
+            font-size: 16px;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            background: #111;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        #player-name:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        #submit-score-btn {
+            padding: 10px 30px;
+            font-size: 14px;
+            background: #000;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #submit-score-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        #submit-score-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #leaderboard {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .leaderboard-title {
+            font-size: 14px;
+            color: #00aaff;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 10px;
+            margin: 3px 0;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .leaderboard-entry.highlight {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+        }
+        
+        .leaderboard-entry .rank {
+            color: #888;
+            width: 25px;
+        }
+        
+        .leaderboard-entry .name {
+            flex: 1;
+            text-align: left;
+            color: #fff;
+            margin-left: 10px;
+        }
+        
+        .leaderboard-entry .time {
+            color: #ffcc00;
+            font-weight: bold;
+        }
+        
+        .leaderboard-entry.highlight .name {
+            color: #00ff88;
+        }
+        
         /* Mobile result screen */
         @media (max-width: 768px) {
             #result-screen {
@@ -638,12 +749,122 @@
         <div id="result-screen">
             <div id="result-title">CRASH!</div>
             <div id="physics-steps"></div>
-            <div class="tap-hint">Tap <span>RIGHT</span> = next | Tap <span>LEFT</span> = back</div>
+            <div class="tap-hint" id="tapHint">Tap <span>RIGHT</span> = next | Tap <span>LEFT</span> = back</div>
+            
+            <!-- Leaderboard section (hidden until physics review done) -->
+            <div id="leaderboard-section" style="display: none;">
+                <div id="score-entry">
+                    <div class="score-label">Your Time: <span id="final-time">0:00</span></div>
+                    <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+                    <button id="submit-score-btn">Submit Score</button>
+                </div>
+                <div id="leaderboard">
+                    <div class="leaderboard-title">Leaderboard</div>
+                    <div id="leaderboard-list"></div>
+                </div>
+            </div>
+            
             <button id="retry-btn" style="display: none;">Try Again</button>
         </div>
     </div>
 
     <script>
+        // Supabase initialization
+        const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+        
+        let supabase = null;
+        let lastSubmittedId = null;
+        
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.warn('Supabase init failed:', e);
+        }
+        
+        // Leaderboard functions
+        async function submitScore(name, timeSeconds) {
+            if (!supabase || !name.trim()) return null;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('milk_chase_scores')
+                    .insert([{ 
+                        player_name: name.trim(), 
+                        time_seconds: timeSeconds 
+                    }])
+                    .select();
+                
+                if (error) {
+                    console.error('Submit error:', error);
+                    return null;
+                }
+                
+                return data?.[0]?.id || null;
+            } catch (e) {
+                console.error('Submit failed:', e);
+                return null;
+            }
+        }
+        
+        async function fetchLeaderboard() {
+            if (!supabase) return [];
+            
+            try {
+                const { data, error } = await supabase
+                    .from('milk_chase_scores')
+                    .select('id, player_name, time_seconds, created_at')
+                    .order('time_seconds', { ascending: false })
+                    .limit(50);
+                
+                if (error) {
+                    console.error('Fetch error:', error);
+                    return [];
+                }
+                
+                return data || [];
+            } catch (e) {
+                console.error('Fetch failed:', e);
+                return [];
+            }
+        }
+        
+        function renderLeaderboard(entries, highlightId) {
+            const list = document.getElementById('leaderboard-list');
+            if (!list) return;
+            
+            if (entries.length === 0) {
+                list.innerHTML = '<div style="color: #666; font-size: 11px;">No scores yet. Be the first!</div>';
+                return;
+            }
+            
+            list.innerHTML = entries.map((entry, i) => {
+                const isHighlight = entry.id === highlightId;
+                const mins = Math.floor(entry.time_seconds / 60);
+                const secs = Math.floor(entry.time_seconds % 60);
+                const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}">
+                    <span class="rank">#${i + 1}</span>
+                    <span class="name">${entry.player_name}</span>
+                    <span class="time">${timeStr}</span>
+                </div>`;
+            }).join('');
+            
+            // Scroll to highlighted entry
+            if (highlightId) {
+                const highlighted = list.querySelector('.highlight');
+                if (highlighted) {
+                    highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+        
+        async function showLeaderboard() {
+            const entries = await fetchLeaderboard();
+            renderLeaderboard(entries, lastSubmittedId);
+        }
+
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         
@@ -1782,14 +2003,76 @@
             });
         }
         
+        let leaderboardShown = false;
+        
         function changePhysicsStep(delta) {
             if (gameState !== 'result') return;
+            if (leaderboardShown) return; // Already showing leaderboard
             
             currentStep += delta;
             if (currentStep < 0) currentStep = 0;
-            if (currentStep >= physicsSteps.length) currentStep = physicsSteps.length - 1;
+            
+            if (currentStep >= physicsSteps.length) {
+                // Show leaderboard
+                currentStep = physicsSteps.length - 1;
+                showLeaderboardSection();
+                return;
+            }
+            
             renderPhysicsSteps();
         }
+        
+        function showLeaderboardSection() {
+            leaderboardShown = true;
+            
+            // Hide physics steps and tap hint
+            document.getElementById('physics-steps').style.display = 'none';
+            document.getElementById('tapHint').style.display = 'none';
+            
+            // Show leaderboard section
+            const section = document.getElementById('leaderboard-section');
+            section.style.display = 'block';
+            
+            // Set final time
+            document.getElementById('final-time').textContent = formatTime(gameTime);
+            
+            // Load saved name from localStorage
+            const savedName = localStorage.getItem('milkChasePlayerName') || '';
+            document.getElementById('player-name').value = savedName;
+            
+            // Show retry button
+            document.getElementById('retry-btn').style.display = 'inline-block';
+            
+            // Fetch and display leaderboard
+            showLeaderboard();
+        }
+        
+        // Submit score button
+        document.getElementById('submit-score-btn').addEventListener('click', async () => {
+            const nameInput = document.getElementById('player-name');
+            const name = nameInput.value.trim();
+            const btn = document.getElementById('submit-score-btn');
+            
+            if (!name) {
+                nameInput.focus();
+                return;
+            }
+            
+            // Save name for next time
+            localStorage.setItem('milkChasePlayerName', name);
+            
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            
+            const id = await submitScore(name, gameTime);
+            lastSubmittedId = id;
+            
+            btn.textContent = 'Submitted!';
+            nameInput.disabled = true;
+            
+            // Refresh leaderboard
+            await showLeaderboard();
+        });
         
         // Tap left/right to navigate physics steps (prevent double-fire)
         let lastTapTime = 0;
@@ -2016,6 +2299,16 @@
         // Start button
         document.getElementById('start-btn').addEventListener('click', resetGame);
         document.getElementById('retry-btn').addEventListener('click', () => {
+            // Reset leaderboard state
+            leaderboardShown = false;
+            lastSubmittedId = null;
+            document.getElementById('leaderboard-section').style.display = 'none';
+            document.getElementById('physics-steps').style.display = 'flex';
+            document.getElementById('tapHint').style.display = 'block';
+            document.getElementById('submit-score-btn').disabled = false;
+            document.getElementById('submit-score-btn').textContent = 'Submit Score';
+            document.getElementById('player-name').disabled = false;
+            
             document.getElementById('start-screen').classList.remove('hidden');
             document.getElementById('result-screen').classList.remove('visible');
             document.body.classList.remove('game-playing');
