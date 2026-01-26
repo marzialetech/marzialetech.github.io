@@ -153,6 +153,7 @@
       flex-direction: column;
       gap: 1.5rem;
       align-items: flex-start;
+      position: relative;
     }
 
     .subfigure {
@@ -181,13 +182,15 @@
 
     .subfigure-caption {
       position: absolute;
-      bottom: -30px;
+      bottom: -40px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 14px;
       color: #fff;
       text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
       white-space: nowrap;
+      width: 100%;
+      text-align: center;
     }
 
     .marziale-logo-container {
@@ -449,8 +452,8 @@
         </div>
         <div class="subfigure">
           <img src="../images/los_alamos_logo.png" alt="Los Alamos Logo" class="los-alamos-glow">
-          <div class="subfigure-caption">Los Alamos National Laboratory</div>
         </div>
+        <div class="subfigure-caption">Los Alamos National Laboratory</div>
       </div>
       <div class="marziale-logo-container">
         <img src="../images/logo.png" alt="Marziale Technologies">
