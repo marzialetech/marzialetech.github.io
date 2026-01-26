@@ -621,7 +621,7 @@
         
         .leaderboard-entry .car-preview {
             width: 30px;
-            height: 20px;
+            height: 48px;
             margin-right: 8px;
             border: 1px solid #555;
             border-radius: 3px;
@@ -1179,17 +1179,22 @@
             }
         }
         
-        // Create car preview canvas
+        // Create car preview canvas - matches in-game appearance
         function createCarPreview(design, color) {
             const canvas = document.createElement('canvas');
+            // Scale: game car is 50x80, preview is 30x48 (maintains 5:8 aspect ratio)
             canvas.width = 30;
-            canvas.height = 20;
+            canvas.height = 48;
             const ctx = canvas.getContext('2d');
             
-            const w = 30;
-            const h = 20;
+            // Scale factor: 30/50 = 0.6
+            const scale = 0.6;
+            const w = 50 * scale; // 30
+            const h = 80 * scale; // 48
+            const centerX = w / 2;
+            const centerY = h / 2;
             
-            // Car body based on design
+            // Car body based on design (same as in-game)
             if (design === 'usa') {
                 if (usaFlag && usaFlag.complete) {
                     ctx.drawImage(usaFlag, 0, 0, w, h);
@@ -1200,8 +1205,9 @@
             } else if (design === 'red') {
                 ctx.fillStyle = color || '#cc2222';
                 ctx.fillRect(0, 0, w, h);
+                // Racing stripe
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(w/2 - 1, 0, 2, h);
+                ctx.fillRect(centerX - 1.8, 0, 3.6, h);
             } else if (design === 'cow') {
                 if (cowPrint && cowPrint.complete) {
                     ctx.drawImage(cowPrint, 0, 0, w, h);
@@ -1213,14 +1219,14 @@
                 ctx.fillStyle = color || '#cc2222';
                 ctx.fillRect(0, 0, w, h);
                 if (southLewisLogo && southLewisLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.7;
+                    const logoSize = Math.min(w, h) * 0.8;
                     ctx.drawImage(southLewisLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
                 }
             } else if (design === 'lowville') {
                 ctx.fillStyle = color || '#cc2222';
                 ctx.fillRect(0, 0, w, h);
                 if (lowvilleLogo && lowvilleLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.7;
+                    const logoSize = Math.min(w, h) * 0.8;
                     ctx.drawImage(lowvilleLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
                 }
             } else {
@@ -1228,6 +1234,21 @@
                 ctx.fillStyle = color || '#cc2222';
                 ctx.fillRect(0, 0, w, h);
             }
+            
+            // Windshield (matches in-game: -player.width/2 + 8, -player.height/2, player.width - 16, 20)
+            ctx.fillStyle = '#66ccff';
+            ctx.fillRect(8 * scale, 0, (w - 16 * scale), 20 * scale);
+            
+            // Wheels (matches in-game positions)
+            ctx.fillStyle = '#111';
+            // Front left: -player.width/2 - 5, -player.height/2 + 10, 8, 20
+            ctx.fillRect(-5 * scale, 10 * scale, 8 * scale, 20 * scale);
+            // Front right: player.width/2 - 3, -player.height/2 + 10, 8, 20
+            ctx.fillRect(w - 3 * scale, 10 * scale, 8 * scale, 20 * scale);
+            // Back left: -player.width/2 - 5, player.height/2 - 30, 8, 20
+            ctx.fillRect(-5 * scale, h - 30 * scale, 8 * scale, 20 * scale);
+            // Back right: player.width/2 - 3, player.height/2 - 30, 8, 20
+            ctx.fillRect(w - 3 * scale, h - 30 * scale, 8 * scale, 20 * scale);
             
             return canvas.toDataURL();
         }
