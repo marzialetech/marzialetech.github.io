@@ -164,11 +164,18 @@
         }
 
         #car-preview-container {
-            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
         }
 
         #car-preview-canvas {
-            display: none;
+            width: 100%;
+            height: 100%;
+            background: transparent;
         }
 
         .option-group {
@@ -935,6 +942,9 @@
             <div id="start-screen-content">
                 <div style="position: relative; width: 400px; margin: 0 auto;">
                     <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
+                    <div id="car-preview-container">
+                        <canvas id="car-preview-canvas"></canvas>
+                    </div>
                 </div>
                 <h1><span>Milk Truck</span> Chase!</h1>
                 <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
@@ -980,18 +990,18 @@
                 <div class="option-group" style="display: flex; gap: 20px; justify-content: center; align-items: flex-start;">
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                         <label style="margin: 0;">Car Color</label>
-                        <div class="car-option" id="car-color-custom" style="position: relative; overflow: hidden;">
-                            <input type="color" id="car-color-picker" value="#cc2222" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                            <div class="car-design" id="car-color-display" style="background: #444;"></div>
-                            <div class="car-name" id="car-color-label">Select</div>
+                        <div class="car-option" id="car-color-custom" style="position: relative; overflow: hidden; cursor: pointer;">
+                            <input type="color" id="car-color-picker" value="#cc2222" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                            <div class="car-design" id="car-color-display" style="background: #444; pointer-events: none;"></div>
+                            <div class="car-name" id="car-color-label" style="pointer-events: none;">Select</div>
                         </div>
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                         <label style="margin: 0;">Wheels Color</label>
-                        <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden;">
-                            <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                            <div class="car-design" id="wheels-color-display" style="background: #444;"></div>
-                            <div class="car-name" id="wheels-color-label">Select</div>
+                        <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden; cursor: pointer;">
+                            <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                            <div class="car-design" id="wheels-color-display" style="background: #444; pointer-events: none;"></div>
+                            <div class="car-name" id="wheels-color-label" style="pointer-events: none;">Select</div>
                         </div>
                     </div>
                 </div>
@@ -1155,6 +1165,109 @@
                 console.error('Fetch failed:', e);
                 return [];
             }
+        }
+        
+        // Draw static car preview on start screen (positioned 70% right of logo, facing northeast)
+        function drawStartCarPreview() {
+            if (!previewCtx || !previewCanvas) return;
+            
+            // Clear canvas
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            
+            // Position: 70% to the right of logo (logo is 400px, container is 400px)
+            // Car should be at right edge, centered vertically
+            const centerX = previewCanvas.width * 0.7; // 70% to the right
+            const centerY = previewCanvas.height / 2;
+            
+            // Rotate 45 degrees to face northeast (top right)
+            const rotation = Math.PI / 4; // 45 degrees
+            
+            previewCtx.save();
+            previewCtx.translate(centerX, centerY);
+            previewCtx.rotate(rotation);
+            
+            // Scale for preview
+            const scale = 0.6;
+            const w = 50 * scale; // 30
+            const h = 80 * scale; // 48
+            
+            // Shadow
+            previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
+            previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
+            
+            // Car body (always use selected car color)
+            previewCtx.fillStyle = selectedCarColor;
+            previewCtx.fillRect(-w/2, -h/2, w, h);
+            
+            // Design patterns
+            if (selectedCar === 'stripe') {
+                previewCtx.fillStyle = '#fff';
+                previewCtx.fillRect(-2, -h/2, 4, h);
+            } else if (selectedCar === 'spots') {
+                previewCtx.fillStyle = '#fff';
+                previewCtx.beginPath();
+                previewCtx.arc(-w/2 + 12, -h/2 + 12, 4, 0, Math.PI * 2);
+                previewCtx.fill();
+                previewCtx.beginPath();
+                previewCtx.arc(w/2 - 8, h/2 - 15, 3, 0, Math.PI * 2);
+                previewCtx.fill();
+            } else if (selectedCar === 'zigzag') {
+                previewCtx.strokeStyle = '#fff';
+                previewCtx.lineWidth = 1.5;
+                previewCtx.beginPath();
+                for (let y = -h/2; y < h/2; y += 8) {
+                    const x = ((y + h/2) % 16 < 8) ? -w/2 : w/2;
+                    if (y === -h/2) previewCtx.moveTo(x, y);
+                    else previewCtx.lineTo(x, y);
+                }
+                previewCtx.stroke();
+            } else if (selectedCar === 'waves') {
+                previewCtx.strokeStyle = '#fff';
+                previewCtx.lineWidth = 1.5;
+                previewCtx.beginPath();
+                for (let x = -w/2; x < w/2; x += 2) {
+                    const y = Math.sin(x / 4) * 6;
+                    if (x === -w/2) previewCtx.moveTo(x, y);
+                    else previewCtx.lineTo(x, y);
+                }
+                previewCtx.stroke();
+            }
+            
+            // Skin design as patch in bottom left corner
+            const patchSize = Math.min(w, h) * 0.4;
+            const patchX = -w/2 + 4;
+            const patchY = h/2 - patchSize - 4;
+            
+            if (selectedCar === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (selectedCar === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (selectedCar === 'southlewis') {
+                if (southLewisLogo && southLewisLogo.complete) {
+                    previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (selectedCar === 'lowville') {
+                if (lowvilleLogo && lowvilleLogo.complete) {
+                    previewCtx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
+                }
+            }
+            
+            // Windshield (always light blue)
+            previewCtx.fillStyle = '#66ccff';
+            previewCtx.fillRect(-w/2 + 6, -h/2, w - 12, 15);
+            
+            // Wheels
+            previewCtx.fillStyle = selectedWheelsColor;
+            previewCtx.fillRect(-w/2 - 4, -h/2 + 8, 6, 15);
+            previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
+            previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
+            previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
+            
+            previewCtx.restore();
         }
         
         // Create car preview canvas - matches in-game appearance, rotated 90 degrees
@@ -1341,6 +1454,16 @@
 
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
+        
+        // Car preview canvas for start screen
+        const previewCanvas = document.getElementById('car-preview-canvas');
+        const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
+        
+        // Set preview canvas size
+        if (previewCanvas) {
+            previewCanvas.width = 120;
+            previewCanvas.height = 120;
+        }
         
         // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
         const southLewisLogo = new Image();
@@ -2680,7 +2803,7 @@
                 document.querySelectorAll('.car-option[data-car]').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedCar = option.dataset.car;
-                // Preview will update automatically on next frame
+                drawStartCarPreview(); // Update preview
             });
         });
 
@@ -2698,6 +2821,7 @@
                     carColorLabel.textContent = '';
                     carColorSelected = true;
                 }
+                drawStartCarPreview(); // Update preview
             });
         }
 
@@ -2714,7 +2838,13 @@
                     wheelsColorLabel.textContent = '';
                     wheelsColorSelected = true;
                 }
+                drawStartCarPreview(); // Update preview
             });
+        }
+        
+        // Draw initial car preview
+        if (previewCanvas && gameState === 'start') {
+            drawStartCarPreview();
         }
 
 
@@ -2772,6 +2902,11 @@
         // Start
         console.log('Milk Chase: Script loaded successfully');
         gameLoop(0);
+        
+        // Draw initial car preview on start screen
+        if (previewCanvas) {
+            drawStartCarPreview();
+        }
         
     </script>
 </body>
