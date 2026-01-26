@@ -290,27 +290,6 @@
             );
         }
 
-        /* Checker design */
-        .car-option[data-car="checker"] .car-design {
-            background: linear-gradient(135deg, #cc2222 0%, #aa0000 50%, #880000 100%);
-            position: relative;
-        }
-        .car-option[data-car="checker"] .car-design::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(45deg, #fff 25%, transparent 25%),
-                linear-gradient(-45deg, #fff 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, #fff 75%),
-                linear-gradient(-45deg, transparent 75%, #fff 75%);
-            background-size: 12px 12px;
-            background-position: 0 0, 0 6px, 6px -6px, -6px 0px;
-            opacity: 0.6;
-        }
 
         /* Waves design */
         .car-option[data-car="waves"] .car-design {
@@ -984,10 +963,6 @@
                         <div class="car-design"></div>
                         <div class="car-name">Zig Zag</div>
                     </div>
-                    <div class="car-option" data-car="checker">
-                        <div class="car-design"></div>
-                        <div class="car-name">Checker</div>
-                    </div>
                     <div class="car-option" data-car="waves">
                         <div class="car-design"></div>
                         <div class="car-name">Waves</div>
@@ -1034,6 +1009,11 @@
                             <div class="car-design" style="background: #000000;"></div>
                             <div class="car-name">Black</div>
                         </div>
+                        <div class="car-option" id="car-color-custom" style="position: relative; overflow: hidden;">
+                            <input type="color" id="car-color-picker" value="#cc2222" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                            <div class="car-design" style="background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);"></div>
+                            <div class="car-name">Custom</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1060,27 +1040,10 @@
                             <div class="car-design" style="background: #ffaa00;"></div>
                             <div class="car-name">Gold</div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="option-group">
-                    <label>Car Effect</label>
-                    <div class="car-options">
-                        <div class="car-option selected" data-effect="none">
-                            <div class="car-design" style="background: #222; display: flex; align-items: center; justify-content: center; color: #888; font-size: 10px;">—</div>
-                            <div class="car-name">None</div>
-                        </div>
-                        <div class="car-option" data-effect="bubbles">
-                            <div class="car-design" style="background: #001122; display: flex; align-items: center; justify-content: center; color: #66ccff; font-size: 12px;">○ ○ ○</div>
-                            <div class="car-name">Bubbles</div>
-                        </div>
-                        <div class="car-option" data-effect="flames">
-                            <div class="car-design" style="background: #220000; display: flex; align-items: center; justify-content: center; color: #ff6600; font-size: 16px;">🔥</div>
-                            <div class="car-name">Flames</div>
-                        </div>
-                        <div class="car-option" data-effect="tracks">
-                            <div class="car-design" style="background: #1a1a1a; display: flex; align-items: center; justify-content: center; color: #666; font-size: 10px;">═══</div>
-                            <div class="car-name">Tracks</div>
+                        <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden;">
+                            <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                            <div class="car-design" style="background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);"></div>
+                            <div class="car-name">Custom</div>
                         </div>
                     </div>
                 </div>
@@ -1178,7 +1141,7 @@
         }
         
         // Leaderboard functions
-        async function submitScore(name, timeSeconds, school, carDesign, carColor, wheelsColor, effect) {
+        async function submitScore(name, timeSeconds, school, carDesign, carColor, wheelsColor) {
             initSupabase();
             if (!supabaseClient || !name.trim()) return null;
             
@@ -1191,8 +1154,7 @@
                         school: school,
                         car_design: carDesign || 'usa',
                         car_color: carColor || '#cc2222',
-                        car_wheels_color: wheelsColor || '#000000',
-                        car_effect: effect || 'none'
+                        car_wheels_color: wheelsColor || '#000000'
                     }])
                     .select();
                 
@@ -1294,15 +1256,6 @@
                     else ctx.lineTo(x, y);
                 }
                 ctx.stroke();
-            } else if (design === 'checker') {
-                const squareSize = 4 * scale;
-                ctx.fillStyle = '#fff';
-                for (let y = 0; y < w; y += squareSize * 2) {
-                    for (let x = 0; x < h; x += squareSize * 2) {
-                        ctx.fillRect(x, y, squareSize, squareSize);
-                        ctx.fillRect(x + squareSize, y + squareSize, squareSize, squareSize);
-                    }
-                }
             } else if (design === 'waves') {
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 1;
@@ -1545,15 +1498,10 @@
         let gameTime = 0;
         let lastObstacleTime = 0;
         
-        // Effect particles (bubbles, flames, tire tracks)
-        let effectParticles = [];
-        let tireTracks = []; // Persistent tire tracks on road
-
         // Settings
         let selectedCar = 'usa';
         let selectedCarColor = '#cc2222';
         let selectedWheelsColor = '#000000';
-        let selectedEffect = 'none';
         let selectedMass = 1000;
 
         // Physics (scaled down 0.75x for easier gameplay)
@@ -1626,7 +1574,6 @@
                 worldY: 0, // Meters traveled
                 mass: selectedMass,
                 design: selectedCar,
-                effect: selectedEffect,
                 // Physics for crash
                 vx: 0, // velocity x (pixels/s)
                 vy: 0, // velocity y (pixels/s)
@@ -2003,15 +1950,6 @@
                     else ctx.lineTo(x, y);
                 }
                 ctx.stroke();
-            } else if (player.design === 'checker') {
-                const squareSize = 8;
-                ctx.fillStyle = '#fff';
-                for (let y = -player.height/2; y < player.height/2; y += squareSize * 2) {
-                    for (let x = -player.width/2; x < player.width/2; x += squareSize * 2) {
-                        ctx.fillRect(x, y, squareSize, squareSize);
-                        ctx.fillRect(x + squareSize, y + squareSize, squareSize, squareSize);
-                    }
-                }
             } else if (player.design === 'waves') {
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 2;
@@ -2284,14 +2222,6 @@
             if (gameState !== 'playing') return;
 
             gameTime += dt;
-            
-            // Create effect particles
-            if (player && player.effect) {
-                createEffectParticles(player.x, player.y, player.width, player.effect);
-            }
-            
-            // Update effect particles
-            updateEffectParticles(dt);
 
             // Player acceleration (auto on mobile)
             // Increase max speed every 20 seconds (slowly ramps up difficulty)
@@ -2661,7 +2591,7 @@
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedCarColor, selectedWheelsColor, selectedEffect);
+            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedCarColor, selectedWheelsColor);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
@@ -2688,8 +2618,6 @@
             lastObstacleTime = 0;
             roadOffset = 0;
             currentMaxSpeed = BASE_MAX_SPEED; // Reset speed progression
-            effectParticles = [];
-            tireTracks = [];
             gameState = 'playing';
             document.body.classList.add('game-playing');
             
@@ -2726,7 +2654,6 @@
             drawTruck();
             drawPlayer();
             drawCautionSigns();
-            drawEffectParticles();
             
             // Draw crash particles
             if (gameState === 'crashing') {
@@ -2866,23 +2793,15 @@
             });
         });
 
-        // Effect selection
-        document.querySelectorAll('.car-option[data-effect]').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.car-option[data-effect]').forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
-                selectedEffect = option.dataset.effect;
-                // Preview will update automatically on next frame
-            });
-        });
-
         // Color selection buttons
         document.querySelectorAll('.car-option[data-color]').forEach(option => {
             option.addEventListener('click', () => {
                 document.querySelectorAll('.car-option[data-color]').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedCarColor = option.dataset.color;
-                // Preview will update automatically on next frame
+                // Update custom picker value
+                const customPicker = document.getElementById('car-color-picker');
+                if (customPicker) customPicker.value = selectedCarColor;
             });
         });
 
@@ -2892,9 +2811,30 @@
                 document.querySelectorAll('.car-option[data-wheels-color]').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedWheelsColor = option.dataset.wheelsColor;
-                // Preview will update automatically on next frame
+                // Update custom picker value
+                const customPicker = document.getElementById('wheels-color-picker');
+                if (customPicker) customPicker.value = selectedWheelsColor;
             });
         });
+
+        // Custom color pickers
+        const carColorPicker = document.getElementById('car-color-picker');
+        if (carColorPicker) {
+            carColorPicker.addEventListener('input', (e) => {
+                selectedCarColor = e.target.value;
+                // Unselect preset buttons when using custom
+                document.querySelectorAll('.car-option[data-color]').forEach(o => o.classList.remove('selected'));
+            });
+        }
+
+        const wheelsColorPicker = document.getElementById('wheels-color-picker');
+        if (wheelsColorPicker) {
+            wheelsColorPicker.addEventListener('input', (e) => {
+                selectedWheelsColor = e.target.value;
+                // Unselect preset buttons when using custom
+                document.querySelectorAll('.car-option[data-wheels-color]').forEach(o => o.classList.remove('selected'));
+            });
+        }
 
 
         // Start button
