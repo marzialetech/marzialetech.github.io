@@ -1199,7 +1199,8 @@
                 // Position: adjusted for logo being 80% size (320px instead of 400px)
                 // Car should be at right edge, centered vertically, then moved down 15% (was 25%, now 15%)
                 // Logo is now 80% of original, so adjust car position proportionally (40% * 0.8 = 32%)
-                const centerX = previewCanvas.width * 0.32; // Adjusted from 40% to 32% to match logo scale
+                // Moved 10% to the left: 32% - 10% = 22%
+                const centerX = previewCanvas.width * 0.22; // Moved 10% to the left from 32%
                 const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
                 
                 // Rotate 45 degrees to face northeast (top right)
@@ -1274,8 +1275,10 @@
                 }
                 
                 // Skin design as patch in bottom left corner
-                // USA patch is bigger (60% instead of 40%)
-                const patchSize = selectedCar === 'usa' ? Math.min(w, h) * 0.6 : Math.min(w, h) * 0.4;
+                // USA, South Lewis, and Lowville patches are bigger (60% instead of 40%)
+                const patchSize = (selectedCar === 'usa' || selectedCar === 'southlewis' || selectedCar === 'lowville') 
+                    ? Math.min(w, h) * 0.6 
+                    : Math.min(w, h) * 0.4;
                 const patchX = -w/2 + 4;
                 const patchY = h/2 - patchSize - 4;
                 
@@ -1387,8 +1390,10 @@
             }
             
             // Skin design as patch in bottom left corner (when rotated, bottom left is at h - patchSize, w - patchSize)
-            // USA patch is bigger (60% instead of 40%)
-            const patchSize = design === 'usa' ? Math.min(h, w) * 0.6 : Math.min(h, w) * 0.4;
+            // USA, South Lewis, and Lowville patches are bigger (60% instead of 40%)
+            const patchSize = (design === 'usa' || design === 'southlewis' || design === 'lowville') 
+                ? Math.min(h, w) * 0.6 
+                : Math.min(h, w) * 0.4;
             const patchX = 5 * scale;
             const patchY = w - patchSize - 5 * scale; // Bottom when rotated
             
@@ -2047,8 +2052,10 @@
             }
 
             // Skin design as patch in bottom left corner
-            // USA patch is bigger (60% instead of 40%)
-            const patchSize = player.design === 'usa' ? Math.min(player.width, player.height) * 0.6 : Math.min(player.width, player.height) * 0.4;
+            // USA, South Lewis, and Lowville patches are bigger (60% instead of 40%)
+            const patchSize = (player.design === 'usa' || player.design === 'southlewis' || player.design === 'lowville') 
+                ? Math.min(player.width, player.height) * 0.6 
+                : Math.min(player.width, player.height) * 0.4;
             const patchX = -player.width/2 + 5;
             const patchY = player.height/2 - patchSize - 5;
             
