@@ -806,29 +806,92 @@
             };
         }
         
-        // Audio context for moo sounds with doppler effect
+        // Audio for moo sounds with doppler effect
+        // Using a free moo sound effect
         let audioCtx = null;
-        function playMoo(pitchMultiplier) {
+        let mooBuffer = null;
+        
+        // Load moo sound on first interaction
+        async function loadMooSound() {
+            if (mooBuffer) return;
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
             
+            try {
+                // Use a free cow moo sound from a public CDN
+                const response = await fetch('https://cdn.freesound.org/previews/58/58277_634166-lq.mp3');
+                const arrayBuffer = await response.arrayBuffer();
+                mooBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            } catch (e) {
+                console.log('Could not load moo sound, using synth fallback');
+            }
+        }
+        
+        // Play moo for N cows with stagger and pitch variation
+        function playMooForCows(numCows, dopplerPitch) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Resume audio context if suspended (mobile browsers)
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            // Play N moos with slight stagger
+            for (let i = 0; i < numCows; i++) {
+                const delay = i * (50 + Math.random() * 100); // 50-150ms stagger per cow
+                const pitchVariation = 0.85 + Math.random() * 0.3; // 0.85-1.15 per cow
+                const finalPitch = dopplerPitch * pitchVariation;
+                
+                setTimeout(() => {
+                    if (mooBuffer) {
+                        // Play real moo sound with pitch shift
+                        playSampledMoo(finalPitch);
+                    } else {
+                        // Fallback to synth moo
+                        playSynthMoo(finalPitch);
+                    }
+                }, delay);
+            }
+        }
+        
+        function playSampledMoo(pitchMultiplier) {
+            if (!mooBuffer || !audioCtx) return;
+            
+            const source = audioCtx.createBufferSource();
+            const gainNode = audioCtx.createGain();
+            
+            source.buffer = mooBuffer;
+            source.playbackRate.value = pitchMultiplier; // Pitch shift via playback rate
+            
+            gainNode.gain.value = 0.3;
+            
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            source.start();
+        }
+        
+        function playSynthMoo(pitchMultiplier) {
+            if (!audioCtx) return;
+            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
-            // Cow moo sound (low frequency)
+            // Cow moo sound (low frequency with pitch bend)
             oscillator.type = 'sawtooth';
-            oscillator.frequency.setValueAtTime(120 * pitchMultiplier, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(80 * pitchMultiplier, audioCtx.currentTime + 0.3);
+            oscillator.frequency.setValueAtTime(140 * pitchMultiplier, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(90 * pitchMultiplier, audioCtx.currentTime + 0.35);
             
-            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
             
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.4);
+            oscillator.stop(audioCtx.currentTime + 0.45);
         }
 
         // Draw road
@@ -1211,23 +1274,24 @@
             // Calculate distance before updating positions
             distance = truck.worldY - player.worldY;
             
-            // Dynamic truck speed based on time-controlled catching/fleeing
-            // Catch up: 5-15s to go from 600m to 300m (truck at 80-100% speed)
-            // Pull away: 3-6s to go from 300m to 600m (truck at 110% speed)
+            // Dynamic truck speed for fast catch-up and pull-away
+            // At 600m: truck at ~25% speed -> closes 300m in ~8-12s at full speed
+            // At 300m: truck at ~170% speed -> opens 300m in ~4-6s
             let truckSpeedRatio;
             const distRange = MAX_DISTANCE - MIN_DISTANCE; // 300m
             
-            if (distance <= MIN_DISTANCE + 10) {
-                // Very close - truck runs fast
-                truckSpeedRatio = 1.15;
-            } else if (distance >= MAX_DISTANCE - 10) {
-                // Very far - truck slows down a lot
-                truckSpeedRatio = 0.75;
+            if (distance <= MIN_DISTANCE + 5) {
+                // At minimum distance - truck runs very fast to escape
+                truckSpeedRatio = 1.7;
+            } else if (distance >= MAX_DISTANCE - 5) {
+                // At maximum distance - truck crawls to let player catch up
+                truckSpeedRatio = 0.25;
             } else {
-                // Smooth transition based on position in range
+                // Smooth exponential transition based on distance
                 const t = (distance - MIN_DISTANCE) / distRange; // 0=close, 1=far
-                // When close (t=0): 105%, when far (t=1): 85%
-                truckSpeedRatio = 1.05 - (t * 0.2);
+                // Use exponential curve for more dramatic changes near edges
+                // t=0 (close): 1.5, t=1 (far): 0.3
+                truckSpeedRatio = 0.3 + (1.2 * Math.pow(1 - t, 2));
             }
             truck.speed = player.speed * truckSpeedRatio;
             
@@ -1280,14 +1344,15 @@
                 obs.y += obstacleSpeed * dt * 60;
 
                 // Doppler moo effect when passing by cows
-                // Play moo when cow passes player Y position
-                if (!obs.hasMooed && obs.y > player.y - 50 && obs.y < player.y + 100) {
+                // Play moo when cows pass player Y position
+                if (!obs.hasMooed && obs.y > player.y - 30 && obs.y < player.y + 80) {
                     obs.hasMooed = true;
-                    // Doppler effect: higher pitch when approaching (above), lower when receding (below)
+                    // Doppler effect: higher pitch when approaching, lower when receding
                     const relativeY = obs.y - player.y;
-                    // -50 to +100 range, map to pitch 1.3 to 0.7
-                    const pitchMultiplier = 1.3 - (relativeY + 50) / 150 * 0.6;
-                    playMoo(pitchMultiplier * (0.8 + Math.random() * 0.4)); // Add some randomness
+                    // -30 to +80 range, map to pitch 1.4 to 0.6
+                    const dopplerPitch = 1.4 - (relativeY + 30) / 110 * 0.8;
+                    // Play N moos for N cows with stagger
+                    playMooForCows(obs.numCows, dopplerPitch);
                 }
 
                 // Remove if off screen
@@ -1563,6 +1628,9 @@
 
         // Reset game
         function resetGame() {
+            // Load moo sound on first game start
+            loadMooSound();
+            
             player = createPlayer();
             truck = createTruck();
             obstacles = [];
