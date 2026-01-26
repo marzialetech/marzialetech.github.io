@@ -1019,7 +1019,10 @@
         // Physics (scaled down 0.75x for easier gameplay)
         const ACCELERATION = 60; // was 80
         const FRICTION = 11; // was 15
-        const MAX_SPEED = 135; // was 180 (km/h internal)
+        const BASE_MAX_SPEED = 135; // Starting max speed (km/h internal)
+        let currentMaxSpeed = BASE_MAX_SPEED; // Increases over time
+        const SPEED_INCREASE_INTERVAL = 20; // seconds between speed increases
+        const SPEED_INCREASE_AMOUNT = 10; // how much to increase each time
         const LANE_SPEED = 300; // was 400 (horizontal movement)
         // ROAD_LEFT, ROAD_RIGHT, LANE_WIDTH are now dynamic (set in updateRoadDimensions)
         
@@ -1795,9 +1798,12 @@
             gameTime += dt;
 
             // Player acceleration (auto on mobile)
+            // Increase max speed every 20 seconds (slowly ramps up difficulty)
+            currentMaxSpeed = BASE_MAX_SPEED + Math.floor(gameTime / SPEED_INCREASE_INTERVAL) * SPEED_INCREASE_AMOUNT;
+            
             if (keys.up || isMobile) {
                 player.speed += ACCELERATION * dt;
-                if (player.speed > MAX_SPEED) player.speed = MAX_SPEED;
+                if (player.speed > currentMaxSpeed) player.speed = currentMaxSpeed;
             } else {
                 player.speed -= FRICTION * dt;
                 if (player.speed < 0) player.speed = 0;
@@ -2179,6 +2185,7 @@
             gameTime = 0;
             lastObstacleTime = 0;
             roadOffset = 0;
+            currentMaxSpeed = BASE_MAX_SPEED; // Reset speed progression
             gameState = 'playing';
             document.body.classList.add('game-playing');
             
