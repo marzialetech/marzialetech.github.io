@@ -435,6 +435,21 @@
         font-size: 12px;
         bottom: -25px;
       }
+
+      .marziale-logo-container img {
+        max-width: 300px;
+        max-height: 300px;
+      }
+
+      /* Code animation mobile adjustments */
+      .slide-animation#codeAnimation {
+        font-size: 12px;
+      }
+
+      /* Physics definitions mobile adjustments */
+      .slide-animation#physicsAnimation {
+        font-size: 10px;
+      }
     }
   </style>
 </head>
@@ -1110,11 +1125,14 @@
         }
       }
       
+      // Mobile detection
+      const isMobile = window.innerWidth <= 600;
+      
       // Draw larger terminal window (centered, not full screen)
-      const termWidth = Math.min(700, codeCanvas.width * 0.75);
-      const termHeight = 350;
+      const termWidth = isMobile ? Math.min(320, codeCanvas.width * 0.9) : Math.min(700, codeCanvas.width * 0.75);
+      const termHeight = isMobile ? 200 : 350;
       const termX = (codeCanvas.width - termWidth) / 2;
-      const termY = codeCanvas.height * 0.25; // Position in upper portion
+      const termY = isMobile ? codeCanvas.height * 0.2 : codeCanvas.height * 0.25; // Position in upper portion
       
       // Draw terminal background
       codeCtx.fillStyle = '#0a0a0a';
@@ -1122,23 +1140,26 @@
       
       // Draw terminal border
       codeCtx.strokeStyle = '#00ff00';
-      codeCtx.lineWidth = 2;
+      codeCtx.lineWidth = isMobile ? 1.5 : 2;
       codeCtx.strokeRect(termX, termY, termWidth, termHeight);
       
       // Draw code lines
-      codeCtx.font = '18px "Courier New", monospace';
+      const fontSize = isMobile ? 12 : 18;
+      const lineSpacing = isMobile ? 20 : 30;
+      const padding = isMobile ? 15 : 25;
+      codeCtx.font = `${fontSize}px "Courier New", monospace`;
       codeCtx.fillStyle = '#00ff00';
       
       codeLines.forEach((line, idx) => {
-        const lineY = termY + 35 + idx * 30;
-        codeCtx.fillText(line.text, termX + 25, lineY);
+        const lineY = termY + (isMobile ? 25 : 35) + idx * lineSpacing;
+        codeCtx.fillText(line.text, termX + padding, lineY);
         
         // Blinking cursor
         if (!line.complete && idx === codeLines.length - 1) {
           const metrics = codeCtx.measureText(line.text);
-          const cursorX = termX + 25 + metrics.width;
+          const cursorX = termX + padding + metrics.width;
           if (Math.floor(Date.now() / 500) % 2) {
-            codeCtx.fillRect(cursorX, lineY - 15, 8, 20);
+            codeCtx.fillRect(cursorX, lineY - (isMobile ? 10 : 15), isMobile ? 5 : 8, isMobile ? 14 : 20);
           }
         }
       });
@@ -1215,41 +1236,53 @@
         physicsCtx.restore();
       });
       
+      // Mobile detection
+      const isMobile = window.innerWidth <= 600;
+      
       // Draw definitions in top right corner (larger)
-      const defX = physicsCanvas.width - 480;
-      const defY = 30;
+      const defWidth = isMobile ? physicsCanvas.width * 0.85 : 470;
+      const defX = isMobile ? physicsCanvas.width * 0.075 : physicsCanvas.width - 480;
+      const defY = isMobile ? 20 : 30;
+      const padding = isMobile ? 10 : 15;
+      const titleFont = isMobile ? 'bold 16px' : 'bold 22px';
+      const formulaFont = isMobile ? '14px' : '18px';
+      const subtitleFont = isMobile ? '11px' : '15px';
+      const bodyFont = isMobile ? '10px' : '14px';
+      const lineHeight = isMobile ? 14 : 20;
+      const maxWidth = isMobile ? defWidth - padding * 2 : 440;
       
       // Momentum definition box
       physicsCtx.fillStyle = 'rgba(0, 50, 100, 0.85)';
-      physicsCtx.fillRect(defX - 15, defY - 15, 470, 160);
+      const momentumBoxHeight = isMobile ? 120 : 160;
+      physicsCtx.fillRect(defX - padding, defY - padding, defWidth, momentumBoxHeight);
       physicsCtx.strokeStyle = '#0080ff';
-      physicsCtx.lineWidth = 3;
-      physicsCtx.strokeRect(defX - 15, defY - 15, 470, 160);
+      physicsCtx.lineWidth = isMobile ? 2 : 3;
+      physicsCtx.strokeRect(defX - padding, defY - padding, defWidth, momentumBoxHeight);
       
-      physicsCtx.font = 'bold 22px "Courier New", monospace';
+      physicsCtx.font = `${titleFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#0080ff';
-      physicsCtx.fillText('Momentum', defX, defY + 30);
+      physicsCtx.fillText('Momentum', defX, defY + (isMobile ? 20 : 30));
       
-      physicsCtx.font = '18px "Courier New", monospace';
+      physicsCtx.font = `${formulaFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#ffffff';
-      physicsCtx.fillText('p = m × v', defX, defY + 60);
+      physicsCtx.fillText('p = m × v', defX, defY + (isMobile ? 40 : 60));
       
-      physicsCtx.font = '15px "Courier New", monospace';
+      physicsCtx.font = `${subtitleFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#cccccc';
-      physicsCtx.fillText('(mass × velocity)', defX, defY + 85);
+      physicsCtx.fillText('(mass × velocity)', defX, defY + (isMobile ? 55 : 85));
       
-      physicsCtx.font = '14px "Courier New", monospace';
+      physicsCtx.font = `${bodyFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#ffffff';
       const momentumDef = 'Momentum is the quantity of motion an object has, calculated by multiplying its mass by its velocity.';
       const momentumWords = momentumDef.split(' ');
-      let momentumY = defY + 115;
+      let momentumY = defY + (isMobile ? 75 : 115);
       let currentLine = '';
       momentumWords.forEach(word => {
         const testLine = currentLine + (currentLine ? ' ' : '') + word;
         const metrics = physicsCtx.measureText(testLine);
-        if (metrics.width > 440 && currentLine) {
+        if (metrics.width > maxWidth && currentLine) {
           physicsCtx.fillText(currentLine, defX, momentumY);
-          momentumY += 20;
+          momentumY += lineHeight;
           currentLine = word;
         } else {
           currentLine = testLine;
@@ -1261,35 +1294,37 @@
       
       // Energy definition box
       physicsCtx.fillStyle = 'rgba(100, 80, 0, 0.85)';
-      physicsCtx.fillRect(defX - 15, defY + 160, 470, 180);
+      const energyBoxHeight = isMobile ? 140 : 180;
+      const energyBoxY = defY + momentumBoxHeight + (isMobile ? 5 : 10);
+      physicsCtx.fillRect(defX - padding, energyBoxY, defWidth, energyBoxHeight);
       physicsCtx.strokeStyle = '#ffcc00';
-      physicsCtx.lineWidth = 3;
-      physicsCtx.strokeRect(defX - 15, defY + 160, 470, 180);
+      physicsCtx.lineWidth = isMobile ? 2 : 3;
+      physicsCtx.strokeRect(defX - padding, energyBoxY, defWidth, energyBoxHeight);
       
-      physicsCtx.font = 'bold 22px "Courier New", monospace';
+      physicsCtx.font = `${titleFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#ffcc00';
-      physicsCtx.fillText('Energy', defX, defY + 190);
+      physicsCtx.fillText('Energy', defX, energyBoxY + (isMobile ? 20 : 30));
       
-      physicsCtx.font = '18px "Courier New", monospace';
+      physicsCtx.font = `${formulaFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#ffffff';
-      physicsCtx.fillText('KE = ½ × m × v²', defX, defY + 220);
+      physicsCtx.fillText('KE = ½ × m × v²', defX, energyBoxY + (isMobile ? 40 : 60));
       
-      physicsCtx.font = '15px "Courier New", monospace';
+      physicsCtx.font = `${subtitleFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#cccccc';
-      physicsCtx.fillText('(kinetic energy)', defX, defY + 245);
+      physicsCtx.fillText('(kinetic energy)', defX, energyBoxY + (isMobile ? 55 : 65));
       
-      physicsCtx.font = '14px "Courier New", monospace';
+      physicsCtx.font = `${bodyFont} "Courier New", monospace`;
       physicsCtx.fillStyle = '#ffffff';
       const energyDef = 'Energy is the ability to do work, and kinetic energy is the energy an object has because of its motion.';
       const energyWords = energyDef.split(' ');
-      let energyY = defY + 270;
+      let energyY = energyBoxY + (isMobile ? 75 : 90);
       currentLine = '';
       energyWords.forEach(word => {
         const testLine = currentLine + (currentLine ? ' ' : '') + word;
         const metrics = physicsCtx.measureText(testLine);
-        if (metrics.width > 440 && currentLine) {
+        if (metrics.width > maxWidth && currentLine) {
           physicsCtx.fillText(currentLine, defX, energyY);
-          energyY += 20;
+          energyY += lineHeight;
           currentLine = word;
         } else {
           currentLine = testLine;
