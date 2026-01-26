@@ -864,7 +864,14 @@
             const gainNode = audioCtx.createGain();
             
             source.buffer = mooBuffer;
-            source.playbackRate.value = pitchMultiplier; // Pitch shift via playback rate
+            
+            // Target duration: random 1.0-1.4 seconds
+            const targetDuration = 1.0 + Math.random() * 0.4;
+            const originalDuration = mooBuffer.duration;
+            // Calculate playback rate to compress to target duration
+            const compressionRate = originalDuration / targetDuration;
+            // Apply both compression and pitch multiplier
+            source.playbackRate.value = compressionRate * pitchMultiplier;
             
             gainNode.gain.value = 0.3;
             
@@ -876,22 +883,25 @@
         function playSynthMoo(pitchMultiplier) {
             if (!audioCtx) return;
             
+            // Random duration 1.0-1.4 seconds
+            const duration = 1.0 + Math.random() * 0.4;
+            
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
             // Cow moo sound (low frequency with pitch bend)
             oscillator.type = 'sawtooth';
             oscillator.frequency.setValueAtTime(140 * pitchMultiplier, audioCtx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(90 * pitchMultiplier, audioCtx.currentTime + 0.35);
+            oscillator.frequency.exponentialRampToValueAtTime(80 * pitchMultiplier, audioCtx.currentTime + duration * 0.8);
             
             gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
             
             oscillator.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.45);
+            oscillator.stop(audioCtx.currentTime + duration);
         }
 
         // Draw road
