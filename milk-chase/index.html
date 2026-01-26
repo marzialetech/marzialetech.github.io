@@ -1159,115 +1159,119 @@
         
         // Draw static car preview on start screen (positioned 40% right of logo, facing northeast)
         function drawStartCarPreview() {
-            if (!previewCtx || !previewCanvas) return;
-            
-            // Clear canvas
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            
-            // Position: 40% to the right of logo (logo is 400px, container is 400px)
-            // Car should be at right edge, centered vertically, then moved down 15% (was 25%, now 15%)
-            const centerX = previewCanvas.width * 0.4; // 40% to the right
-            const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
-            
-            // Rotate 45 degrees to face northeast (top right)
-            const rotation = Math.PI / 4; // 45 degrees
-            
-            previewCtx.save();
-            previewCtx.translate(centerX, centerY);
-            previewCtx.rotate(rotation);
-            
-            // Scale for preview
-            const scale = 0.9;
-            const w = 50 * scale; // 45
-            const h = 80 * scale; // 72
-            
-            // Shadow
-            previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
-            
-            // Car body (always use selected car color)
-            previewCtx.fillStyle = selectedCarColor;
-            previewCtx.fillRect(-w/2, -h/2, w, h);
-            
-            // Design patterns
-            if (selectedCar === 'stripe') {
-                previewCtx.fillStyle = '#fff';
-                previewCtx.fillRect(-2, -h/2, 4, h);
-            } else if (selectedCar === 'spots') {
-                // Draw a single star
-                previewCtx.fillStyle = '#fff';
+            try {
+                if (!previewCtx || !previewCanvas) return;
+                
+                // Clear canvas
+                previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // Position: 40% to the right of logo (logo is 400px, container is 400px)
+                // Car should be at right edge, centered vertically, then moved down 15% (was 25%, now 15%)
+                const centerX = previewCanvas.width * 0.4; // 40% to the right
+                const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
+                
+                // Rotate 45 degrees to face northeast (top right)
+                const rotation = Math.PI / 4; // 45 degrees
+                
                 previewCtx.save();
-                previewCtx.translate(0, 0);
-                previewCtx.beginPath();
-                // 5-pointed star
-                const starSize = 8;
-                for (let i = 0; i < 5; i++) {
-                    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
-                    const x = Math.cos(angle) * starSize;
-                    const y = Math.sin(angle) * starSize;
-                    if (i === 0) previewCtx.moveTo(x, y);
-                    else previewCtx.lineTo(x, y);
+                previewCtx.translate(centerX, centerY);
+                previewCtx.rotate(rotation);
+                
+                // Scale for preview
+                const scale = 0.9;
+                const w = 50 * scale; // 45
+                const h = 80 * scale; // 72
+                
+                // Shadow
+                previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
+                previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
+                
+                // Car body (always use selected car color)
+                previewCtx.fillStyle = selectedCarColor;
+                previewCtx.fillRect(-w/2, -h/2, w, h);
+                
+                // Design patterns
+                if (selectedCar === 'stripe') {
+                    previewCtx.fillStyle = '#fff';
+                    previewCtx.fillRect(-2, -h/2, 4, h);
+                } else if (selectedCar === 'spots') {
+                    // Draw a single star
+                    previewCtx.fillStyle = '#fff';
+                    previewCtx.save();
+                    previewCtx.translate(0, 0);
+                    previewCtx.beginPath();
+                    // 5-pointed star
+                    const starSize = 8;
+                    for (let i = 0; i < 5; i++) {
+                        const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                        const x = Math.cos(angle) * starSize;
+                        const y = Math.sin(angle) * starSize;
+                        if (i === 0) previewCtx.moveTo(x, y);
+                        else previewCtx.lineTo(x, y);
+                    }
+                    previewCtx.closePath();
+                    previewCtx.fill();
+                    previewCtx.restore();
+                } else if (selectedCar === 'zigzag') {
+                    previewCtx.strokeStyle = '#fff';
+                    previewCtx.lineWidth = 1.5;
+                    previewCtx.beginPath();
+                    for (let y = -h/2; y < h/2; y += 8) {
+                        const x = ((y + h/2) % 16 < 8) ? -w/2 : w/2;
+                        if (y === -h/2) previewCtx.moveTo(x, y);
+                        else previewCtx.lineTo(x, y);
+                    }
+                    previewCtx.stroke();
+                } else if (selectedCar === 'waves') {
+                    previewCtx.strokeStyle = '#fff';
+                    previewCtx.lineWidth = 1.5;
+                    previewCtx.beginPath();
+                    for (let x = -w/2; x < w/2; x += 2) {
+                        const y = Math.sin(x / 4) * 6;
+                        if (x === -w/2) previewCtx.moveTo(x, y);
+                        else previewCtx.lineTo(x, y);
+                    }
+                    previewCtx.stroke();
                 }
-                previewCtx.closePath();
-                previewCtx.fill();
+                
+                // Skin design as patch in bottom left corner
+                const patchSize = Math.min(w, h) * 0.4;
+                const patchX = -w/2 + 4;
+                const patchY = h/2 - patchSize - 4;
+                
+                if (selectedCar === 'usa') {
+                    if (usaFlag && usaFlag.complete) {
+                        previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                    }
+                } else if (selectedCar === 'cow') {
+                    if (cowPrint && cowPrint.complete) {
+                        previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                    }
+                } else if (selectedCar === 'southlewis') {
+                    if (southLewisLogo && southLewisLogo.complete) {
+                        previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
+                    }
+                } else if (selectedCar === 'lowville') {
+                    if (lowvilleLogo && lowvilleLogo.complete) {
+                        previewCtx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
+                    }
+                }
+                
+                // Windshield (always light blue)
+                previewCtx.fillStyle = '#66ccff';
+                previewCtx.fillRect(-w/2 + 6, -h/2, w - 12, 15);
+                
+                // Wheels
+                previewCtx.fillStyle = selectedWheelsColor;
+                previewCtx.fillRect(-w/2 - 4, -h/2 + 8, 6, 15);
+                previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
+                previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
+                previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
+                
                 previewCtx.restore();
-            } else if (selectedCar === 'zigzag') {
-                previewCtx.strokeStyle = '#fff';
-                previewCtx.lineWidth = 1.5;
-                previewCtx.beginPath();
-                for (let y = -h/2; y < h/2; y += 8) {
-                    const x = ((y + h/2) % 16 < 8) ? -w/2 : w/2;
-                    if (y === -h/2) previewCtx.moveTo(x, y);
-                    else previewCtx.lineTo(x, y);
-                }
-                previewCtx.stroke();
-            } else if (selectedCar === 'waves') {
-                previewCtx.strokeStyle = '#fff';
-                previewCtx.lineWidth = 1.5;
-                previewCtx.beginPath();
-                for (let x = -w/2; x < w/2; x += 2) {
-                    const y = Math.sin(x / 4) * 6;
-                    if (x === -w/2) previewCtx.moveTo(x, y);
-                    else previewCtx.lineTo(x, y);
-                }
-                previewCtx.stroke();
+            } catch (e) {
+                console.error('Error drawing car preview:', e);
             }
-            
-            // Skin design as patch in bottom left corner
-            const patchSize = Math.min(w, h) * 0.4;
-            const patchX = -w/2 + 4;
-            const patchY = h/2 - patchSize - 4;
-            
-            if (selectedCar === 'usa') {
-                if (usaFlag && usaFlag.complete) {
-                    previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'cow') {
-                if (cowPrint && cowPrint.complete) {
-                    previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'southlewis') {
-                if (southLewisLogo && southLewisLogo.complete) {
-                    previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'lowville') {
-                if (lowvilleLogo && lowvilleLogo.complete) {
-                    previewCtx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
-                }
-            }
-            
-            // Windshield (always light blue)
-            previewCtx.fillStyle = '#66ccff';
-            previewCtx.fillRect(-w/2 + 6, -h/2, w - 12, 15);
-            
-            // Wheels
-            previewCtx.fillStyle = selectedWheelsColor;
-            previewCtx.fillRect(-w/2 - 4, -h/2 + 8, 6, 15);
-            previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
-            previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
-            previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
-            
-            previewCtx.restore();
         }
         
         // Create car preview canvas - matches in-game appearance, rotated 90 degrees
@@ -2860,9 +2864,12 @@
         }
         
         // Draw initial car preview
-        if (previewCanvas && gameState === 'start') {
-            drawStartCarPreview();
-        }
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            if (previewCanvas && gameState === 'start') {
+                drawStartCarPreview();
+            }
+        }, 100);
 
 
         // Start button
@@ -2921,9 +2928,11 @@
         gameLoop(0);
         
         // Draw initial car preview on start screen
-        if (previewCanvas) {
-            drawStartCarPreview();
-        }
+        setTimeout(() => {
+            if (previewCanvas) {
+                drawStartCarPreview();
+            }
+        }, 100);
         
     </script>
 </body>
