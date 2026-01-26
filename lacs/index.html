@@ -302,7 +302,7 @@
     // Dialogue sequence - 5 slides for middle school audience
     const sequence = [
       { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
-      { img: 3, dialogue: "I studied math in school and got my PhD. My research was all about modeling physics using computers!", animation: 'rockets' },
+      { img: 3, dialogue: "I studied math in school and got my PhD, which basically lets you do research as a career. My research was all about modeling physical systems using computers!", animation: 'rockets' },
       { img: 1, dialogue: "I used computers to simulate how rockets move through space.", animation: 'code' },
       { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
       { img: 7, dialogue: "These ideas help us understand how things move and crash into each other..." },
@@ -492,29 +492,55 @@
           rocketCtx.fill();
         });
         
-        // Draw rocket body (bright white/orange, visible on black)
+        // Draw actual rocket shape (pointed top, cylindrical body)
+        rocketCtx.save();
+        rocketCtx.translate(r.x, r.y);
+        
+        // Rocket body (white cylinder)
         rocketCtx.fillStyle = '#ffffff';
         rocketCtx.beginPath();
-        rocketCtx.arc(r.x, r.y, r.size, 0, Math.PI * 2);
+        rocketCtx.rect(-r.size * 0.3, -r.size * 0.8, r.size * 0.6, r.size * 1.6);
         rocketCtx.fill();
         
-        // Rocket body highlight
+        // Rocket nose cone (pointed triangle)
         rocketCtx.fillStyle = '#ffaa00';
         rocketCtx.beginPath();
-        rocketCtx.arc(r.x, r.y, r.size * 0.7, 0, Math.PI * 2);
+        rocketCtx.moveTo(0, -r.size * 0.8);
+        rocketCtx.lineTo(-r.size * 0.3, -r.size * 0.2);
+        rocketCtx.lineTo(r.size * 0.3, -r.size * 0.2);
+        rocketCtx.closePath();
+        rocketCtx.fill();
+        
+        // Rocket fins (bottom)
+        rocketCtx.fillStyle = '#cccccc';
+        rocketCtx.beginPath();
+        // Left fin
+        rocketCtx.moveTo(-r.size * 0.3, r.size * 0.8);
+        rocketCtx.lineTo(-r.size * 0.6, r.size * 1.2);
+        rocketCtx.lineTo(-r.size * 0.3, r.size * 1.0);
+        rocketCtx.closePath();
+        rocketCtx.fill();
+        // Right fin
+        rocketCtx.beginPath();
+        rocketCtx.moveTo(r.size * 0.3, r.size * 0.8);
+        rocketCtx.lineTo(r.size * 0.6, r.size * 1.2);
+        rocketCtx.lineTo(r.size * 0.3, r.size * 1.0);
+        rocketCtx.closePath();
         rocketCtx.fill();
         
         // Bright flame (very visible)
         rocketCtx.fillStyle = '#ffff00';
         rocketCtx.beginPath();
-        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.8, 0, Math.PI * 2);
+        rocketCtx.arc(0, r.size * 0.8, r.size * 0.8, 0, Math.PI * 2);
         rocketCtx.fill();
         
         // Inner flame
         rocketCtx.fillStyle = '#ff6600';
         rocketCtx.beginPath();
-        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.5, 0, Math.PI * 2);
+        rocketCtx.arc(0, r.size * 0.8, r.size * 0.5, 0, Math.PI * 2);
         rocketCtx.fill();
+        
+        rocketCtx.restore();
         
         // Remove if off screen
         if (r.y < -50) {
@@ -551,15 +577,19 @@
         if (lineIndex < codeSnippets.length) {
           const line = codeSnippets[lineIndex];
           if (charIndex < line.length) {
-            codeLines.push({
-              text: line.substring(0, charIndex + 1),
-              y: 100 + lineIndex * 30,
-              complete: false
-            });
+            // Update or add line
+            if (codeLines.length > lineIndex) {
+              codeLines[lineIndex].text = line.substring(0, charIndex + 1);
+            } else {
+              codeLines.push({
+                text: line.substring(0, charIndex + 1),
+                complete: false
+              });
+            }
             charIndex++;
             setTimeout(addNextChar, 50 + Math.random() * 30);
           } else {
-            codeLines[codeLines.length - 1].complete = true;
+            codeLines[lineIndex].complete = true;
             lineIndex++;
             charIndex = 0;
             if (lineIndex < codeSnippets.length) {
@@ -580,28 +610,35 @@
       codeCtx.fillStyle = '#000';
       codeCtx.fillRect(0, 0, codeCanvas.width, codeCanvas.height);
       
+      // Draw smaller terminal window (centered, not full screen)
+      const termWidth = Math.min(500, codeCanvas.width * 0.6);
+      const termHeight = 250;
+      const termX = (codeCanvas.width - termWidth) / 2;
+      const termY = codeCanvas.height * 0.3; // Position in upper portion
+      
       // Draw terminal background
       codeCtx.fillStyle = '#0a0a0a';
-      codeCtx.fillRect(50, 50, codeCanvas.width - 100, codeCanvas.height - 100);
+      codeCtx.fillRect(termX, termY, termWidth, termHeight);
       
       // Draw terminal border
       codeCtx.strokeStyle = '#00ff00';
       codeCtx.lineWidth = 2;
-      codeCtx.strokeRect(50, 50, codeCanvas.width - 100, codeCanvas.height - 100);
+      codeCtx.strokeRect(termX, termY, termWidth, termHeight);
       
       // Draw code lines
-      codeCtx.font = '16px "Courier New", monospace';
+      codeCtx.font = '14px "Courier New", monospace';
       codeCtx.fillStyle = '#00ff00';
       
       codeLines.forEach((line, idx) => {
-        codeCtx.fillText(line.text, 70, line.y);
+        const lineY = termY + 30 + idx * 25;
+        codeCtx.fillText(line.text, termX + 20, lineY);
         
         // Blinking cursor
         if (!line.complete && idx === codeLines.length - 1) {
           const metrics = codeCtx.measureText(line.text);
-          const cursorX = 70 + metrics.width;
+          const cursorX = termX + 20 + metrics.width;
           if (Math.floor(Date.now() / 500) % 2) {
-            codeCtx.fillRect(cursorX, line.y - 14, 8, 18);
+            codeCtx.fillRect(cursorX, lineY - 12, 6, 16);
           }
         }
       });
