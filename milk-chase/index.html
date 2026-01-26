@@ -244,21 +244,20 @@
             transform: scale(1.05);
         }
 
-        /* Result screen */
+        /* Result screen - full black background for step-by-step physics */
         #result-screen {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
+            background: #000;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            border-radius: 10px;
-            padding: 30px;
-            padding-top: 40px;
+            padding: 20px;
+            padding-top: 30px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -270,58 +269,88 @@
         /* Mobile result screen fixes */
         @media (max-width: 768px) {
             #result-screen {
-                padding: 20px;
+                padding: 15px;
                 padding-top: 20px;
             }
             
             #result-title {
-                font-size: 28px !important;
+                font-size: 22px !important;
             }
             
             #physics-explanation {
-                max-width: 100% !important;
-                padding: 15px !important;
-                font-size: 14px;
+                padding: 10px !important;
             }
             
-            #physics-explanation .formula {
-                font-size: 16px !important;
-            }
-            
-            #physics-explanation .values {
-                font-size: 12px;
+            .physics-step {
+                font-size: 13px !important;
+                padding: 8px 10px !important;
             }
             
             #retry-btn {
                 margin-top: 15px;
                 margin-bottom: 30px;
             }
+            
+            .tap-to-continue {
+                font-size: 11px !important;
+            }
         }
 
         #result-title {
-            font-size: 36px;
-            margin-bottom: 20px;
+            font-size: 28px;
+            margin-bottom: 15px;
         }
 
         #result-title.crash {
             color: #ff4444;
         }
 
-        #result-title.win {
-            color: #00ff88;
-        }
-
         #physics-explanation {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 500px;
-            margin-bottom: 25px;
+            background: transparent;
+            padding: 10px;
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 15px;
         }
 
         #physics-explanation h3 {
             color: #ffcc00;
             margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        /* Step-by-step physics styling */
+        .physics-step {
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #666; /* Dimmed by default */
+            transition: all 0.3s ease;
+        }
+        
+        .physics-step.active {
+            color: #00ddff;
+            text-shadow: 0 0 10px #00ddff, 0 0 20px #00ddff;
+            background: rgba(0, 200, 255, 0.1);
+            border: 1px solid rgba(0, 200, 255, 0.3);
+        }
+        
+        .physics-step.completed {
+            color: #888;
+        }
+        
+        .physics-step .formula {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        .tap-to-continue {
+            color: #00ff88;
+            font-size: 12px;
+            margin-top: 10px;
+            animation: flashHint 0.8s ease-in-out infinite alternate;
         }
 
         #physics-explanation p {
@@ -385,61 +414,30 @@
             border: 1px solid #555;
         }
 
-        /* Mobile controls */
-        #mobile-controls {
+        /* Mobile tap instructions */
+        #mobile-instructions {
             display: none;
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 85%;
-            max-width: 350px;
-            z-index: 100;
-        }
-
-        .mobile-slider-container {
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #00aaff;
-            border-radius: 20px;
-            padding: 8px 12px;
-            touch-action: none;
-        }
-
-        .mobile-slider-track {
-            position: relative;
-            height: 40px;
-            background: linear-gradient(90deg, #ff6600 0%, #333 50%, #00aaff 100%);
-            border-radius: 20px;
-            overflow: hidden;
-        }
-
-        .mobile-slider-thumb {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255,255,255,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
+            text-align: center;
+            z-index: 100;
             pointer-events: none;
         }
 
-        .mobile-slider-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 4px;
-            font-size: 10px;
-            color: #666;
+        .tap-hint {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffaa;
+            text-shadow: 0 0 20px #00ffaa, 0 0 40px #00ffaa;
+            margin: 15px 0;
+            animation: flashHint 0.8s ease-in-out infinite alternate;
         }
 
-        .mobile-auto-accel {
-            display: none; /* Hide this text to reduce clutter */
+        @keyframes flashHint {
+            0% { opacity: 0.4; }
+            100% { opacity: 1; }
         }
 
         /* Hide desktop instructions on mobile */
@@ -447,14 +445,14 @@
             display: none;
         }
 
-        /* Show mobile controls on mobile ONLY during gameplay */
-        body.is-mobile.game-playing #mobile-controls {
+        /* Show mobile instructions on mobile ONLY during gameplay before first tap */
+        body.is-mobile.game-playing.show-hints #mobile-instructions {
             display: block;
         }
 
         /* Adjust speedometer position on mobile */
         body.is-mobile #speedometer {
-            bottom: 80px;
+            bottom: 15px;
             right: 10px;
             width: 60px;
             height: 60px;
@@ -503,18 +501,10 @@
             <p><kbd>↑</kbd> Accelerate &nbsp; <kbd>←</kbd> <kbd>→</kbd> Dodge</p>
         </div>
 
-        <!-- Mobile controls -->
-        <div id="mobile-controls">
-            <div class="mobile-slider-container" id="mobileSlider">
-                <div class="mobile-slider-track">
-                    <div class="mobile-slider-thumb" id="sliderThumb">🚗</div>
-                </div>
-                <div class="mobile-slider-labels">
-                    <span>← LEFT</span>
-                    <span>RIGHT →</span>
-                </div>
-            </div>
-            <div class="mobile-auto-accel">AUTO-ACCELERATING</div>
+        <!-- Mobile tap instructions (shown until first tap) -->
+        <div id="mobile-instructions">
+            <div class="tap-hint">TAP LEFT = MOVE LEFT</div>
+            <div class="tap-hint">TAP RIGHT = MOVE RIGHT</div>
         </div>
 
         <div id="start-screen">
@@ -554,12 +544,11 @@
         <div id="result-screen">
             <div id="result-title">CRASH!</div>
             <div id="physics-explanation">
-                <h3>📚 Conservation of Momentum</h3>
-                <p>When your car hit the obstacle, momentum was conserved!</p>
-                <div class="formula">m₁v₁ = m₁v₁' + m₂v₂'</div>
-                <p id="collision-math"></p>
+                <h3>📚 Physics of the Collision</h3>
+                <div id="physics-steps"></div>
+                <div class="tap-to-continue" id="tapPrompt">TAP TO CONTINUE</div>
             </div>
-            <button id="retry-btn">🔄 Try Again</button>
+            <button id="retry-btn" style="display: none;">🔄 Try Again</button>
         </div>
     </div>
 
@@ -639,11 +628,17 @@
                          ('ontouchstart' in window) || 
                          (window.innerWidth <= 768);
         
-        let mobileSliderValue = 0.5; // 0 = full left, 0.5 = center, 1 = full right
-        let mobileTargetX = null; // Target X position based on slider
+        let playerLane = 1; // 0 = left, 1 = center, 2 = right
+        let mobileHintsShown = true; // Show hints until first tap
         
         if (isMobile) {
             document.body.classList.add('is-mobile');
+        }
+        
+        // Get lane X positions
+        function getLaneX(lane) {
+            const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+            return lanes[Math.max(0, Math.min(2, lane))];
         }
         
         // Crash state
@@ -1070,9 +1065,11 @@
             }
 
             // Horizontal movement
-            if (isMobile && mobileTargetX !== null) {
-                // Direct 1:1 control - car position matches slider position exactly
-                player.x = mobileTargetX;
+            if (isMobile) {
+                // Smooth lane-based movement on mobile
+                const targetX = getLaneX(playerLane);
+                const diff = targetX - player.x;
+                player.x += diff * 12 * dt; // Smooth interpolation to lane
             } else {
                 if (keys.left) {
                     player.x -= LANE_SPEED * dt;
@@ -1248,12 +1245,16 @@
             }
         }
         
+        // Step-by-step physics state
+        let physicsSteps = [];
+        let currentStep = 0;
+        
         // Show crash result after animation
         function showCrashResult() {
             gameState = 'result';
             document.body.classList.remove('game-playing');
             
-            const { m1, v1, m2, v1f, v2f } = crashData;
+            const { m1, v1, m2 } = crashData;
             const survivalTime = formatTime(gameTime);
 
             document.getElementById('result-title').textContent = `💥 CRASHED! Time: ${survivalTime}`;
@@ -1263,52 +1264,93 @@
             const dm1 = toDisplayMass(m1);
             const dm2 = toDisplayObstacleMass(m2);
             const dv1 = toDisplaySpeed(v1);
-            const dv1f = Math.round(dv1 * (m1 - m2) / (m1 + m2)); // Apply same physics ratio
-            const dv2f = Math.round(dv1 * 2 * m1 / (m1 + m2));
             
-            const displayMomentumBefore = dm1 * dv1;
-            const displayMomentumAfter = dm1 * dv1f + dm2 * dv2f;
+            // Calculate using physics formulas
+            const massRatio = (dm1 - dm2) / (dm1 + dm2);
+            const dv1f = Math.round(dv1 * massRatio);
+            const dv2f = Math.round(dv1 * 2 * dm1 / (dm1 + dm2));
             
-            document.getElementById('collision-math').innerHTML = `
-                <strong>Before collision:</strong><br>
-                <span class="values">Your car: ${dm1} lbs × ${dv1} mph = ${dm1 * dv1} lb·mph</span><br>
-                <span class="values">Obstacle: ${dm2} lbs × 0 mph = 0 lb·mph</span><br><br>
+            const pBefore = dm1 * dv1;
+            const pAfter = dm1 * dv1f + dm2 * dv2f;
+            
+            const keBefore = 0.5 * dm1 * dv1 * dv1;
+            const keAfter = 0.5 * dm1 * dv1f * dv1f + 0.5 * dm2 * dv2f * dv2f;
+            
+            // Build step-by-step physics explanation
+            physicsSteps = [
+                `<b>THE SETUP:</b> Your car (m₁ = ${dm1} lbs) at ${dv1} mph hits a stationary obstacle (m₂ = ${dm2} lbs).`,
                 
-                <strong>Total momentum before:</strong> <span class="values">${displayMomentumBefore} lb·mph</span><br><br>
+                `<b>TWO CONSERVATION LAWS</b> must both be satisfied:`,
                 
-                <strong>After collision:</strong><br>
-                <span class="values">Your car: ${dm1} lbs × ${dv1f} mph = ${dm1 * dv1f} lb·mph</span><br>
-                <span class="values">Obstacle: ${dm2} lbs × ${dv2f} mph = ${dm2 * dv2f} lb·mph</span><br><br>
+                `<b>1. Conservation of Momentum:</b><br><span class="formula">m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'</span><br>${dm1}×${dv1} + ${dm2}×0 = ${dm1}×v₁' + ${dm2}×v₂'<br><b>${pBefore} = ${dm1}v₁' + ${dm2}v₂'</b>`,
                 
-                <strong>Total momentum after:</strong> <span class="values">${displayMomentumAfter} lb·mph</span><br><br>
+                `<b>2. Conservation of Kinetic Energy:</b><br><span class="formula">½m₁v₁² + ½m₂v₂² = ½m₁v₁'² + ½m₂v₂'²</span><br>½×${dm1}×${dv1}² = ½×${dm1}×v₁'² + ½×${dm2}×v₂'²<br><b>${Math.round(keBefore)} = ${dm1/2}v₁'² + ${dm2/2}v₂'²</b>`,
                 
-                <em>Momentum is conserved! ✓</em><br><br>
+                `<b>SOLVING:</b> We have 2 equations and 2 unknowns (v₁' and v₂'). Solving simultaneously...`,
                 
-                <strong>Why these exact speeds?</strong><br>
-                Two laws must be satisfied simultaneously:<br><br>
+                `<b>From momentum equation:</b><br>v₂' = (${pBefore} - ${dm1}v₁') / ${dm2}<br>Substitute into energy equation...`,
                 
-                <span class="values">1. <b>Conservation of Momentum:</b><br>
-                m₁v₁ = m₁v₁' + m₂v₂'</span><br><br>
+                `<b>After algebra, the formulas are:</b><br><span class="formula">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂)</span><br><span class="formula">v₂' = v₁ × 2m₁/(m₁ + m₂)</span>`,
                 
-                <span class="values">2. <b>Conservation of Energy</b> (elastic collision):<br>
-                ½m₁v₁² = ½m₁v₁'² + ½m₂v₂'²</span><br><br>
+                `<b>PLUGGING IN VALUES:</b><br>v₁' = ${dv1} × (${dm1} - ${dm2})/(${dm1} + ${dm2})<br>v₁' = ${dv1} × ${dm1 - dm2}/${dm1 + dm2} = <b>${dv1f} mph</b>`,
                 
-                Solving both equations together gives us the <em>only</em> pair of final velocities that satisfy both constraints:<br><br>
+                `v₂' = ${dv1} × 2×${dm1}/(${dm1} + ${dm2})<br>v₂' = ${dv1} × ${2*dm1}/${dm1 + dm2} = <b>${dv2f} mph</b>`,
                 
-                <span class="values">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂) = ${dv1} × ${((m1 - m2)/(m1 + m2)).toFixed(2)} = <b>${dv1f} mph</b></span><br><br>
+                `<b>VERIFICATION:</b><br>Momentum: ${dm1}×${dv1f} + ${dm2}×${dv2f} = ${pAfter} ✓<br>Energy: ½×${dm1}×${dv1f}² + ½×${dm2}×${dv2f}² = ${Math.round(keAfter)} ✓`,
                 
-                <span class="values">v₂' = v₁ × 2m₁/(m₁ + m₂) = ${dv1} × ${((2*m1)/(m1 + m2)).toFixed(2)} = <b>${dv2f} mph</b></span><br><br>
-                
-                ${dm1 > dm2 ? 
-                    `<em>Your car (${dm1} lbs) is heavier than the obstacle (${dm2} lbs), so you kept moving forward while transferring some momentum.</em>` : 
+                dm1 > dm2 ? 
+                    `<b>INTERPRETATION:</b> Your heavier car (${dm1} lbs) kept moving at ${dv1f} mph while the lighter obstacle (${dm2} lbs) flew off at ${dv2f} mph.` : 
                     dm1 < dm2 ? 
-                    `<em>The obstacle (${dm2} lbs) is heavier than your car (${dm1} lbs), so you bounced backward while the obstacle moved forward slowly.</em>` :
-                    `<em>Equal masses! Your car transferred ALL its momentum to the obstacle, stopping completely while the obstacle moved at your original speed.</em>`
-                }
-            `;
-
+                    `<b>INTERPRETATION:</b> The heavier obstacle (${dm2} lbs) absorbed momentum, moving slowly at ${dv2f} mph while your lighter car bounced back.` :
+                    `<b>INTERPRETATION:</b> Equal masses! Your car stopped completely, transferring ALL momentum to the obstacle.`
+            ];
+            
+            currentStep = 0;
+            renderPhysicsSteps();
+            
             document.getElementById('result-screen').classList.add('visible');
+            document.getElementById('retry-btn').style.display = 'none';
+            document.getElementById('tapPrompt').style.display = 'block';
         }
+        
+        function renderPhysicsSteps() {
+            const container = document.getElementById('physics-steps');
+            container.innerHTML = physicsSteps.map((step, i) => {
+                let className = 'physics-step';
+                if (i < currentStep) className += ' completed';
+                if (i === currentStep) className += ' active';
+                if (i > currentStep) return ''; // Don't show future steps
+                return `<div class="${className}">${step}</div>`;
+            }).join('');
+            
+            // Scroll to current step
+            const activeStep = container.querySelector('.active');
+            if (activeStep) {
+                activeStep.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        function advancePhysicsStep() {
+            if (gameState !== 'result') return;
+            
+            currentStep++;
+            if (currentStep >= physicsSteps.length) {
+                // All steps shown - show retry button
+                document.getElementById('retry-btn').style.display = 'inline-block';
+                document.getElementById('tapPrompt').style.display = 'none';
+            }
+            renderPhysicsSteps();
+        }
+        
+        // Tap/click to advance physics steps
+        document.getElementById('result-screen').addEventListener('click', (e) => {
+            if (e.target.id === 'retry-btn') return; // Don't advance if clicking retry
+            advancePhysicsStep();
+        });
+        document.getElementById('result-screen').addEventListener('touchend', (e) => {
+            if (e.target.id === 'retry-btn') return;
+            advancePhysicsStep();
+        });
 
         // Reset game
         function resetGame() {
@@ -1321,6 +1363,14 @@
             roadOffset = 0;
             gameState = 'playing';
             document.body.classList.add('game-playing');
+            
+            // Reset lane and hints for mobile
+            playerLane = 1; // Start in center lane
+            player.x = getLaneX(1);
+            if (isMobile) {
+                mobileHintsShown = true;
+                document.body.classList.add('show-hints');
+            }
             
             // Reset crash state
             crashData = null;
@@ -1501,54 +1551,28 @@
             gameState = 'start';
         });
 
-        // Mobile slider controls
+        // Mobile tap controls - tap left/right side of screen to change lanes
         if (isMobile) {
-            const mobileSlider = document.getElementById('mobileSlider');
-            const sliderThumb = document.getElementById('sliderThumb');
-            
-            function updateSliderFromTouch(e) {
-                e.preventDefault();
-                const touch = e.touches ? e.touches[0] : e;
-                const rect = mobileSlider.querySelector('.mobile-slider-track').getBoundingClientRect();
+            document.addEventListener('touchstart', (e) => {
+                if (gameState !== 'playing') return;
                 
-                // Calculate position as 0-1
-                let x = (touch.clientX - rect.left) / rect.width;
-                x = Math.max(0, Math.min(1, x));
+                // Hide hints after first tap
+                if (mobileHintsShown) {
+                    mobileHintsShown = false;
+                    document.body.classList.remove('show-hints');
+                }
                 
-                mobileSliderValue = x;
+                const touch = e.touches[0];
+                const screenMidX = window.innerWidth / 2;
                 
-                // Update thumb position
-                sliderThumb.style.left = (x * 100) + '%';
-                
-                // Calculate target X position on road
-                const roadWidth = ROAD_RIGHT - ROAD_LEFT - player.width - 20;
-                mobileTargetX = ROAD_LEFT + player.width/2 + 10 + (x * roadWidth);
-            }
-            
-            mobileSlider.addEventListener('touchstart', (e) => {
-                updateSliderFromTouch(e);
-                if (gameState === 'start') resetGame();
-            }, { passive: false });
-            
-            mobileSlider.addEventListener('touchmove', updateSliderFromTouch, { passive: false });
-            
-            mobileSlider.addEventListener('touchend', () => {
-                // Keep the last position (don't spring back to center)
-            });
-            
-            // Also support mouse for testing on desktop
-            let mouseDown = false;
-            mobileSlider.addEventListener('mousedown', (e) => {
-                mouseDown = true;
-                updateSliderFromTouch(e);
-                if (gameState === 'start') resetGame();
-            });
-            document.addEventListener('mousemove', (e) => {
-                if (mouseDown) updateSliderFromTouch(e);
-            });
-            document.addEventListener('mouseup', () => {
-                mouseDown = false;
-            });
+                if (touch.clientX < screenMidX) {
+                    // Tap on left side - move left
+                    playerLane = Math.max(0, playerLane - 1);
+                } else {
+                    // Tap on right side - move right
+                    playerLane = Math.min(2, playerLane + 1);
+                }
+            }, { passive: true });
         }
 
         // Start
