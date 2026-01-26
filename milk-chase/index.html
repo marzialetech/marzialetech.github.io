@@ -58,19 +58,23 @@
             position: absolute;
             top: 10px;
             left: 10px;
+            right: 10px;
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 12px;
             border-radius: 8px;
             border: 2px solid #00aaff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         #hud div {
-            margin-bottom: 4px;
+            margin-bottom: 0;
             font-size: 12px;
         }
 
         #hud .timer-row {
-            margin-bottom: 6px;
+            margin-bottom: 0;
         }
 
         #hud .label {
@@ -89,22 +93,14 @@
 
         /* Speedometer */
         #speedometer {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            width: 80px;
-            height: 80px;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 50%;
-            border: 3px solid #ff6600;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-end;
+            gap: 2px;
         }
 
         #speed-value {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: bold;
             color: #ff6600;
         }
@@ -168,21 +164,11 @@
         }
 
         #car-preview-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none; /* Allow clicks to pass through */
+            display: none;
         }
 
         #car-preview-canvas {
-            width: 100%;
-            height: 100%;
-            background: transparent;
+            display: none;
         }
 
         .option-group {
@@ -929,10 +915,14 @@
         
         body.is-mobile #hud div {
             font-size: 10px;
-            margin-bottom: 2px;
+            margin-bottom: 0;
         }
         
         body.is-mobile #hud .value.timer {
+            font-size: 14px;
+        }
+        
+        body.is-mobile #speed-value {
             font-size: 14px;
         }
     </style>
@@ -943,11 +933,10 @@
 
         <div id="hud">
             <div class="timer-row"><span class="label">Time: </span><span class="value timer" id="timer-value">0:00</span></div>
-        </div>
-
-        <div id="speedometer">
-            <div id="speed-value">0</div>
-            <div id="speed-unit">mph</div>
+            <div id="speedometer">
+                <div id="speed-value">0</div>
+                <div id="speed-unit">mph</div>
+            </div>
         </div>
 
         <div id="instructions">
@@ -964,9 +953,6 @@
             <div id="start-screen-content">
                 <div style="position: relative; width: 400px; margin: 0 auto;">
                     <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
-                    <div id="car-preview-container">
-                        <canvas id="car-preview-canvas"></canvas>
-                    </div>
                 </div>
                 <h1><span>Milk Truck</span> Chase!</h1>
                 <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
@@ -1512,23 +1498,7 @@
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         
-        // Car preview canvas
-        const previewCanvas = document.getElementById('car-preview-canvas');
-        const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
-        
-        // Preview car state (driving left to right over logo)
-        let previewCarX = -50; // Start off-screen left (car width is ~40px scaled)
-        const previewCarSpeed = 2; // Pixels per frame
-        const previewCarResetX = -50; // Reset position (off-screen left)
-        const previewCarEndX = 450; // End position (off-screen right, assuming 400px container)
-        
-        // Set preview canvas size to match logo container
-        if (previewCanvas) {
-            previewCanvas.width = 400;
-            previewCanvas.height = 400;
-        }
-        
-        // Load school logos, USA flag, cow print, Stewart's logo, and start logo for car skins, truck, and preview
+        // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
         const southLewisLogo = new Image();
         southLewisLogo.src = 'southlewis-logo.png';
         const lowvilleLogo = new Image();
@@ -2092,155 +2062,6 @@
         }
 
 
-        // Draw car preview on start screen (driving left to right over logo)
-        function drawCarPreview() {
-            if (!previewCtx || !previewCanvas) return;
-            
-            // Update car position (left to right)
-            previewCarX += previewCarSpeed;
-            
-            // Reset to left side when car goes off-screen right
-            if (previewCarX > previewCarEndX) {
-                previewCarX = previewCarResetX;
-            }
-            
-            // Clear canvas (transparent)
-            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-            
-            // Car is always horizontal (driving left to right)
-            const carRotation = 0; // Horizontal, facing right
-            const carY = previewCanvas.height / 2; // Center vertically
-            
-            // Draw car at current position
-            previewCtx.save();
-            previewCtx.translate(previewCarX, carY);
-            previewCtx.rotate(carRotation);
-            
-            // Scale for preview (car is 50x80, scale down for preview)
-            const scale = 0.5;
-            const w = 50 * scale;
-            const h = 80 * scale;
-            
-            // Shadow
-            previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
-
-            // Car body (always use selected car color)
-            previewCtx.fillStyle = selectedCarColor;
-            previewCtx.fillRect(-w/2, -h/2, w, h);
-
-            // Design patterns
-            if (selectedCar === 'stripe') {
-                previewCtx.fillStyle = '#fff';
-                previewCtx.fillRect(-2, -h/2, 4, h);
-            } else if (selectedCar === 'spots') {
-                previewCtx.fillStyle = '#fff';
-                previewCtx.beginPath();
-                previewCtx.arc(-w/2 + 12, -h/2 + 12, 4, 0, Math.PI * 2);
-                previewCtx.fill();
-                previewCtx.beginPath();
-                previewCtx.arc(w/2 - 8, h/2 - 15, 3, 0, Math.PI * 2);
-                previewCtx.fill();
-            } else if (selectedCar === 'zigzag') {
-                previewCtx.strokeStyle = '#fff';
-                previewCtx.lineWidth = 1.5;
-                previewCtx.beginPath();
-                for (let y = -h/2; y < h/2; y += 8) {
-                    const x = ((y + h/2) % 16 < 8) ? -w/2 : w/2;
-                    if (y === -h/2) previewCtx.moveTo(x, y);
-                    else previewCtx.lineTo(x, y);
-                }
-                previewCtx.stroke();
-            } else if (selectedCar === 'checker') {
-                const squareSize = 6;
-                previewCtx.fillStyle = '#fff';
-                for (let y = -h/2; y < h/2; y += squareSize * 2) {
-                    for (let x = -w/2; x < w/2; x += squareSize * 2) {
-                        previewCtx.fillRect(x, y, squareSize, squareSize);
-                        previewCtx.fillRect(x + squareSize, y + squareSize, squareSize, squareSize);
-                    }
-                }
-            } else if (selectedCar === 'waves') {
-                previewCtx.strokeStyle = '#fff';
-                previewCtx.lineWidth = 1.5;
-                previewCtx.beginPath();
-                for (let x = -w/2; x < w/2; x += 2) {
-                    const y = Math.sin(x / 4) * 6;
-                    if (x === -w/2) previewCtx.moveTo(x, y);
-                    else previewCtx.lineTo(x, y);
-                }
-                previewCtx.stroke();
-            }
-
-            // Skin design as patch in bottom left corner
-            const patchSize = Math.min(w, h) * 0.4;
-            const patchX = -w/2 + 4;
-            const patchY = h/2 - patchSize - 4;
-            
-            if (selectedCar === 'usa') {
-                if (usaFlag && usaFlag.complete) {
-                    previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'cow') {
-                if (cowPrint && cowPrint.complete) {
-                    previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'southlewis') {
-                if (southLewisLogo && southLewisLogo.complete) {
-                    previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
-                }
-            } else if (selectedCar === 'lowville') {
-                if (lowvilleLogo && lowvilleLogo.complete) {
-                    previewCtx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
-                }
-            }
-
-            // Windshield (always light blue)
-            previewCtx.fillStyle = '#66ccff';
-            previewCtx.fillRect(-w/2 + 6, -h/2, w - 12, 15);
-
-            // Wheels
-            previewCtx.fillStyle = selectedWheelsColor;
-            previewCtx.fillRect(-w/2 - 4, -h/2 + 8, 6, 15);
-            previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
-            previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
-            previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
-
-            // Draw simple effect preview (static for preview)
-            if (selectedEffect === 'bubbles') {
-                previewCtx.strokeStyle = '#66ccff';
-                previewCtx.fillStyle = 'rgba(102, 204, 255, 0.2)';
-                previewCtx.beginPath();
-                previewCtx.arc(0, h/2 + 5, 3, 0, Math.PI * 2);
-                previewCtx.stroke();
-                previewCtx.fill();
-            } else if (selectedEffect === 'flames') {
-                previewCtx.fillStyle = '#ff6600';
-                previewCtx.beginPath();
-                previewCtx.arc(0, h/2 + 8, 4, 0, Math.PI * 2);
-                previewCtx.fill();
-            } else if (selectedEffect === 'tracks') {
-                previewCtx.strokeStyle = '#333';
-                previewCtx.lineWidth = 1;
-                previewCtx.setLineDash([3, 2]);
-                previewCtx.beginPath();
-                previewCtx.moveTo(-w/2, h/2);
-                previewCtx.lineTo(-w/2, h/2 + 8);
-                previewCtx.stroke();
-                previewCtx.beginPath();
-                previewCtx.moveTo(w/2, h/2);
-                previewCtx.lineTo(w/2, h/2 + 8);
-                previewCtx.stroke();
-                previewCtx.setLineDash([]);
-            }
-
-            previewCtx.restore();
-            
-            // Continue animation if on start screen
-            if (gameState === 'start') {
-                requestAnimationFrame(drawCarPreview);
-            }
-        }
 
         // Draw milk truck
         function drawTruck() {
@@ -3075,10 +2896,6 @@
             });
         });
 
-        // Start car preview animation
-        if (previewCanvas && gameState === 'start') {
-            drawCarPreview();
-        }
 
         // Start button
         const startBtn = document.getElementById('start-btn');
@@ -3135,10 +2952,6 @@
         console.log('Milk Chase: Script loaded successfully');
         gameLoop(0);
         
-        // Start car preview animation on start screen
-        if (previewCanvas) {
-            drawCarPreview();
-        }
     </script>
 </body>
 </html>
