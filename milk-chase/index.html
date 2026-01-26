@@ -125,11 +125,19 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             border-radius: 10px;
             padding: 30px;
             overflow-y: auto;
             z-index: 10;
+        }
+
+        #start-screen-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
         }
 
         #start-screen.hidden {
@@ -639,6 +647,34 @@
         .leaderboard-entry.highlight .name {
             color: #00ff88;
         }
+
+        /* Start screen leaderboard */
+        #start-leaderboard {
+            width: 90%;
+            max-width: 350px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        #start-leaderboard .leaderboard-title {
+            font-size: 12px;
+            color: #00aaff;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        #start-leaderboard-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #start-leaderboard-list .leaderboard-entry {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
         
         /* Mobile result screen */
         @media (max-width: 768px) {
@@ -817,39 +853,46 @@
         </div>
 
         <div id="start-screen">
-            <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
-            <h1><span>Milk Truck</span> Chase!</h1>
-            <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
+            <div id="start-screen-content">
+                <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
+                <h1><span>Milk Truck</span> Chase!</h1>
+                <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
 
-            <div class="option-group">
-                <label>Choose Your Car</label>
-                <div class="car-options">
-                    <div class="car-option" data-car="southlewis">
-                        <div class="car-design"></div>
-                        <div class="car-name">South Lewis</div>
+                <div class="option-group">
+                    <label>Choose Your Car</label>
+                    <div class="car-options">
+                        <div class="car-option" data-car="southlewis">
+                            <div class="car-design"></div>
+                            <div class="car-name">South Lewis</div>
+                        </div>
+                        <div class="car-option" data-car="lowville">
+                            <div class="car-design"></div>
+                            <div class="car-name">Lowville</div>
+                        </div>
+                        <div class="car-option selected" data-car="usa">
+                            <div class="car-design"></div>
+                            <div class="car-name">USA</div>
+                        </div>
+                        <div class="car-option" data-car="red">
+                            <div class="car-design"></div>
+                            <div class="car-name">Classic Red</div>
+                        </div>
+                        <div class="car-option" data-car="cow">
+                            <div class="car-design"></div>
+                            <div class="car-name">Cow Print</div>
+                        </div>
                     </div>
-                    <div class="car-option" data-car="lowville">
-                        <div class="car-design"></div>
-                        <div class="car-name">Lowville</div>
-                    </div>
-                    <div class="car-option selected" data-car="usa">
-                        <div class="car-design"></div>
-                        <div class="car-name">USA</div>
-                    </div>
-                    <div class="car-option" data-car="red">
-                        <div class="car-design"></div>
-                        <div class="car-name">Classic Red</div>
-                    </div>
-                    <div class="car-option" data-car="cow">
-                        <div class="car-design"></div>
-                        <div class="car-name">Cow Print</div>
-                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button id="start-btn">Start Chase</button>
+                    <button id="math-btn">The Math</button>
                 </div>
             </div>
 
-            <div class="button-row">
-                <button id="start-btn">Start Chase</button>
-                <button id="math-btn">The Math</button>
+            <div id="start-leaderboard">
+                <div class="leaderboard-title">Top 10 Leaderboard</div>
+                <div id="start-leaderboard-list"></div>
             </div>
         </div>
         
@@ -914,7 +957,14 @@
         // Try to init now, and also when DOM is ready
         initSupabase();
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initSupabase);
+            document.addEventListener('DOMContentLoaded', () => {
+                initSupabase();
+                // Load start screen leaderboard after a short delay to ensure Supabase is ready
+                setTimeout(loadStartLeaderboard, 500);
+            });
+        } else {
+            // DOM already loaded, load leaderboard after a short delay
+            setTimeout(loadStartLeaderboard, 500);
         }
         
         // Leaderboard functions
@@ -1010,6 +1060,36 @@
         async function showLeaderboard() {
             const entries = await fetchLeaderboard(leaderboardFilter);
             renderLeaderboard(entries, lastSubmittedId);
+        }
+
+        function renderStartLeaderboard(entries) {
+            const list = document.getElementById('start-leaderboard-list');
+            if (!list) return;
+            
+            if (entries.length === 0) {
+                list.innerHTML = '<div style="color: #666; font-size: 10px;">No scores yet. Be the first!</div>';
+                return;
+            }
+            
+            const schoolNames = { lowville: 'Lowville', southlewis: 'South Lewis' };
+            
+            list.innerHTML = entries.slice(0, 10).map((entry, i) => {
+                const schoolTag = entry.school ? `<span class="school">${schoolNames[entry.school] || entry.school}</span>` : '';
+                const mins = Math.floor(entry.time_seconds / 60);
+                const secs = Math.floor(entry.time_seconds % 60);
+                const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+                
+                return `<div class="leaderboard-entry">
+                    <span class="rank">#${i + 1}</span>
+                    <span class="name">${entry.player_name}${schoolTag}</span>
+                    <span class="time">${timeStr}</span>
+                </div>`;
+            }).join('');
+        }
+
+        async function loadStartLeaderboard() {
+            const entries = await fetchLeaderboard('all');
+            renderStartLeaderboard(entries);
         }
 
         const canvas = document.getElementById('game');
