@@ -474,9 +474,8 @@
 
         <div id="hud">
             <div><span class="label">Distance to truck: </span><span class="value" id="distance-value">500</span><span class="label"> m</span></div>
-            <div><span class="label">Truck speed: </span><span class="value" id="truck-speed-value">144</span><span class="label"> km/h</span></div>
-            <div><span class="label">Speed limit: </span><span class="value" id="speed-limit-value" style="color: #ff6666;">171</span><span class="label"> km/h</span></div>
-            <div><span class="label">Your mass: </span><span class="value" id="mass-value">1000</span><span class="label"> kg</span></div>
+            <div><span class="label">Truck speed: </span><span class="value" id="truck-speed-value">8</span><span class="label"> mph</span></div>
+            <div><span class="label">Your mass: </span><span class="value" id="mass-value">4</span><span class="label"> lbs</span></div>
         </div>
 
         <div id="physics-bar">
@@ -485,7 +484,7 @@
 
         <div id="speedometer">
             <div id="speed-value">0</div>
-            <div id="speed-unit">km/h</div>
+            <div id="speed-unit">mph</div>
         </div>
 
         <div id="instructions">
@@ -532,8 +531,8 @@
             <div class="option-group">
                 <label>Car Mass</label>
                 <div class="mass-slider">
-                    <input type="range" id="mass-input" min="500" max="2000" value="1000" step="100">
-                    <div class="mass-display"><span id="mass-preview">1000</span> kg</div>
+                    <input type="range" id="mass-input" min="500" max="2000" value="1000" step="250">
+                    <div class="mass-display"><span id="mass-preview">4</span> lbs</div>
                 </div>
             </div>
 
@@ -606,9 +605,18 @@
         const TRUCK_SPEED = MAX_SPEED * 0.8; // 144 km/h
         const INITIAL_DISTANCE = 500; // meters
         
-        // Speed limit = 95% of max speed
-        const SPEED_LIMIT = MAX_SPEED * 0.95; // 171 km/h
-        const SPEEDING_THRESHOLD = 3; // seconds before cops chase
+        // Display conversion functions (keep gameplay the same, show nice numbers)
+        // Speed: 0-180 internal → 0-10 display mph
+        // Mass: 500-2000 internal → 2-8 display lbs
+        function toDisplaySpeed(internalSpeed) {
+            return Math.round(internalSpeed / 18); // 180 → 10
+        }
+        function toDisplayMass(internalMass) {
+            return Math.round((internalMass - 500) / 250 + 2); // 500→2, 1000→4, 1500→6, 2000→8
+        }
+        function toDisplayObstacleMass(internalMass) {
+            return Math.round((internalMass - 200) / 200 + 1); // 300→1.5→2, 500→2.5→3, 700→3.5→4
+        }
 
         // Input
         let keys = { up: false, left: false, right: false };
@@ -624,11 +632,6 @@
         if (isMobile) {
             document.body.classList.add('is-mobile');
         }
-        
-        // Cop chase state
-        let speedingTime = 0;
-        let copsChasing = false;
-        let cops = [];
         
         // Crash state
         let crashData = null;
@@ -668,20 +671,6 @@
             };
         }
         
-        // Police car
-        function createCop(lane) {
-            const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
-            return {
-                x: lanes[lane],
-                y: H + 100, // Visual position (calculated in drawCop)
-                width: 50,
-                height: 80,
-                lane: lane,
-                speed: MAX_SPEED * 0.95, // Cops are fast!
-                worldY: player ? player.worldY - 20 : -20 // Start 20m behind player (visible on screen)
-            };
-        }
-
         // Obstacle
         const MIN_VERTICAL_GAP = 150; // Minimum vertical gap in pixels for car to pass
         
@@ -1019,55 +1008,6 @@
             ctx.restore();
         }
         
-        // Draw police car
-        function drawCop(cop) {
-            if (!cop) return;
-            
-            // Calculate visual Y based on world position relative to player
-            // distBehind > 0 means cop is behind player (should appear lower on screen)
-            const distBehind = player.worldY - cop.worldY;
-            // Use larger scale factor for fullscreen - 15 pixels per meter of distance
-            cop.y = player.y + distBehind * 15;
-            
-            // Don't draw if off screen
-            if (cop.y < -100 || cop.y > H + 150) return;
-            
-            ctx.save();
-            ctx.translate(cop.x, cop.y);
-            
-            // Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.fillRect(-cop.width/2 + 5, -cop.height/2 + 5, cop.width, cop.height);
-            
-            // Police car body (black and white)
-            ctx.fillStyle = '#111';
-            ctx.fillRect(-cop.width/2, -cop.height/2, cop.width, cop.height);
-            
-            // White door panels
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(-cop.width/2, -cop.height/4, cop.width, cop.height/2);
-            
-            // Windshield
-            ctx.fillStyle = '#66ccff';
-            ctx.fillRect(-cop.width/2 + 8, -cop.height/2, cop.width - 16, 18);
-            
-            // Light bar (flashing)
-            const flash = Math.floor(Date.now() / 150) % 2;
-            ctx.fillStyle = flash ? '#ff0000' : '#0066ff';
-            ctx.fillRect(-cop.width/2 + 5, -cop.height/2 - 8, 15, 8);
-            ctx.fillStyle = flash ? '#0066ff' : '#ff0000';
-            ctx.fillRect(cop.width/2 - 20, -cop.height/2 - 8, 15, 8);
-            
-            // Wheels
-            ctx.fillStyle = '#111';
-            ctx.fillRect(-cop.width/2 - 5, -cop.height/2 + 10, 8, 20);
-            ctx.fillRect(cop.width/2 - 3, -cop.height/2 + 10, 8, 20);
-            ctx.fillRect(-cop.width/2 - 5, cop.height/2 - 30, 8, 20);
-            ctx.fillRect(cop.width/2 - 3, cop.height/2 - 30, 8, 20);
-            
-            ctx.restore();
-        }
-
         // Draw obstacle
         function drawObstacle(obs) {
             ctx.save();
@@ -1096,7 +1036,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`${Math.round(obs.mass)}kg`, 0, obs.height/2 + 15);
+            ctx.fillText(`${toDisplayObstacleMass(obs.mass)} lbs`, 0, obs.height/2 + 15);
 
             ctx.restore();
         }
@@ -1132,50 +1072,6 @@
             // Clamp to road
             player.x = Math.max(ROAD_LEFT + player.width/2 + 10, 
                                Math.min(ROAD_RIGHT - player.width/2 - 10, player.x));
-
-            // Track speeding
-            if (player.speed > SPEED_LIMIT) {
-                speedingTime += dt;
-                if (speedingTime >= SPEEDING_THRESHOLD && !copsChasing) {
-                    // Cops start chasing!
-                    copsChasing = true;
-                    // Spawn 2 cops in different lanes
-                    const playerLane = player.x < W/2 - 50 ? 0 : (player.x > W/2 + 50 ? 2 : 1);
-                    const copLanes = [0, 1, 2].filter(l => l !== playerLane);
-                    cops.push(createCop(copLanes[0]));
-                    cops.push(createCop(copLanes[1]));
-                }
-            } else {
-                // Reset speeding timer if under limit (but cops keep chasing once started)
-                speedingTime = Math.max(0, speedingTime - dt * 0.5); // Slowly decrease
-            }
-            
-            // Update cops
-            if (copsChasing) {
-                for (let i = cops.length - 1; i >= 0; i--) {
-                    const cop = cops[i];
-                    const copSpeedMS = cop.speed / 3.6;
-                    cop.worldY += copSpeedMS * dt;
-                    
-                    // Cops try to match player's lane
-                    const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
-                    const targetX = player.x;
-                    cop.x += (targetX - cop.x) * 0.02;
-                    cop.x = Math.max(ROAD_LEFT + cop.width/2, Math.min(ROAD_RIGHT - cop.width/2, cop.x));
-                    
-                    // Check if cop caught player
-                    const distToPlayer = player.worldY - cop.worldY;
-                    if (distToPlayer < 5 && Math.abs(cop.x - player.x) < 40) {
-                        handleBusted();
-                        return;
-                    }
-                    
-                    // Remove cop if too far behind
-                    if (cop.worldY < player.worldY - 100) {
-                        cops.splice(i, 1);
-                    }
-                }
-            }
 
             // Update world positions (convert km/h to m/s: divide by 3.6)
             const playerSpeedMS = player.speed / 3.6;
@@ -1238,9 +1134,9 @@
             }
 
             // Update HUD
-            document.getElementById('speed-value').textContent = Math.round(player.speed);
+            document.getElementById('speed-value').textContent = toDisplaySpeed(player.speed);
             document.getElementById('distance-value').textContent = Math.max(0, Math.round(distance));
-            document.getElementById('truck-speed-value').textContent = Math.round(truck.speed);
+            document.getElementById('truck-speed-value').textContent = toDisplaySpeed(truck.speed);
         }
 
         // Collision detection
@@ -1319,26 +1215,33 @@
             gameState = 'result';
             document.body.classList.remove('game-playing');
             
-            const { m1, v1, m2, v1f, v2f, initialMomentum, finalMomentum } = crashData;
+            const { m1, v1, m2, v1f, v2f } = crashData;
 
             document.getElementById('result-title').textContent = '💥 CRASH!';
             document.getElementById('result-title').className = 'crash';
 
-            // Calculate mass ratio for explanation
-            const massRatio = m1 / m2;
+            // Convert to display units for nice round numbers
+            const dm1 = toDisplayMass(m1);
+            const dm2 = toDisplayObstacleMass(m2);
+            const dv1 = toDisplaySpeed(v1);
+            const dv1f = Math.round(dv1 * (m1 - m2) / (m1 + m2)); // Apply same physics ratio
+            const dv2f = Math.round(dv1 * 2 * m1 / (m1 + m2));
+            
+            const displayMomentumBefore = dm1 * dv1;
+            const displayMomentumAfter = dm1 * dv1f + dm2 * dv2f;
             
             document.getElementById('collision-math').innerHTML = `
                 <strong>Before collision:</strong><br>
-                <span class="values">Your car: ${m1} kg × ${v1.toFixed(1)} km/h = ${(m1 * v1).toFixed(0)} kg·km/h</span><br>
-                <span class="values">Obstacle: ${m2.toFixed(0)} kg × 0 km/h = 0 kg·km/h</span><br><br>
+                <span class="values">Your car: ${dm1} lbs × ${dv1} mph = ${dm1 * dv1} lb·mph</span><br>
+                <span class="values">Obstacle: ${dm2} lbs × 0 mph = 0 lb·mph</span><br><br>
                 
-                <strong>Total momentum before:</strong> <span class="values">${initialMomentum.toFixed(0)} kg·km/h</span><br><br>
+                <strong>Total momentum before:</strong> <span class="values">${displayMomentumBefore} lb·mph</span><br><br>
                 
                 <strong>After collision:</strong><br>
-                <span class="values">Your car: ${m1} kg × ${v1f.toFixed(1)} km/h = ${(m1 * v1f).toFixed(0)} kg·km/h</span><br>
-                <span class="values">Obstacle: ${m2.toFixed(0)} kg × ${v2f.toFixed(1)} km/h = ${(m2 * v2f).toFixed(0)} kg·km/h</span><br><br>
+                <span class="values">Your car: ${dm1} lbs × ${dv1f} mph = ${dm1 * dv1f} lb·mph</span><br>
+                <span class="values">Obstacle: ${dm2} lbs × ${dv2f} mph = ${dm2 * dv2f} lb·mph</span><br><br>
                 
-                <strong>Total momentum after:</strong> <span class="values">${finalMomentum.toFixed(0)} kg·km/h</span><br><br>
+                <strong>Total momentum after:</strong> <span class="values">${displayMomentumAfter} lb·mph</span><br><br>
                 
                 <em>Momentum is conserved! ✓</em><br><br>
                 
@@ -1353,14 +1256,14 @@
                 
                 Solving both equations together gives us the <em>only</em> pair of final velocities that satisfy both constraints:<br><br>
                 
-                <span class="values">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂) = ${v1.toFixed(1)} × ${((m1 - m2)/(m1 + m2)).toFixed(2)} = <b>${v1f.toFixed(1)} km/h</b></span><br><br>
+                <span class="values">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂) = ${dv1} × ${((m1 - m2)/(m1 + m2)).toFixed(2)} = <b>${dv1f} mph</b></span><br><br>
                 
-                <span class="values">v₂' = v₁ × 2m₁/(m₁ + m₂) = ${v1.toFixed(1)} × ${((2*m1)/(m1 + m2)).toFixed(2)} = <b>${v2f.toFixed(1)} km/h</b></span><br><br>
+                <span class="values">v₂' = v₁ × 2m₁/(m₁ + m₂) = ${dv1} × ${((2*m1)/(m1 + m2)).toFixed(2)} = <b>${dv2f} mph</b></span><br><br>
                 
-                ${m1 > m2 ? 
-                    `<em>Your car (${m1} kg) is heavier than the obstacle (${m2.toFixed(0)} kg), so you kept moving forward while transferring some momentum.</em>` : 
-                    m1 < m2 ? 
-                    `<em>The obstacle (${m2.toFixed(0)} kg) is heavier than your car (${m1} kg), so you bounced backward while the obstacle moved forward slowly.</em>` :
+                ${dm1 > dm2 ? 
+                    `<em>Your car (${dm1} lbs) is heavier than the obstacle (${dm2} lbs), so you kept moving forward while transferring some momentum.</em>` : 
+                    dm1 < dm2 ? 
+                    `<em>The obstacle (${dm2} lbs) is heavier than your car (${dm1} lbs), so you bounced backward while the obstacle moved forward slowly.</em>` :
                     `<em>Equal masses! Your car transferred ALL its momentum to the obstacle, stopping completely while the obstacle moved at your original speed.</em>`
                 }
             `;
@@ -1369,33 +1272,6 @@
         }
 
         // Handle win
-        // Handle getting busted by cops
-        function handleBusted() {
-            gameState = 'result';
-            document.body.classList.remove('game-playing');
-
-            document.getElementById('result-title').textContent = '🚔 BUSTED!';
-            document.getElementById('result-title').className = 'crash';
-
-            const copMass = 1800; // Police cruiser mass
-            const copSpeed = MAX_SPEED * 0.9;
-            
-            document.getElementById('collision-math').innerHTML = `
-                <strong>The police caught you for speeding!</strong><br><br>
-                Speed limit: <span class="values">${Math.round(SPEED_LIMIT)} km/h</span><br>
-                Your speed: <span class="values">${player.speed.toFixed(1)} km/h</span><br><br>
-                
-                When the cop car stopped you, momentum was transferred:<br>
-                <span class="values">Your momentum: ${player.mass} kg × ${player.speed.toFixed(1)} km/h = ${(player.mass * player.speed).toFixed(0)} kg·km/h</span><br>
-                <span class="values">Cop momentum: ${copMass} kg × ${copSpeed.toFixed(1)} km/h = ${(copMass * copSpeed).toFixed(0)} kg·km/h</span><br><br>
-                
-                The heavier police cruiser had more momentum,<br>
-                making it easier to force you to stop!
-            `;
-
-            document.getElementById('result-screen').classList.add('visible');
-        }
-        
         function handleWin() {
             gameState = 'result';
             document.body.classList.remove('game-playing');
@@ -1403,11 +1279,15 @@
             document.getElementById('result-title').textContent = '🥛 GOT THE MILK!';
             document.getElementById('result-title').className = 'win';
 
+            const displayMass = toDisplayMass(player.mass);
+            const displaySpeed = toDisplaySpeed(player.speed);
+            const displayMomentum = displayMass * displaySpeed;
+
             document.getElementById('collision-math').innerHTML = `
                 <strong>You caught the milk truck!</strong><br><br>
                 Your car's momentum helped you catch up:<br>
-                <span class="values">p = mv = ${player.mass} kg × ${player.speed.toFixed(1)} km/h</span><br>
-                <span class="values">p = ${(player.mass * player.speed).toFixed(0)} kg·km/h</span><br><br>
+                <span class="values">p = mv = ${displayMass} lbs × ${displaySpeed} mph</span><br>
+                <span class="values">p = ${displayMomentum} lb·mph</span><br><br>
                 
                 A heavier car at the same speed has more momentum,<br>
                 and takes more force to stop!
@@ -1428,19 +1308,13 @@
             gameState = 'playing';
             document.body.classList.add('game-playing');
             
-            // Reset cop chase state
-            speedingTime = 0;
-            copsChasing = false;
-            cops = [];
-            
             // Reset crash state
             crashData = null;
             crashTimer = 0;
             crashParticles = [];
 
-            document.getElementById('mass-value').textContent = selectedMass;
-            document.getElementById('truck-speed-value').textContent = Math.round(TRUCK_SPEED);
-            document.getElementById('speed-limit-value').textContent = Math.round(SPEED_LIMIT);
+            document.getElementById('mass-value').textContent = toDisplayMass(selectedMass);
+            document.getElementById('truck-speed-value').textContent = toDisplaySpeed(TRUCK_SPEED);
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('visible');
         }
@@ -1459,11 +1333,6 @@
 
             drawTruck();
             drawPlayer();
-            
-            // Draw cops
-            for (const cop of cops) {
-                drawCop(cop);
-            }
             
             // Draw crash particles
             if (gameState === 'crashing') {
@@ -1487,36 +1356,6 @@
                 }
             }
             
-            // Draw speed warning
-            if (player.speed > SPEED_LIMIT && gameState === 'playing') {
-                drawSpeedWarning();
-            }
-        }
-        
-        // Draw speed limit warning
-        function drawSpeedWarning() {
-            ctx.save();
-            
-            const warningY = H - 220;
-            const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 100);
-            
-            // Warning background
-            ctx.fillStyle = `rgba(255, 0, 0, ${0.3 * pulse})`;
-            ctx.fillRect(0, 0, W, H);
-            
-            // Warning text
-            ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'center';
-            
-            if (copsChasing) {
-                ctx.fillText('🚔 COPS CHASING! 🚔', W/2, 100);
-            } else {
-                const timeLeft = Math.max(0, SPEEDING_THRESHOLD - speedingTime);
-                ctx.fillText(`⚠️ SPEEDING! Cops in ${timeLeft.toFixed(1)}s ⚠️`, W/2, 100);
-            }
-            
-            ctx.restore();
         }
 
         // Game loop
@@ -1635,7 +1474,7 @@
         // Mass slider
         document.getElementById('mass-input').addEventListener('input', (e) => {
             selectedMass = parseInt(e.target.value);
-            document.getElementById('mass-preview').textContent = selectedMass;
+            document.getElementById('mass-preview').textContent = toDisplayMass(selectedMass);
         });
 
         // Start button
