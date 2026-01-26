@@ -1737,7 +1737,8 @@
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
         let hintsShown = true; // Show hints until first tap/click
         let lastTapTime = 0; // Track last tap time to prevent double taps
-        const TAP_DEBOUNCE_MS = 200; // Minimum time between taps (200ms)
+        const TAP_DEBOUNCE_MS = 100; // Minimum time between taps (100ms - reduced for less latency)
+        let touchHandled = false; // Track if touchstart already handled the event
         
         // Always add mobile class for styling
         document.body.classList.add('is-mobile');
@@ -3046,18 +3047,19 @@
 
         // Tap/Click controls - work on both mobile and desktop
         // Click left/right side of screen to change lanes
-        let touchHandled = false; // Track if touchstart already handled the event
-        
         document.addEventListener('touchstart', (e) => {
             if (gameState !== 'playing') return;
             
-            // Prevent click event from firing after touchstart
+            // Prevent click event from firing after touchstart (more aggressive)
             touchHandled = true;
-            setTimeout(() => { touchHandled = false; }, 300);
+            setTimeout(() => { touchHandled = false; }, 500); // Longer timeout to prevent click
             
-            // Debounce: prevent rapid taps
+            // Debounce: prevent rapid taps (reduced time for less latency)
             const now = Date.now();
-            if (now - lastTapTime < TAP_DEBOUNCE_MS) return;
+            if (now - lastTapTime < TAP_DEBOUNCE_MS) {
+                e.preventDefault();
+                return;
+            }
             lastTapTime = now;
             
             // Hide hints after first tap
@@ -3076,7 +3078,10 @@
                 // Tap on right side - move right
                 playerLane = Math.min(2, playerLane + 1);
             }
-        }, { passive: true });
+            
+            // Prevent default to stop click event
+            e.preventDefault();
+        }, { passive: false });
         
         // Click controls for desktop (same as mobile tap)
         // Skip if touchstart already handled it (prevents double-tap on mobile)
@@ -3087,6 +3092,7 @@
             if (touchHandled) {
                 e.preventDefault();
                 e.stopPropagation();
+                e.stopImmediatePropagation();
                 return;
             }
             
@@ -3101,7 +3107,10 @@
             
             // Debounce: prevent rapid clicks
             const now = Date.now();
-            if (now - lastTapTime < TAP_DEBOUNCE_MS) return;
+            if (now - lastTapTime < TAP_DEBOUNCE_MS) {
+                e.preventDefault();
+                return;
+            }
             lastTapTime = now;
             
             // Hide hints after first click
@@ -3119,7 +3128,7 @@
                 // Click on right side - move right
                 playerLane = Math.min(2, playerLane + 1);
             }
-        });
+        }, true); // Use capture phase to catch early
 
         // Start
         console.log('Milk Chase: Script loaded successfully');
