@@ -904,15 +904,45 @@
             text-align: center;
             z-index: 100;
             pointer-events: none;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px 35px;
+            border-radius: 15px;
+            border: 2px solid #00ffaa;
+            box-shadow: 0 0 30px rgba(0, 255, 170, 0.5);
         }
 
         .tap-hint {
-            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 20px;
             font-weight: bold;
-            color: #00ffaa;
-            text-shadow: 0 0 20px #00ffaa, 0 0 40px #00ffaa;
-            margin: 15px 0;
+            color: #fff;
+            margin: 12px 0;
             animation: flashHint 0.8s ease-in-out infinite alternate;
+        }
+
+        .tap-hint .arrow {
+            font-size: 32px;
+            color: #00ffaa;
+            text-shadow: 0 0 15px #00ffaa;
+            min-width: 40px;
+        }
+
+        .tap-hint .action {
+            color: #00ffaa;
+            text-shadow: 0 0 10px rgba(0, 255, 170, 0.6);
+        }
+
+        .tap-hint .equals {
+            color: #888;
+            margin: 0 8px;
+        }
+
+        .tap-hint .result {
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
         }
 
         @keyframes flashHint {
@@ -982,8 +1012,18 @@
 
         <!-- Mobile tap instructions (shown until first tap) -->
         <div id="mobile-instructions">
-            <div class="tap-hint">TAP LEFT = MOVE LEFT</div>
-            <div class="tap-hint">TAP RIGHT = MOVE RIGHT</div>
+            <div class="tap-hint">
+                <span class="arrow">←</span>
+                <span class="action">Tap Left</span>
+                <span class="equals">=</span>
+                <span class="result">Move Left</span>
+            </div>
+            <div class="tap-hint">
+                <span class="arrow">→</span>
+                <span class="action">Tap Right</span>
+                <span class="equals">=</span>
+                <span class="result">Move Right</span>
+            </div>
         </div>
 
         <div id="start-screen">
