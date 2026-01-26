@@ -121,6 +121,97 @@
       50% { transform: translateY(-4px); }
     }
 
+    /* Slide 1 images */
+    .slide-images {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide-images.visible {
+      opacity: 1;
+    }
+
+    .slide-images-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .subfigures-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: flex-start;
+    }
+
+    .subfigure {
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .subfigure:nth-child(1) {
+      animation-delay: 0s;
+      margin-left: 0;
+    }
+
+    .subfigure:nth-child(2) {
+      animation-delay: 0.5s;
+      margin-left: 2rem;
+    }
+
+    .subfigure img {
+      max-width: 250px;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .subfigure-caption {
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
+    }
+
+    .marziale-logo-container {
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+
+    .marziale-logo-container img {
+      max-width: 200px;
+      max-height: 200px;
+      width: auto;
+      height: auto;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4));
+    }
+
+    .los-alamos-glow {
+      filter: drop-shadow(0 0 15px rgba(0, 150, 255, 0.8))
+              drop-shadow(0 0 30px rgba(0, 150, 255, 0.6))
+              drop-shadow(0 0 45px rgba(0, 150, 255, 0.4));
+    }
+
     /* Animation canvases - behind character and dialogue */
     .slide-animation {
       position: fixed;
@@ -305,6 +396,30 @@
         width: 100px;
         height: 100px;
       }
+
+      .slide-images-container {
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .subfigure img {
+        max-width: 150px;
+        max-height: 200px;
+      }
+
+      .subfigure:nth-child(2) {
+        margin-left: 1rem;
+      }
+
+      .marziale-logo-container img {
+        max-width: 150px;
+        max-height: 150px;
+      }
+
+      .subfigure-caption {
+        font-size: 12px;
+        bottom: -25px;
+      }
     }
   </style>
 </head>
@@ -321,6 +436,24 @@
           <p class="dialogue-text" id="dialogueText"></p>
         </div>
         <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 1 images -->
+  <div class="slide-images" id="slide1Images">
+    <div class="slide-images-container">
+      <div class="subfigures-container">
+        <div class="subfigure">
+          <img src="../images/oppenheimer.png" alt="Oppenheimer" class="los-alamos-glow">
+        </div>
+        <div class="subfigure">
+          <img src="../images/los_alamos_logo.png" alt="Los Alamos Logo" class="los-alamos-glow">
+          <div class="subfigure-caption">Los Alamos National Laboratory</div>
+        </div>
+      </div>
+      <div class="marziale-logo-container">
+        <img src="../images/logo.png" alt="Marziale Technologies">
       </div>
     </div>
   </div>
@@ -424,6 +557,7 @@
     const promptIcon = document.getElementById('promptIcon');
     const finalSlide = document.getElementById('finalSlide');
     const qrCodeContainer = document.getElementById('qrCodeContainer');
+    const slide1Images = document.getElementById('slide1Images');
     
     // Fireworks for final slide
     const bgCanvas = document.getElementById('fireworksBg');
@@ -1193,6 +1327,13 @@
 
       const frame = sequence[index];
       characterImg.src = imageMap[frame.img];
+      
+      // Show/hide slide 1 images
+      if (index === 0) {
+        slide1Images.classList.add('visible');
+      } else {
+        slide1Images.classList.remove('visible');
+      }
       
       // Reset dialogue part index for new frame
       currentDialoguePart = 0;
