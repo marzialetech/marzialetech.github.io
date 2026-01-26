@@ -32,6 +32,7 @@
       padding: 2rem;
       opacity: 1;
       transition: opacity 0.5s ease;
+      z-index: 5;
     }
 
     .character {
@@ -44,6 +45,8 @@
       transition: transform 0.8s linear;
       -webkit-transition: -webkit-transform 0.8s linear;
       will-change: transform;
+      position: relative;
+      z-index: 6;
     }
 
     .character.entered {
@@ -71,6 +74,8 @@
       gap: 0.8rem;
       opacity: 0;
       transition: opacity 0.3s ease;
+      position: relative;
+      z-index: 6;
     }
 
     .dialogue-box.visible {
@@ -116,7 +121,7 @@
       50% { transform: translateY(-4px); }
     }
 
-    /* Animation canvases */
+    /* Animation canvases - behind character and dialogue */
     .slide-animation {
       position: fixed;
       top: 0;
@@ -124,7 +129,7 @@
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 1;
+      z-index: 0;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
