@@ -2091,68 +2091,6 @@
             ctx.restore();
         }
 
-        // Draw car effect (bubbles, flames, or tire tracks)
-        function drawCarEffect(ctx, car, effect) {
-            if (!effect || effect === 'none') return;
-            
-            const backX = 0; // Car center x (already translated)
-            const backY = car.height/2; // Back of car
-            
-            if (effect === 'bubbles') {
-                // Draw bubbles rising from back
-                const bubbleCount = 3;
-                for (let i = 0; i < bubbleCount; i++) {
-                    const offsetX = (i - 1) * 8;
-                    const offsetY = 5 + i * 3;
-                    const size = 3 + i;
-                    ctx.strokeStyle = '#66ccff';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.arc(backX + offsetX, backY + offsetY, size, 0, Math.PI * 2);
-                    ctx.stroke();
-                }
-            } else if (effect === 'flames') {
-                // Draw flames from exhaust
-                ctx.fillStyle = '#ff6600';
-                ctx.beginPath();
-                ctx.moveTo(backX - 8, backY);
-                ctx.lineTo(backX - 12, backY + 8);
-                ctx.lineTo(backX - 6, backY + 6);
-                ctx.lineTo(backX, backY + 10);
-                ctx.lineTo(backX + 6, backY + 6);
-                ctx.lineTo(backX + 12, backY + 8);
-                ctx.lineTo(backX + 8, backY);
-                ctx.closePath();
-                ctx.fill();
-                
-                // Inner yellow flame
-                ctx.fillStyle = '#ffcc00';
-                ctx.beginPath();
-                ctx.moveTo(backX - 6, backY);
-                ctx.lineTo(backX - 8, backY + 5);
-                ctx.lineTo(backX, backY + 4);
-                ctx.lineTo(backX + 8, backY + 5);
-                ctx.lineTo(backX + 6, backY);
-                ctx.closePath();
-                ctx.fill();
-            } else if (effect === 'tracks') {
-                // Draw tire tracks
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 2;
-                ctx.setLineDash([4, 4]);
-                // Left track
-                ctx.beginPath();
-                ctx.moveTo(backX - player.width/2, backY);
-                ctx.lineTo(backX - player.width/2, backY + 15);
-                ctx.stroke();
-                // Right track
-                ctx.beginPath();
-                ctx.moveTo(backX + player.width/2, backY);
-                ctx.lineTo(backX + player.width/2, backY + 15);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
-        }
 
         // Draw car preview on start screen (driving left to right over logo)
         function drawCarPreview() {
