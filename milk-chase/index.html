@@ -486,6 +486,68 @@
             cursor: not-allowed;
         }
         
+        .school-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .school-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            background: #111;
+            border: 2px solid #555;
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .school-btn.selected {
+            border-color: #ffcc00;
+            color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+        }
+        
+        .school-btn:hover {
+            border-color: #ffcc00;
+        }
+        
+        #school-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+            justify-content: center;
+        }
+        
+        .school-tab {
+            padding: 4px 10px;
+            font-size: 10px;
+            background: transparent;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .school-tab.active {
+            border-color: #00aaff;
+            color: #00aaff;
+            background: rgba(0, 170, 255, 0.1);
+        }
+        
+        .school-tab:hover {
+            border-color: #00aaff;
+        }
+        
+        .leaderboard-entry .school {
+            color: #ffcc00;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        
         #leaderboard {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
@@ -768,10 +830,19 @@
                 <div id="score-entry">
                     <div class="score-label">Your Time: <span id="final-time">0:00</span></div>
                     <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+                    <div class="school-selector">
+                        <button class="school-btn selected" data-school="lowville">Lowville</button>
+                        <button class="school-btn" data-school="southlewis">South Lewis</button>
+                    </div>
                     <button id="submit-score-btn">Submit Score</button>
                 </div>
                 <div id="leaderboard">
                     <div class="leaderboard-title">Leaderboard</div>
+                    <div id="school-tabs">
+                        <button class="school-tab active" data-school="all">All</button>
+                        <button class="school-tab" data-school="lowville">Lowville</button>
+                        <button class="school-tab" data-school="southlewis">South Lewis</button>
+                    </div>
                     <div id="leaderboard-list"></div>
                 </div>
             </div>
@@ -787,6 +858,8 @@
         
         let supabaseClient = null;
         let lastSubmittedId = null;
+        let selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
+        let leaderboardFilter = 'all';
         
         // Initialize Supabase (defensive check for CDN loading)
         function initSupabase() {
@@ -807,7 +880,7 @@
         }
         
         // Leaderboard functions
-        async function submitScore(name, timeSeconds) {
+        async function submitScore(name, timeSeconds, school) {
             initSupabase();
             if (!supabaseClient || !name.trim()) return null;
             
@@ -816,7 +889,8 @@
                     .from('milk_chase_scores')
                     .insert([{ 
                         player_name: name.trim(), 
-                        time_seconds: timeSeconds 
+                        time_seconds: timeSeconds,
+                        school: school
                     }])
                     .select();
                 
@@ -832,16 +906,22 @@
             }
         }
         
-        async function fetchLeaderboard() {
+        async function fetchLeaderboard(schoolFilter = 'all') {
             initSupabase();
             if (!supabaseClient) return [];
             
             try {
-                const { data, error } = await supabaseClient
+                let query = supabaseClient
                     .from('milk_chase_scores')
-                    .select('id, player_name, time_seconds, created_at')
+                    .select('id, player_name, time_seconds, school, created_at')
                     .order('time_seconds', { ascending: false })
                     .limit(50);
+                
+                if (schoolFilter !== 'all') {
+                    query = query.eq('school', schoolFilter);
+                }
+                
+                const { data, error } = await query;
                 
                 if (error) {
                     console.error('Fetch error:', error);
@@ -864,15 +944,18 @@
                 return;
             }
             
+            const schoolNames = { lowville: 'LV', southlewis: 'SL' };
+            
             list.innerHTML = entries.map((entry, i) => {
                 const isHighlight = entry.id === highlightId;
+                const schoolTag = entry.school ? `<span class="school">${schoolNames[entry.school] || entry.school}</span>` : '';
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}">
                     <span class="rank">#${i + 1}</span>
-                    <span class="name">${entry.player_name}</span>
+                    <span class="name">${entry.player_name}${schoolTag}</span>
                     <span class="time">${timeStr}</span>
                 </div>`;
             }).join('');
@@ -887,7 +970,7 @@
         }
         
         async function showLeaderboard() {
-            const entries = await fetchLeaderboard();
+            const entries = await fetchLeaderboard(leaderboardFilter);
             renderLeaderboard(entries, lastSubmittedId);
         }
 
@@ -2023,6 +2106,34 @@
             });
         }
         
+        // School selection buttons
+        document.querySelectorAll('.school-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.school-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedSchool = btn.dataset.school;
+                localStorage.setItem('milkChaseSchool', selectedSchool);
+            });
+        });
+        
+        // Set initial school selection from localStorage
+        const savedSchool = localStorage.getItem('milkChaseSchool');
+        if (savedSchool) {
+            document.querySelectorAll('.school-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.school === savedSchool);
+            });
+        }
+        
+        // School filter tabs
+        document.querySelectorAll('.school-tab').forEach(tab => {
+            tab.addEventListener('click', async () => {
+                document.querySelectorAll('.school-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                leaderboardFilter = tab.dataset.school;
+                await showLeaderboard();
+            });
+        });
+        
         // Submit score button
         const submitBtn = document.getElementById('submit-score-btn');
         if (submitBtn) submitBtn.addEventListener('click', async () => {
@@ -2035,17 +2146,21 @@
                 return;
             }
             
-            // Save name for next time
+            // Save name and school for next time
             localStorage.setItem('milkChasePlayerName', name);
+            localStorage.setItem('milkChaseSchool', selectedSchool);
             
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime);
+            const id = await submitScore(name, gameTime, selectedSchool);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
             nameInput.disabled = true;
+            
+            // Disable school buttons too
+            document.querySelectorAll('.school-btn').forEach(b => b.disabled = true);
             
             // Refresh leaderboard
             await showLeaderboard();
@@ -2257,6 +2372,7 @@
         if (retryBtn) retryBtn.addEventListener('click', () => {
             // Reset leaderboard state
             lastSubmittedId = null;
+            leaderboardFilter = 'all';
             const submitScoreBtn = document.getElementById('submit-score-btn');
             const playerName = document.getElementById('player-name');
             if (submitScoreBtn) {
@@ -2264,6 +2380,10 @@
                 submitScoreBtn.textContent = 'Submit Score';
             }
             if (playerName) playerName.disabled = false;
+            
+            // Reset school buttons
+            document.querySelectorAll('.school-btn').forEach(b => b.disabled = false);
+            document.querySelectorAll('.school-tab').forEach(t => t.classList.toggle('active', t.dataset.school === 'all'));
             
             document.getElementById('start-screen')?.classList.remove('hidden');
             document.getElementById('result-screen')?.classList.remove('visible');
