@@ -297,22 +297,22 @@
             margin-top: 10px;
         }
 
-        #start-btn {
+        #start-btn, #retry-btn {
             margin-top: 20px;
             padding: 15px 50px;
             font-size: 20px;
-            background: linear-gradient(135deg, #00ff88, #00cc66);
-            border: none;
-            border-radius: 30px;
-            color: white;
+            background: #000;
+            border: 2px solid #00ff88;
+            border-radius: 8px;
+            color: #00ff88;
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 25px rgba(0, 255, 100, 0.5);
-            transition: transform 0.2s;
+            transition: all 0.2s;
         }
 
-        #start-btn:hover {
-            transform: scale(1.05);
+        #start-btn:hover, #retry-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
         }
 
         /* Result screen - full black background, single slide format */
@@ -588,7 +588,6 @@
 
         <div id="hud">
             <div class="timer-row"><span class="label">Time: </span><span class="value timer" id="timer-value">0:00</span></div>
-            <div><span class="label">Distance: </span><span class="value" id="distance-value">300</span><span class="label">m</span></div>
             <div><span class="label">Mass: </span><span class="value" id="mass-value">4</span><span class="label"> lbs</span></div>
         </div>
 
@@ -609,8 +608,8 @@
 
         <div id="start-screen">
             <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
-            <h1>🥛 <span>Milk Truck</span> Chase!</h1>
-            <div class="subtitle">Chase the milk truck! Survive as long as you can...</div>
+            <h1><span>Milk Truck</span> Chase!</h1>
+            <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
 
             <div class="option-group">
                 <label>Choose Your Car</label>
@@ -638,7 +637,7 @@
                 </div>
             </div>
 
-            <button id="start-btn">🏁 START CHASE</button>
+            <button id="start-btn">Start Chase</button>
         </div>
 
         <div id="result-screen">
@@ -646,7 +645,7 @@
             <div id="physics-steps"></div>
             <div class="step-counter" id="stepCounter">1 / 18</div>
             <div class="tap-to-continue" id="tapPrompt">TAP TO CONTINUE</div>
-            <button id="retry-btn" style="display: none;">🔄 Try Again</button>
+            <button id="retry-btn" style="display: none;">Try Again</button>
         </div>
     </div>
 
@@ -944,6 +943,106 @@
             oscillator.start();
             oscillator.stop(audioCtx.currentTime + duration);
         }
+        
+        // Crash sound effect
+        function playCrashSound() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // Create noise for crash
+            const bufferSize = audioCtx.sampleRate * 0.5;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+            }
+            
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const gainNode = audioCtx.createGain();
+            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            // Low frequency thump
+            const thump = audioCtx.createOscillator();
+            thump.frequency.setValueAtTime(80, audioCtx.currentTime);
+            thump.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.2);
+            
+            const thumpGain = audioCtx.createGain();
+            thumpGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            thumpGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            noise.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            thump.connect(thumpGain);
+            thumpGain.connect(audioCtx.destination);
+            
+            noise.start();
+            thump.start();
+            thump.stop(audioCtx.currentTime + 0.3);
+        }
+        
+        // Draw caution signs for lanes with cows on screen
+        function drawCautionSigns() {
+            const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+            
+            // Find cows in each lane
+            const cowsInLane = [0, 0, 0];
+            for (const obs of obstacles) {
+                if (obs.y > -100 && obs.y < H) {
+                    cowsInLane[obs.lane] += obs.numCows;
+                }
+            }
+            
+            for (let lane = 0; lane < 3; lane++) {
+                if (cowsInLane[lane] > 0) {
+                    const x = lanes[lane];
+                    const y = 90;
+                    
+                    ctx.save();
+                    ctx.translate(x, y);
+                    
+                    // Yellow warning triangle
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -25);
+                    ctx.lineTo(22, 15);
+                    ctx.lineTo(-22, 15);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Black border
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Inner triangle (black)
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -15);
+                    ctx.lineTo(14, 10);
+                    ctx.lineTo(-14, 10);
+                    ctx.closePath();
+                    ctx.stroke();
+                    
+                    // Exclamation mark
+                    ctx.fillStyle = '#000';
+                    ctx.font = 'bold 18px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('!', 0, 8);
+                    
+                    // Text below: "N cows!!"
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillText(`${cowsInLane[lane]} cow${cowsInLane[lane] > 1 ? 's' : ''}!!`, 0, 35);
+                    
+                    ctx.restore();
+                }
+            }
+        }
 
         // Draw road
         function drawRoad() {
@@ -1227,15 +1326,19 @@
             ctx.lineWidth = 2;
             ctx.stroke();
             
-            // Milk icon
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('🥛', arrowX, arrowY + 50);
-            
-            // Distance text
+            // Milk carton icon (drawn, no emoji)
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText(`${Math.round(distance)}m`, arrowX, arrowY + 70);
+            ctx.fillRect(arrowX - 6, arrowY + 40, 12, 16);
+            ctx.fillStyle = '#00aaff';
+            ctx.fillRect(arrowX - 4, arrowY + 48, 8, 6);
+            // Carton top
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.moveTo(arrowX - 6, arrowY + 40);
+            ctx.lineTo(arrowX, arrowY + 34);
+            ctx.lineTo(arrowX + 6, arrowY + 40);
+            ctx.closePath();
+            ctx.fill();
 
             ctx.restore();
         }
@@ -1500,7 +1603,6 @@
             // Update HUD
             document.getElementById('speed-value').textContent = toDisplaySpeed(player.speed);
             document.getElementById('timer-value').textContent = formatTime(gameTime);
-            document.getElementById('distance-value').textContent = Math.round(distance);
         }
         
         // Format time as MM:SS
@@ -1520,6 +1622,7 @@
         function handleCrash(obstacle) {
             gameState = 'crashing';
             crashTimer = 0;
+            playCrashSound();
 
             const m1 = player.mass;
             const v1 = player.speed;
@@ -1594,7 +1697,7 @@
             const { m1, v1, m2 } = crashData;
             const survivalTime = formatTime(gameTime);
 
-            document.getElementById('result-title').textContent = `💥 CRASHED! Time: ${survivalTime}`;
+            document.getElementById('result-title').textContent = `CRASHED! Time: ${survivalTime}`;
             document.getElementById('result-title').className = 'crash';
 
             // Convert to display units for nice round numbers
@@ -1823,6 +1926,7 @@
 
             drawTruck();
             drawPlayer();
+            drawCautionSigns();
             
             // Draw crash particles
             if (gameState === 'crashing') {
