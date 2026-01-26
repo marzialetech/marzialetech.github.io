@@ -785,15 +785,15 @@
         const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
         
-        let supabase = null;
+        let supabaseClient = null;
         let lastSubmittedId = null;
         
         // Initialize Supabase (defensive check for CDN loading)
         function initSupabase() {
-            if (supabase) return;
+            if (supabaseClient) return;
             try {
                 if (window.supabase && window.supabase.createClient) {
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 }
             } catch (e) {
                 console.warn('Supabase init failed:', e);
@@ -809,10 +809,10 @@
         // Leaderboard functions
         async function submitScore(name, timeSeconds) {
             initSupabase();
-            if (!supabase || !name.trim()) return null;
+            if (!supabaseClient || !name.trim()) return null;
             
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('milk_chase_scores')
                     .insert([{ 
                         player_name: name.trim(), 
@@ -834,10 +834,10 @@
         
         async function fetchLeaderboard() {
             initSupabase();
-            if (!supabase) return [];
+            if (!supabaseClient) return [];
             
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('milk_chase_scores')
                     .select('id, player_name, time_seconds, created_at')
                     .order('time_seconds', { ascending: false })
