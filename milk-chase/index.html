@@ -1310,13 +1310,23 @@
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(0, centerX - 1.8, h, 3.6);
             } else if (design === 'spots') {
+                // Draw a single star
                 ctx.fillStyle = '#fff';
+                ctx.save();
+                ctx.translate(h / 2, w / 2);
                 ctx.beginPath();
-                ctx.arc(8 * scale, 8 * scale, 3 * scale, 0, Math.PI * 2);
+                // 5-pointed star
+                const starSize = 6 * scale;
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    const x = Math.cos(angle) * starSize;
+                    const y = Math.sin(angle) * starSize;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
                 ctx.fill();
-                ctx.beginPath();
-                ctx.arc(h - 6 * scale, w - 10 * scale, 2.5 * scale, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.restore();
             } else if (design === 'zigzag') {
                 ctx.strokeStyle = '#fff';
                 ctx.lineWidth = 1;
