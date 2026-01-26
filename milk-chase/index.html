@@ -970,6 +970,7 @@
                     <input type="text" id="player-name" placeholder="Name" maxlength="15">
                     <button class="school-btn selected" data-school="lowville">Lowville</button>
                     <button class="school-btn" data-school="southlewis">South Lewis</button>
+                    <button class="school-btn admin-only" data-school="none" style="display: none;">No Affiliation</button>
                     <button id="submit-score-btn">Submit</button>
                 </div>
                 <div id="leaderboard">
@@ -995,6 +996,15 @@
         let supabaseClient = null;
         let lastSubmittedId = null;
         let selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
+        
+        // Initialize school selection validation
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                validateSchoolSelection();
+            });
+        } else {
+            validateSchoolSelection();
+        }
         let leaderboardFilter = 'all';
         let isAdmin = false;
         let currentUser = null;
@@ -1050,6 +1060,43 @@
                 loginBtn.textContent = 'developer mode';
                 adminLogin.classList.remove('admin-authenticated');
             }
+            
+            // Update school selector based on admin status
+            updateSchoolSelector();
+        }
+
+        // Update school selector UI based on admin status
+        function updateSchoolSelector() {
+            const noAffiliationBtn = document.querySelector('.school-btn[data-school="none"]');
+            if (noAffiliationBtn) {
+                noAffiliationBtn.style.display = isAdmin ? 'inline-block' : 'none';
+            }
+            
+            // If admin just logged in and no school selected, select "No Affiliation"
+            if (isAdmin && !selectedSchool) {
+                selectedSchool = 'none';
+                document.querySelectorAll('.school-btn').forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.school === 'none');
+                });
+            }
+            
+            // Validate school selection for submit button
+            validateSchoolSelection();
+        }
+
+        // Validate school selection (required for non-admins)
+        function validateSchoolSelection() {
+            const submitBtn = document.getElementById('submit-score-btn');
+            if (!submitBtn) return;
+            
+            // For non-admins, school must be selected (not 'none')
+            if (!isAdmin && (!selectedSchool || selectedSchool === 'none')) {
+                submitBtn.disabled = true;
+                submitBtn.title = 'Please select a school';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.title = '';
+            }
         }
 
         // GitHub login
@@ -1092,6 +1139,7 @@
                 supabaseClient.auth.onAuthStateChange((event, session) => {
                     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                         checkAuthState().then(() => {
+                            updateSchoolSelector();
                             showLeaderboard();
                             loadStartLeaderboard();
                         });
@@ -1099,6 +1147,12 @@
                         currentUser = null;
                         isAdmin = false;
                         updateLoginUI();
+                        // Reset to default school selection
+                        selectedSchool = localStorage.getItem('milkChaseSchool') || 'lowville';
+                        document.querySelectorAll('.school-btn').forEach(btn => {
+                            btn.classList.toggle('selected', btn.dataset.school === selectedSchool);
+                        });
+                        validateSchoolSelection();
                         showLeaderboard();
                         loadStartLeaderboard();
                     }
@@ -2473,7 +2527,11 @@
                 document.querySelectorAll('.school-btn').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 selectedSchool = btn.dataset.school;
-                localStorage.setItem('milkChaseSchool', selectedSchool);
+                // Don't save 'none' to localStorage (admin-only option)
+                if (selectedSchool !== 'none') {
+                    localStorage.setItem('milkChaseSchool', selectedSchool);
+                }
+                validateSchoolSelection();
             });
         });
         
@@ -2507,14 +2565,24 @@
                 return;
             }
             
-            // Save name and school for next time
+            // Validate school selection (required for non-admins)
+            if (!isAdmin && (!selectedSchool || selectedSchool === 'none')) {
+                alert('Please select a school affiliation.');
+                return;
+            }
+            
+            // Save name and school for next time (only if not 'none')
             localStorage.setItem('milkChasePlayerName', name);
-            localStorage.setItem('milkChaseSchool', selectedSchool);
+            if (selectedSchool !== 'none') {
+                localStorage.setItem('milkChaseSchool', selectedSchool);
+            }
             
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedColor);
+            // Submit with null school if 'none' selected
+            const schoolToSubmit = selectedSchool === 'none' ? null : selectedSchool;
+            const id = await submitScore(name, gameTime, schoolToSubmit, selectedCar, selectedColor);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
