@@ -261,6 +261,24 @@
                 radial-gradient(ellipse 15px 20px at 80% 75%, #111 100%, transparent 100%);
         }
 
+        /* South Lewis design */
+        .car-option[data-car="southlewis"] .car-design {
+            background: #cc2222;
+            background-image: url('southlewis-logo.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Lowville design */
+        .car-option[data-car="lowville"] .car-design {
+            background: #cc2222;
+            background-image: url('lowville-logo.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
         .car-option .car-name {
             font-size: 9px;
             color: #aaa;
@@ -803,6 +821,14 @@
             <div class="option-group">
                 <label>Choose Your Car</label>
                 <div class="car-options">
+                    <div class="car-option" data-car="southlewis">
+                        <div class="car-design"></div>
+                        <div class="car-name">South Lewis</div>
+                    </div>
+                    <div class="car-option" data-car="lowville">
+                        <div class="car-design"></div>
+                        <div class="car-name">Lowville</div>
+                    </div>
                     <div class="car-option selected" data-car="usa">
                         <div class="car-design"></div>
                         <div class="car-name">USA</div>
@@ -985,6 +1011,12 @@
 
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
+        
+        // Load school logos for car skins
+        const southLewisLogo = new Image();
+        southLewisLogo.src = 'southlewis-logo.png';
+        const lowvilleLogo = new Image();
+        lowvilleLogo.src = 'lowville-logo.png';
         
         // Dynamic canvas sizing
         let W, H;
@@ -1525,6 +1557,24 @@
                 ctx.beginPath();
                 ctx.arc(8, 30, 6, 0, Math.PI * 2);
                 ctx.fill();
+            } else if (player.design === 'southlewis') {
+                // Red background with South Lewis logo
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                // Draw logo image
+                if (southLewisLogo && southLewisLogo.complete) {
+                    const logoSize = Math.min(player.width, player.height) * 0.8;
+                    ctx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                }
+            } else if (player.design === 'lowville') {
+                // Red background with Lowville logo
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                // Draw logo image
+                if (lowvilleLogo && lowvilleLogo.complete) {
+                    const logoSize = Math.min(player.width, player.height) * 0.8;
+                    ctx.drawImage(lowvilleLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                }
             }
 
             // Windshield
