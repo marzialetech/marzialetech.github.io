@@ -302,10 +302,10 @@
     // Dialogue sequence - 5 slides for middle school audience
     const sequence = [
       { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
-      { img: 3, dialogue: "I studied math in school and got my PhD, which basically lets you do research as a career. My research was all about modeling physical systems using computers!", animation: 'rockets' },
-      { img: 1, dialogue: "I used computers to simulate how rockets move through space.", animation: 'code' },
+      { img: 3, dialogue: "I studied math in school and got my PhD, which basically lets you do research as a career. My research was all about understanding the physics of a rocket motor!", animation: 'rockets' },
+      { img: 1, dialogue: "I used computers to simulate everything that goes on inside of a rocket once it turns on.", animation: 'codeAndRockets' },
       { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
-      { img: 7, dialogue: "These ideas help us understand how things move and crash into each other..." },
+      { img: 7, dialogue: "These ideas help us understand how things move and crash into each other, whether it's a rocket or a car!" },
       { img: 8, dialogue: "And that's exactly what I want to show you!" },
     ];
 
@@ -442,6 +442,7 @@
     let rockets = [];
     let codeLines = [];
     let physicsParticles = [];
+    let backgroundRockets = []; // For slide 3 background rockets
     
     // Rocket animation (slide 2)
     function initRocketAnimation() {
@@ -551,7 +552,7 @@
       requestAnimationFrame(animateRockets);
     }
     
-    // Code animation (slide 3)
+    // Code animation (slide 3) - with background rockets
     const codeSnippets = [
       'function simulateRocket() {',
       '  let velocity = 0;',
@@ -566,6 +567,7 @@
     
     function initCodeAnimation() {
       codeLines = [];
+      backgroundRockets = [];
       codeAnimationActive = true;
       codeCanvas.classList.add('active');
       let lineIndex = 0;
@@ -604,11 +606,90 @@
       addNextChar();
     }
     
+    function drawRocket(ctx, x, y, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      
+      // Rocket body (white cylinder)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.rect(-size * 0.3, -size * 0.8, size * 0.6, size * 1.6);
+      ctx.fill();
+      
+      // Rocket nose cone (pointed triangle)
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.8);
+      ctx.lineTo(-size * 0.3, -size * 0.2);
+      ctx.lineTo(size * 0.3, -size * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Rocket fins (bottom)
+      ctx.fillStyle = '#cccccc';
+      ctx.beginPath();
+      // Left fin
+      ctx.moveTo(-size * 0.3, size * 0.8);
+      ctx.lineTo(-size * 0.6, size * 1.2);
+      ctx.lineTo(-size * 0.3, size * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      // Right fin
+      ctx.beginPath();
+      ctx.moveTo(size * 0.3, size * 0.8);
+      ctx.lineTo(size * 0.6, size * 1.2);
+      ctx.lineTo(size * 0.3, size * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Bright flame
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      ctx.arc(0, size * 0.8, size * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner flame
+      ctx.fillStyle = '#ff6600';
+      ctx.beginPath();
+      ctx.arc(0, size * 0.8, size * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+    
     function animateCode() {
       if (!codeAnimationActive) return;
       
-      codeCtx.fillStyle = '#000';
+      // Clear with fade for background rockets
+      codeCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
       codeCtx.fillRect(0, 0, codeCanvas.width, codeCanvas.height);
+      
+      // Spawn background rockets occasionally
+      if (Math.random() < 0.01) {
+        backgroundRockets.push({
+          x: Math.random() * codeCanvas.width,
+          y: codeCanvas.height + 20,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: -1.5 - Math.random() * 1,
+          size: 6 + Math.random() * 4
+        });
+      }
+      
+      // Update and draw background rockets
+      for (let i = backgroundRockets.length - 1; i >= 0; i--) {
+        const r = backgroundRockets[i];
+        r.x += r.vx;
+        r.y += r.vy;
+        
+        // Draw rocket (semi-transparent for background effect)
+        codeCtx.globalAlpha = 0.4;
+        drawRocket(codeCtx, r.x, r.y, r.size);
+        codeCtx.globalAlpha = 1;
+        
+        if (r.y < -50) {
+          backgroundRockets.splice(i, 1);
+        }
+      }
       
       // Draw smaller terminal window (centered, not full screen)
       const termWidth = Math.min(500, codeCanvas.width * 0.6);
@@ -715,12 +796,48 @@
         physicsCtx.restore();
       });
       
-      // Draw labels
-      physicsCtx.font = 'bold 20px "Courier New", monospace';
+      // Draw definitions in top right corner
+      const defX = physicsCanvas.width - 350;
+      const defY = 30;
+      
+      // Momentum definition box
+      physicsCtx.fillStyle = 'rgba(0, 50, 100, 0.8)';
+      physicsCtx.fillRect(defX - 10, defY - 10, 340, 120);
+      physicsCtx.strokeStyle = '#0080ff';
+      physicsCtx.lineWidth = 2;
+      physicsCtx.strokeRect(defX - 10, defY - 10, 340, 120);
+      
+      physicsCtx.font = 'bold 16px "Courier New", monospace';
       physicsCtx.fillStyle = '#0080ff';
-      physicsCtx.fillText('Momentum', 50, 50);
+      physicsCtx.fillText('Momentum', defX, defY + 20);
+      
+      physicsCtx.font = '14px "Courier New", monospace';
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('p = m × v', defX, defY + 45);
+      
+      physicsCtx.font = '12px "Courier New", monospace';
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(mass × velocity)', defX, defY + 65);
+      
+      // Energy definition box
+      physicsCtx.fillStyle = 'rgba(100, 80, 0, 0.8)';
+      physicsCtx.fillRect(defX - 10, defY + 120, 340, 120);
+      physicsCtx.strokeStyle = '#ffcc00';
+      physicsCtx.lineWidth = 2;
+      physicsCtx.strokeRect(defX - 10, defY + 120, 340, 120);
+      
+      physicsCtx.font = 'bold 16px "Courier New", monospace';
       physicsCtx.fillStyle = '#ffcc00';
-      physicsCtx.fillText('Energy', 50, 80);
+      physicsCtx.fillText('Energy', defX, defY + 150);
+      
+      physicsCtx.font = '14px "Courier New", monospace';
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('KE = ½ × m × v²', defX, defY + 175);
+      
+      physicsCtx.font = '12px "Courier New", monospace';
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(kinetic energy)', defX, defY + 195);
+      physicsCtx.fillText('(energy of motion)', defX, defY + 215);
       
       requestAnimationFrame(animatePhysics);
     }
@@ -735,6 +852,7 @@
       rocketCtx.clearRect(0, 0, rocketCanvas.width, rocketCanvas.height);
       codeCtx.clearRect(0, 0, codeCanvas.width, codeCanvas.height);
       physicsCtx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+      backgroundRockets = [];
     }
 
     function showFrame(index) {
@@ -752,6 +870,8 @@
       // Start appropriate animation
       if (frame.animation === 'rockets') {
         setTimeout(() => initRocketAnimation(), 300);
+      } else if (frame.animation === 'codeAndRockets') {
+        setTimeout(() => initCodeAnimation(), 300);
       } else if (frame.animation === 'code') {
         setTimeout(() => initCodeAnimation(), 300);
       } else if (frame.animation === 'physics') {
