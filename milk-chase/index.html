@@ -1262,13 +1262,15 @@
         const canvas = document.getElementById('game');
         const ctx = canvas.getContext('2d');
         
-        // Load school logos and USA flag for car skins
+        // Load school logos, USA flag, and Stewart's logo for car skins and truck
         const southLewisLogo = new Image();
         southLewisLogo.src = 'southlewis-logo.png';
         const lowvilleLogo = new Image();
         lowvilleLogo.src = 'lowville-logo.png';
         const usaFlag = new Image();
         usaFlag.src = 'usa.png';
+        const stewartsLogo = new Image();
+        stewartsLogo.src = 'stewarts-logo.png';
         
         // Dynamic canvas sizing
         let W, H;
@@ -1796,65 +1798,22 @@
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.fillRect(-truck.width/2 + 5, -truck.height/2 + 5, truck.width, truck.height);
 
-            // Truck body (white base for cow print)
+            // Truck body (white)
             ctx.fillStyle = '#fff';
             ctx.fillRect(-truck.width/2, -truck.height/2, truck.width, truck.height);
-            
-            // Cow print spots on truck body
-            ctx.fillStyle = '#111';
-            ctx.beginPath();
-            ctx.arc(-20, -30, 12, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(15, -35, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(-10, -10, 11, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(20, -5, 9, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(-15, 15, 10, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(10, 25, 8, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(-25, 35, 9, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(18, 40, 7, 0, Math.PI * 2);
-            ctx.fill();
 
-            // Cab (cow print too)
+            // Cab (white)
             ctx.fillStyle = '#fff';
             ctx.fillRect(-truck.width/2, truck.height/2 - 30, truck.width, 30);
-            ctx.fillStyle = '#111';
-            ctx.beginPath();
-            ctx.arc(-15, truck.height/2 - 15, 6, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(12, truck.height/2 - 20, 5, 0, Math.PI * 2);
-            ctx.fill();
 
-            // Stewart's logo (simplified - red circle with white "S")
-            ctx.fillStyle = '#cc0000';
-            ctx.beginPath();
-            ctx.arc(0, -10, 18, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('S', 0, -5);
-            
-            // "STEWART'S" text below logo
-            ctx.fillStyle = '#cc0000';
-            ctx.font = 'bold 10px Arial';
-            ctx.fillText('STEWART\'S', 0, 15);
+            // Stewart's logo on the back of the truck
+            if (stewartsLogo && stewartsLogo.complete) {
+                const logoWidth = truck.width * 0.7;
+                const logoHeight = logoWidth * (stewartsLogo.height / stewartsLogo.width);
+                const logoX = -logoWidth / 2;
+                const logoY = -truck.height/2 + 10; // Position near the top (back) of truck
+                ctx.drawImage(stewartsLogo, logoX, logoY, logoWidth, logoHeight);
+            }
 
             // Wheels
             ctx.fillStyle = '#111';
