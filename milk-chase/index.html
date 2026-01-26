@@ -1736,6 +1736,10 @@
         
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
         let hintsShown = true; // Show hints until first tap/click
+        let lastTapTime = 0; // Track last tap time to prevent double taps
+        const TAP_DEBOUNCE_MS = 200; // Minimum time between taps (200ms)
+        let lastTapTime = 0; // Track last tap time to prevent double taps
+        const TAP_DEBOUNCE_MS = 200; // Minimum time between taps (200ms)
         
         // Always add mobile class for styling
         document.body.classList.add('is-mobile');
@@ -3044,8 +3048,19 @@
 
         // Tap/Click controls - work on both mobile and desktop
         // Click left/right side of screen to change lanes
+        let touchHandled = false; // Track if touchstart already handled the event
+        
         document.addEventListener('touchstart', (e) => {
             if (gameState !== 'playing') return;
+            
+            // Prevent click event from firing after touchstart
+            touchHandled = true;
+            setTimeout(() => { touchHandled = false; }, 300);
+            
+            // Debounce: prevent rapid taps
+            const now = Date.now();
+            if (now - lastTapTime < TAP_DEBOUNCE_MS) return;
+            lastTapTime = now;
             
             // Hide hints after first tap
             if (hintsShown) {
@@ -3066,8 +3081,16 @@
         }, { passive: true });
         
         // Click controls for desktop (same as mobile tap)
+        // Skip if touchstart already handled it (prevents double-tap on mobile)
         document.addEventListener('click', (e) => {
             if (gameState !== 'playing') return;
+            
+            // Skip if touchstart already handled this (prevents double-tap on mobile)
+            if (touchHandled) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             
             // Don't trigger on UI elements
             if (e.target.closest('#start-screen') || 
@@ -3077,6 +3100,11 @@
                 e.target.closest('.car-option')) {
                 return;
             }
+            
+            // Debounce: prevent rapid clicks
+            const now = Date.now();
+            if (now - lastTapTime < TAP_DEBOUNCE_MS) return;
+            lastTapTime = now;
             
             // Hide hints after first click
             if (hintsShown) {
