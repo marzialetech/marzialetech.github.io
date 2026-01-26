@@ -1737,8 +1737,9 @@
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
         let hintsShown = true; // Show hints until first tap/click
         let lastTapTime = 0; // Track last tap time to prevent double taps
-        const TAP_DEBOUNCE_MS = 100; // Minimum time between taps (100ms - reduced for less latency)
+        const TAP_DEBOUNCE_MS = 150; // Minimum time between taps (150ms - balance between latency and double-tap prevention)
         let touchHandled = false; // Track if touchstart already handled the event
+        let activeTouchId = null; // Track active touch to prevent multiple touches
         
         // Always add mobile class for styling
         document.body.classList.add('is-mobile');
@@ -3050,11 +3051,23 @@
         document.addEventListener('touchstart', (e) => {
             if (gameState !== 'playing') return;
             
-            // Prevent click event from firing after touchstart (more aggressive)
-            touchHandled = true;
-            setTimeout(() => { touchHandled = false; }, 500); // Longer timeout to prevent click
+            // Only process first touch in a gesture
+            if (activeTouchId !== null) {
+                e.preventDefault();
+                return;
+            }
             
-            // Debounce: prevent rapid taps (reduced time for less latency)
+            const touch = e.touches[0];
+            activeTouchId = touch.identifier;
+            
+            // Prevent click event from firing after touchstart
+            touchHandled = true;
+            setTimeout(() => { 
+                touchHandled = false;
+                activeTouchId = null;
+            }, 400);
+            
+            // Debounce: prevent rapid taps
             const now = Date.now();
             if (now - lastTapTime < TAP_DEBOUNCE_MS) {
                 e.preventDefault();
@@ -3068,7 +3081,6 @@
                 document.body.classList.remove('show-hints');
             }
             
-            const touch = e.touches[0];
             const screenMidX = window.innerWidth / 2;
             
             if (touch.clientX < screenMidX) {
@@ -3082,6 +3094,18 @@
             // Prevent default to stop click event
             e.preventDefault();
         }, { passive: false });
+        
+        // Clear touch ID when touch ends
+        document.addEventListener('touchend', (e) => {
+            if (e.changedTouches.length > 0) {
+                const touch = e.changedTouches[0];
+                if (touch.identifier === activeTouchId) {
+                    setTimeout(() => {
+                        activeTouchId = null;
+                    }, 100);
+                }
+            }
+        }, { passive: true });
         
         // Click controls for desktop (same as mobile tap)
         // Skip if touchstart already handled it (prevents double-tap on mobile)
