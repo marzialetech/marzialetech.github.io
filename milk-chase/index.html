@@ -806,6 +806,27 @@
             };
         }
         
+        // Background music
+        let bgMusic = null;
+        function initBackgroundMusic() {
+            if (bgMusic) return;
+            bgMusic = new Audio('song.mp3');
+            bgMusic.loop = true;
+            bgMusic.volume = 0.4;
+        }
+        
+        function playBackgroundMusic() {
+            if (!bgMusic) initBackgroundMusic();
+            bgMusic.play().catch(e => console.log('Music autoplay blocked'));
+        }
+        
+        function stopBackgroundMusic() {
+            if (bgMusic) {
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+            }
+        }
+        
         // Audio for moo sounds with doppler effect
         // Using a free moo sound effect
         let audioCtx = null;
@@ -1470,6 +1491,7 @@
         function showCrashResult() {
             gameState = 'result';
             document.body.classList.remove('game-playing');
+            stopBackgroundMusic();
             
             const { m1, v1, m2 } = crashData;
             const survivalTime = formatTime(gameTime);
@@ -1638,8 +1660,9 @@
 
         // Reset game
         function resetGame() {
-            // Load moo sound on first game start
+            // Load moo sound and start music on first game start
             loadMooSound();
+            playBackgroundMusic();
             
             player = createPlayer();
             truck = createTruck();
