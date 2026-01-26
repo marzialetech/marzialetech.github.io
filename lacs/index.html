@@ -381,8 +381,14 @@
       { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
       { img: 3, dialogue: "I studied math in school and got my PhD, which basically lets you do research as a career. My research was all about understanding the physics of a rocket motor!", animation: 'rockets' },
       { img: 1, dialogue: "I used computers to simulate everything that goes on inside of a rocket once it turns on.", animation: 'codeAndRockets' },
-      { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
-      { img: 7, dialogue: "These ideas help us understand how things move and crash into each other, whether it's a rocket or a car!" },
+      { 
+        img: 6, 
+        dialogueParts: [
+          "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.",
+          "These ideas help us understand how things move and crash into each other, whether it's a rocket or a car!"
+        ],
+        animation: 'physics' 
+      },
       { img: 8, dialogue: "...And speaking of cars, I want to show you something!" },
     ];
 
@@ -399,6 +405,7 @@
     };
 
     let currentFrame = -1;
+    let currentDialoguePart = 0;
     let introComplete = false;
     let waitingForStart = false;
     let started = false;
@@ -1187,18 +1194,25 @@
       const frame = sequence[index];
       characterImg.src = imageMap[frame.img];
       
-      // Stop all animations first
-      stopAllAnimations();
+      // Reset dialogue part index for new frame
+      currentDialoguePart = 0;
       
-      // Start appropriate animation
-      if (frame.animation === 'rockets') {
-        setTimeout(() => initRocketAnimation(), 300);
-      } else if (frame.animation === 'codeAndRockets') {
-        setTimeout(() => initCodeAnimation(), 300);
-      } else if (frame.animation === 'code') {
-        setTimeout(() => initCodeAnimation(), 300);
-      } else if (frame.animation === 'physics') {
-        setTimeout(() => initPhysicsAnimation(), 300);
+      // Stop all animations first (unless we're continuing a multi-part dialogue)
+      if (currentDialoguePart === 0) {
+        stopAllAnimations();
+      }
+      
+      // Start appropriate animation (only on first part)
+      if (currentDialoguePart === 0) {
+        if (frame.animation === 'rockets') {
+          setTimeout(() => initRocketAnimation(), 300);
+        } else if (frame.animation === 'codeAndRockets') {
+          setTimeout(() => initCodeAnimation(), 300);
+        } else if (frame.animation === 'code') {
+          setTimeout(() => initCodeAnimation(), 300);
+        } else if (frame.animation === 'physics') {
+          setTimeout(() => initPhysicsAnimation(), 300);
+        }
       }
 
       dialogueBox.classList.remove('visible');
@@ -1210,7 +1224,41 @@
       
       setTimeout(() => {
         dialogueText.textContent = '';
-        fullText = frame.dialogue;
+        // Use dialogueParts if available, otherwise use dialogue
+        if (frame.dialogueParts && frame.dialogueParts.length > 0) {
+          fullText = frame.dialogueParts[currentDialoguePart];
+        } else {
+          fullText = frame.dialogue;
+        }
+        charIndex = 0;
+        isDelaying = false;
+        dialogueBox.classList.add('visible');
+        startTyping();
+      }, 150);
+    }
+    
+    function showNextDialoguePart() {
+      const frame = sequence[currentFrame];
+      if (!frame.dialogueParts || currentDialoguePart >= frame.dialogueParts.length - 1) {
+        // No more parts, move to next slide
+        currentFrame++;
+        showFrame(currentFrame);
+        return;
+      }
+      
+      // Move to next dialogue part
+      currentDialoguePart++;
+      
+      dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      setTimeout(() => {
+        dialogueText.textContent = '';
+        fullText = frame.dialogueParts[currentDialoguePart];
         charIndex = 0;
         isDelaying = false;
         dialogueBox.classList.add('visible');
@@ -1250,8 +1298,16 @@
         return;
       }
 
-      currentFrame++;
-      showFrame(currentFrame);
+      // Check if current frame has multiple dialogue parts
+      const frame = sequence[currentFrame];
+      if (frame.dialogueParts && frame.dialogueParts.length > 0) {
+        // Move to next dialogue part (animation stays active)
+        showNextDialoguePart();
+      } else {
+        // Move to next slide
+        currentFrame++;
+        showFrame(currentFrame);
+      }
     }
 
     document.addEventListener('keydown', (e) => {
