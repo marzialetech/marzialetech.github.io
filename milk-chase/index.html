@@ -619,11 +619,25 @@
             width: 25px;
         }
         
+        .leaderboard-entry .car-preview {
+            width: 30px;
+            height: 20px;
+            margin-right: 8px;
+            border: 1px solid #555;
+            border-radius: 3px;
+            flex-shrink: 0;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
         .leaderboard-entry .name {
             flex: 1;
             text-align: left;
             color: #fff;
             margin-left: 10px;
+            display: flex;
+            align-items: center;
         }
         
         .leaderboard-entry .time {
@@ -895,7 +909,7 @@
                 <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
 
                 <div class="option-group">
-                    <label>Choose Your Car</label>
+                    <label>Choose Your Car Skin</label>
                     <div class="car-options">
                         <div class="car-option" data-car="southlewis">
                             <div class="car-design"></div>
@@ -918,6 +932,11 @@
                         <div class="car-name">Cow Print</div>
                     </div>
                 </div>
+                </div>
+
+                <div class="option-group">
+                    <label>Choose Your Car Color</label>
+                    <input type="color" id="car-color-picker" value="#cc2222" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
                 </div>
 
                 <div class="button-row">
@@ -1103,7 +1122,7 @@
         }
         
         // Leaderboard functions
-        async function submitScore(name, timeSeconds, school) {
+        async function submitScore(name, timeSeconds, school, carDesign, carColor) {
             initSupabase();
             if (!supabaseClient || !name.trim()) return null;
             
@@ -1113,7 +1132,9 @@
                     .insert([{ 
                         player_name: name.trim(), 
                         time_seconds: timeSeconds,
-                        school: school
+                        school: school,
+                        car_design: carDesign || 'usa',
+                        car_color: carColor || '#cc2222'
                     }])
                     .select();
                 
@@ -1136,7 +1157,7 @@
             try {
                 let query = supabaseClient
                     .from('milk_chase_scores')
-                    .select('id, player_name, time_seconds, school, created_at')
+                    .select('id, player_name, time_seconds, school, car_design, car_color, created_at')
                     .order('time_seconds', { ascending: false })
                     .limit(50);
                 
@@ -1158,6 +1179,59 @@
             }
         }
         
+        // Create car preview canvas
+        function createCarPreview(design, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 30;
+            canvas.height = 20;
+            const ctx = canvas.getContext('2d');
+            
+            const w = 30;
+            const h = 20;
+            
+            // Car body based on design
+            if (design === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, 0, 0, w, h);
+                } else {
+                    ctx.fillStyle = '#B22234';
+                    ctx.fillRect(0, 0, w, h);
+                }
+            } else if (design === 'red') {
+                ctx.fillStyle = color || '#cc2222';
+                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(w/2 - 1, 0, 2, h);
+            } else if (design === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    ctx.drawImage(cowPrint, 0, 0, w, h);
+                } else {
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, w, h);
+                }
+            } else if (design === 'southlewis') {
+                ctx.fillStyle = color || '#cc2222';
+                ctx.fillRect(0, 0, w, h);
+                if (southLewisLogo && southLewisLogo.complete) {
+                    const logoSize = Math.min(w, h) * 0.7;
+                    ctx.drawImage(southLewisLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
+                }
+            } else if (design === 'lowville') {
+                ctx.fillStyle = color || '#cc2222';
+                ctx.fillRect(0, 0, w, h);
+                if (lowvilleLogo && lowvilleLogo.complete) {
+                    const logoSize = Math.min(w, h) * 0.7;
+                    ctx.drawImage(lowvilleLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
+                }
+            } else {
+                // Default: use color
+                ctx.fillStyle = color || '#cc2222';
+                ctx.fillRect(0, 0, w, h);
+            }
+            
+            return canvas.toDataURL();
+        }
+
         function renderLeaderboard(entries, highlightId) {
             const list = document.getElementById('leaderboard-list');
             if (!list) return;
@@ -1176,10 +1250,14 @@
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
                 const deleteBtn = isAdmin ? `<button class="delete-btn" onclick="deleteScore(${entry.id})" title="Delete this entry">×</button>` : '';
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222');
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
-                    <span class="name">${entry.player_name}${schoolTag}</span>
+                    <span class="name">
+                        <img src="${carPreview}" class="car-preview" alt="car">
+                        ${entry.player_name}${schoolTag}
+                    </span>
                     <span class="time">${timeStr}</span>
                     ${deleteBtn}
                 </div>`;
@@ -1216,10 +1294,14 @@
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
                 const deleteBtn = isAdmin ? `<button class="delete-btn" onclick="deleteScore(${entry.id})" title="Delete this entry">×</button>` : '';
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222');
                 
                 return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
-                    <span class="name">${entry.player_name}${schoolTag}</span>
+                    <span class="name">
+                        <img src="${carPreview}" class="car-preview" alt="car">
+                        ${entry.player_name}${schoolTag}
+                    </span>
                     <span class="time">${timeStr}</span>
                     ${deleteBtn}
                 </div>`;
@@ -1324,6 +1406,7 @@
 
         // Settings
         let selectedCar = 'usa';
+        let selectedColor = '#cc2222';
         let selectedMass = 1000;
 
         // Physics (scaled down 0.75x for easier gameplay)
@@ -2392,7 +2475,7 @@
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime, selectedSchool);
+            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedColor);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
@@ -2592,6 +2675,14 @@
                 selectedCar = option.dataset.car;
             });
         });
+
+        // Color picker
+        const colorPicker = document.getElementById('car-color-picker');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                selectedColor = e.target.value;
+            });
+        }
 
         // GitHub login button
         const githubLoginBtn = document.getElementById('github-login-btn');
