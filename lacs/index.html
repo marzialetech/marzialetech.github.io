@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>LACS - Lewis County</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: flex-end;
+      padding: 2rem;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .character {
+      width: 16vw;
+      min-width: 100px;
+      max-width: 180px;
+      flex-shrink: 0;
+      transform: translate3d(0, 100vh, 0);
+      -webkit-transform: translate3d(0, 100vh, 0);
+      transition: transform 0.8s linear;
+      -webkit-transition: -webkit-transform 0.8s linear;
+      will-change: transform;
+    }
+
+    .character.entered {
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    .character img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .dialogue-area {
+      display: flex;
+      align-items: flex-end;
+      padding-left: 1.5rem;
+      padding-bottom: 0.5rem;
+      min-height: 80px;
+    }
+
+    .dialogue-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+    }
+
+    .dialogue-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .speaker-name {
+      font-weight: bold;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      margin-bottom: 0.25rem;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    .dialogue-text {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      line-height: 1.5;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      max-width: 500px;
+    }
+
+    .prompt-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      flex-shrink: 0;
+      image-rendering: pixelated;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .prompt-icon.visible {
+      opacity: 0.8;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Final slide - logo and button */
+    .final-slide {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      z-index: 10;
+    }
+
+    .final-slide.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .final-logo {
+      width: 70vw;
+      max-width: 600px;
+      height: auto;
+      filter: invert(1);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .play-button {
+      padding: 15px 40px;
+      font-size: 20px;
+      background: #000;
+      border: 2px solid #00ff88;
+      border-radius: 8px;
+      color: #00ff88;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      font-family: 'Courier New', monospace;
+    }
+
+    .play-button:hover {
+      background: rgba(0, 255, 136, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
+      transform: scale(1.05);
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+        padding-bottom: 2rem;
+        flex-wrap: wrap;
+        align-content: flex-end;
+      }
+      
+      .character {
+        width: 25vw;
+        min-width: 80px;
+      }
+      
+      .dialogue-area {
+        padding-left: 1rem;
+      }
+
+      .dialogue-box {
+        position: absolute;
+        bottom: 2rem;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+      }
+
+      .character {
+        margin-bottom: 3rem;
+      }
+
+      .dialogue-text {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .final-logo {
+        width: 90vw;
+      }
+
+      .play-button {
+        font-size: 18px;
+        padding: 12px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <div class="character" id="character">
+      <img id="characterImg" src="../images/img2_wave.png" alt="character">
+    </div>
+
+    <div class="dialogue-area">
+      <div class="dialogue-box" id="dialogueBox">
+        <div class="dialogue-content">
+          <p class="speaker-name">Joseph</p>
+          <p class="dialogue-text" id="dialogueText"></p>
+        </div>
+        <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
+      </div>
+    </div>
+  </div>
+
+  <!-- Final slide with logo and button -->
+  <div class="final-slide" id="finalSlide">
+    <img class="final-logo" src="../milk-chase/logo.png" alt="Lewis County Milk Chase">
+    <a href="/milk-chase" class="play-button">Play the Game!</a>
+  </div>
+
+  <script>
+    // Audio context for Animal Crossing style chatter
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playChatter() {
+      if (!audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      const baseFreq = 280 + Math.random() * 180;
+      oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, audioCtx.currentTime + 0.06);
+      oscillator.type = 'square';
+      
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.06);
+    }
+
+    // Dialogue sequence - 5 slides for middle school audience
+    const sequence = [
+      { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
+      { img: 3, dialogue: "I studied physics in school and got my PhD. My research was all about rockets!" },
+      { img: 1, dialogue: "I used computers to simulate how rockets move through space." },
+      { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy." },
+      { img: 7, dialogue: "These ideas help us understand how things move and crash into each other..." },
+      { img: 8, dialogue: "And that's exactly what I want to show you!" },
+    ];
+
+    const imageMap = {
+      1: '../images/img1_passion1.png',
+      2: '../images/img2_wave.png',
+      3: '../images/img3_talk1.png',
+      4: '../images/img4_passion2.png',
+      5: '../images/img5_embarassed.png',
+      6: '../images/img6_talk2.png',
+      7: '../images/img7_mischief.png',
+      8: '../images/img8_thumbsup.png',
+      9: '../images/img9_celebrate.png',
+    };
+
+    let currentFrame = -1;
+    let introComplete = false;
+    let waitingForStart = false;
+    let started = false;
+    let isTyping = false;
+    let isDelaying = false;
+    let isFinished = false;
+    let typewriterTimeout = null;
+    let fullText = '';
+    let charIndex = 0;
+
+    const mainContainer = document.getElementById('mainContainer');
+    const dialogueBox = document.getElementById('dialogueBox');
+    const dialogueText = document.getElementById('dialogueText');
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    const promptIcon = document.getElementById('promptIcon');
+    const finalSlide = document.getElementById('finalSlide');
+
+    // Preload images
+    Object.values(imageMap).forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    function typeWriter() {
+      if (charIndex < fullText.length) {
+        const currentChar = fullText.charAt(charIndex);
+        dialogueText.textContent += currentChar;
+        
+        if (currentChar !== ' ') {
+          playChatter();
+        }
+        
+        charIndex++;
+        
+        const delay = currentChar === ' ' ? 30 : 35 + Math.random() * 20;
+        typewriterTimeout = setTimeout(typeWriter, delay);
+      } else {
+        isTyping = false;
+        
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+      }
+    }
+
+    function startTyping() {
+      if (fullText.startsWith('...')) {
+        isDelaying = true;
+        typewriterTimeout = setTimeout(() => {
+          isDelaying = false;
+          isTyping = true;
+          typeWriter();
+        }, 500);
+      } else {
+        isTyping = true;
+        typeWriter();
+      }
+    }
+
+    function endSequence() {
+      isFinished = true;
+      promptIcon.classList.remove('visible');
+      dialogueBox.classList.remove('visible');
+      character.classList.remove('entered');
+      
+      setTimeout(() => {
+        mainContainer.classList.add('hidden');
+        finalSlide.classList.add('visible');
+      }, 800);
+    }
+
+    function playIntro() {
+      characterImg.src = imageMap[2];
+      character.classList.add('entered');
+      
+      setTimeout(() => {
+        introComplete = true;
+        waitingForStart = true;
+      }, 850);
+    }
+
+    function startDialogue() {
+      if (!waitingForStart) return;
+      
+      waitingForStart = false;
+      started = true;
+      currentFrame = 0;
+      showFrame(currentFrame);
+    }
+
+    function showFrame(index) {
+      if (index >= sequence.length) {
+        endSequence();
+        return;
+      }
+
+      const frame = sequence[index];
+      characterImg.src = imageMap[frame.img];
+
+      dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      setTimeout(() => {
+        dialogueText.textContent = '';
+        fullText = frame.dialogue;
+        charIndex = 0;
+        isDelaying = false;
+        dialogueBox.classList.add('visible');
+        startTyping();
+      }, 150);
+    }
+
+    function advance() {
+      if (isDelaying) return;
+      if (isFinished) return;
+
+      initAudio();
+
+      if (waitingForStart) {
+        startDialogue();
+        return;
+      }
+
+      if (!started) return;
+
+      if (isTyping) {
+        if (typewriterTimeout) {
+          clearTimeout(typewriterTimeout);
+        }
+        dialogueText.textContent = fullText;
+        isTyping = false;
+        
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+        return;
+      }
+
+      currentFrame++;
+      showFrame(currentFrame);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (e.repeat) return;
+        initAudio();
+        advance();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      initAudio();
+      advance();
+    });
+
+    document.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      initAudio();
+      advance();
+    });
+
+    window.addEventListener('load', () => {
+      setTimeout(playIntro, 500);
+    });
+  </script>
+</body>
+</html>
