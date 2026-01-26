@@ -166,10 +166,14 @@
         #car-preview-container {
             position: absolute;
             top: 0;
+            left: 0;
             right: 0;
-            width: 120px;
-            height: 120px;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
+            z-index: 100;
+            overflow: visible;
         }
 
         #car-preview-canvas {
@@ -999,7 +1003,7 @@
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                         <label style="margin: 0;">Wheels Color</label>
                         <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden; cursor: pointer;">
-                            <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
+                            <input type="color" id="wheels-color-picker" value="#1a1a1a" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
                             <div class="car-design" id="wheels-color-display" style="background: #444; pointer-events: none;"></div>
                             <div class="car-name" id="wheels-color-label" style="pointer-events: none;">Select</div>
                         </div>
@@ -1112,7 +1116,7 @@
                         school: school,
                         car_design: carDesign || 'usa',
                         car_color: carColor || '#cc2222',
-                        car_wheels_color: wheelsColor || '#000000'
+                        car_wheels_color: wheelsColor || '#1a1a1a'
                     }])
                     .select();
                 
@@ -1357,7 +1361,7 @@
             ctx.fillRect(0, 8 * scale, 20 * scale, w - 16 * scale);
             
             // Wheels (use selected color, rotated positions)
-            ctx.fillStyle = wheelsColor || '#000000';
+            ctx.fillStyle = wheelsColor || '#1a1a1a';
             // Front left (now top left when rotated)
             ctx.fillRect(10 * scale, -5 * scale, 20 * scale, 8 * scale);
             // Front right (now top right when rotated)
@@ -1389,7 +1393,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#1a1a1a');
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1432,7 +1436,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#1a1a1a');
                 
                 return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1459,10 +1463,10 @@
         const previewCanvas = document.getElementById('car-preview-canvas');
         const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
         
-        // Set preview canvas size
+        // Set preview canvas size (larger to prevent cutoff)
         if (previewCanvas) {
-            previewCanvas.width = 120;
-            previewCanvas.height = 120;
+            previewCanvas.width = 400;
+            previewCanvas.height = 400;
         }
         
         // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
@@ -1515,7 +1519,7 @@
         // Settings
         let selectedCar = 'usa';
         let selectedCarColor = '#cc2222';
-        let selectedWheelsColor = '#000000';
+        let selectedWheelsColor = '#1a1a1a'; // Very dark gray, not black
         let selectedMass = 1000;
 
         // Physics (scaled down 0.75x for easier gameplay)
