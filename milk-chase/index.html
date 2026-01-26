@@ -40,17 +40,21 @@
         /* HUD */
         #hud {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 10px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 15px;
-            border-radius: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
             border: 2px solid #00aaff;
         }
 
         #hud div {
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        #hud .timer-row {
+            margin-bottom: 6px;
         }
 
         #hud .label {
@@ -62,16 +66,21 @@
             font-weight: bold;
         }
 
+        #hud .value.timer {
+            font-size: 18px;
+            color: #ffcc00;
+        }
+
         /* Speedometer */
         #speedometer {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 130px;
-            height: 130px;
+            bottom: 15px;
+            right: 15px;
+            width: 80px;
+            height: 80px;
             background: rgba(0, 0, 0, 0.85);
             border-radius: 50%;
-            border: 4px solid #ff6600;
+            border: 3px solid #ff6600;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -79,30 +88,14 @@
         }
 
         #speed-value {
-            font-size: 32px;
+            font-size: 22px;
             font-weight: bold;
             color: #ff6600;
         }
 
         #speed-unit {
-            font-size: 12px;
+            font-size: 10px;
             color: #aaa;
-        }
-
-        /* Physics bar */
-        #physics-bar {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 12px 20px;
-            border-radius: 20px;
-            border: 2px solid #ffcc00;
-        }
-
-        #physics-bar .equation {
-            font-size: 18px;
-            color: #ffcc00;
         }
 
         /* Start screen */
@@ -396,27 +389,27 @@
         #mobile-controls {
             display: none;
             position: absolute;
-            bottom: 30px;
+            bottom: 10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
+            width: 85%;
+            max-width: 350px;
             z-index: 100;
         }
 
         .mobile-slider-container {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.7);
             border: 2px solid #00aaff;
-            border-radius: 30px;
-            padding: 15px 20px;
+            border-radius: 20px;
+            padding: 8px 12px;
             touch-action: none;
         }
 
         .mobile-slider-track {
             position: relative;
-            height: 50px;
+            height: 40px;
             background: linear-gradient(90deg, #ff6600 0%, #333 50%, #00aaff 100%);
-            border-radius: 25px;
+            border-radius: 20px;
             overflow: hidden;
         }
 
@@ -425,31 +418,28 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             background: #fff;
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             pointer-events: none;
         }
 
         .mobile-slider-labels {
             display: flex;
             justify-content: space-between;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #888;
+            margin-top: 4px;
+            font-size: 10px;
+            color: #666;
         }
 
         .mobile-auto-accel {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 11px;
-            color: #0f0;
+            display: none; /* Hide this text to reduce clutter */
         }
 
         /* Hide desktop instructions on mobile */
@@ -464,7 +454,33 @@
 
         /* Adjust speedometer position on mobile */
         body.is-mobile #speedometer {
-            bottom: 140px;
+            bottom: 80px;
+            right: 10px;
+            width: 60px;
+            height: 60px;
+        }
+        
+        body.is-mobile #speed-value {
+            font-size: 18px;
+        }
+        
+        body.is-mobile #speed-unit {
+            font-size: 8px;
+        }
+        
+        /* Smaller HUD on mobile */
+        body.is-mobile #hud {
+            padding: 6px 8px;
+            font-size: 10px;
+        }
+        
+        body.is-mobile #hud div {
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+        
+        body.is-mobile #hud .value.timer {
+            font-size: 14px;
         }
     </style>
 </head>
@@ -473,13 +489,9 @@
         <canvas id="game"></canvas>
 
         <div id="hud">
-            <div><span class="label">Distance to truck: </span><span class="value" id="distance-value">500</span><span class="label"> m</span></div>
-            <div><span class="label">Truck speed: </span><span class="value" id="truck-speed-value">8</span><span class="label"> mph</span></div>
-            <div><span class="label">Your mass: </span><span class="value" id="mass-value">4</span><span class="label"> lbs</span></div>
-        </div>
-
-        <div id="physics-bar">
-            <div class="equation">p = mv (momentum)</div>
+            <div class="timer-row"><span class="label">Time: </span><span class="value timer" id="timer-value">0:00</span></div>
+            <div><span class="label">Distance: </span><span class="value" id="distance-value">300</span><span class="label">m</span></div>
+            <div><span class="label">Mass: </span><span class="value" id="mass-value">4</span><span class="label"> lbs</span></div>
         </div>
 
         <div id="speedometer">
@@ -508,7 +520,7 @@
         <div id="start-screen">
             <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
             <h1>🥛 <span>Milk Truck</span> Chase!</h1>
-            <div class="subtitle">Catch the milk truck! But watch out for obstacles...</div>
+            <div class="subtitle">Chase the milk truck! Survive as long as you can...</div>
 
             <div class="option-group">
                 <label>Choose Your Car</label>
@@ -594,22 +606,23 @@
         let selectedCar = 'usa';
         let selectedMass = 1000;
 
-        // Physics
-        const ACCELERATION = 80;
-        const FRICTION = 15;
-        const MAX_SPEED = 180; // km/h = 50 m/s
-        const LANE_SPEED = 400; // Horizontal movement speed (pixels/s)
+        // Physics (scaled down 0.75x for easier gameplay)
+        const ACCELERATION = 60; // was 80
+        const FRICTION = 11; // was 15
+        const MAX_SPEED = 135; // was 180 (km/h internal)
+        const LANE_SPEED = 300; // was 400 (horizontal movement)
         // ROAD_LEFT, ROAD_RIGHT, LANE_WIDTH are now dynamic (set in updateRoadDimensions)
         
-        // Truck speed = 80% of max speed
-        const TRUCK_SPEED = MAX_SPEED * 0.8; // 144 km/h
-        const INITIAL_DISTANCE = 500; // meters
+        // Truck stays between 100-500m from player
+        const MIN_DISTANCE = 100; // meters - truck speeds up when closer
+        const MAX_DISTANCE = 500; // meters - truck slows down when further
+        const INITIAL_DISTANCE = 300; // meters - start in the middle
         
         // Display conversion functions (keep gameplay the same, show nice numbers)
-        // Speed: 0-180 internal → 0-10 display mph
+        // Speed: 0-135 internal → 0-10 display mph
         // Mass: 500-2000 internal → 2-8 display lbs
         function toDisplaySpeed(internalSpeed) {
-            return Math.round(internalSpeed / 18); // 180 → 10
+            return Math.round(internalSpeed / 13.5); // 135 → 10
         }
         function toDisplayMass(internalMass) {
             return Math.round((internalMass - 500) / 250 + 2); // 500→2, 1000→4, 1500→6, 2000→8
@@ -667,7 +680,7 @@
                 height: 100,
                 lane: 1, // 0, 1, or 2
                 worldY: INITIAL_DISTANCE, // Meters ahead of player
-                speed: TRUCK_SPEED // km/h - independent velocity
+                speed: 0 // Dynamic - calculated each frame based on distance
             };
         }
         
@@ -1073,6 +1086,24 @@
             player.x = Math.max(ROAD_LEFT + player.width/2 + 10, 
                                Math.min(ROAD_RIGHT - player.width/2 - 10, player.x));
 
+            // Calculate distance before updating positions
+            distance = truck.worldY - player.worldY;
+            
+            // Dynamic truck speed based on distance
+            // When far (500m): truck goes ~80% of player speed (player catches up)
+            // When close (100m): truck goes ~110% of player speed (truck pulls away)
+            let truckSpeedRatio;
+            if (distance <= MIN_DISTANCE) {
+                truckSpeedRatio = 1.1; // Truck speeds up to escape
+            } else if (distance >= MAX_DISTANCE) {
+                truckSpeedRatio = 0.8; // Truck slows down to let player catch up
+            } else {
+                // Linear interpolation between 80% and 100%
+                const t = (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE);
+                truckSpeedRatio = 1.0 - (t * 0.2); // 100% at close, 80% at far
+            }
+            truck.speed = player.speed * truckSpeedRatio;
+            
             // Update world positions (convert km/h to m/s: divide by 3.6)
             const playerSpeedMS = player.speed / 3.6;
             const truckSpeedMS = truck.speed / 3.6;
@@ -1080,14 +1111,19 @@
             player.worldY += playerSpeedMS * dt;
             truck.worldY += truckSpeedMS * dt;
             
-            // Distance is how far ahead the truck is
+            // Clamp distance to stay within bounds
             distance = truck.worldY - player.worldY;
+            if (distance < MIN_DISTANCE) {
+                truck.worldY = player.worldY + MIN_DISTANCE;
+                distance = MIN_DISTANCE;
+            } else if (distance > MAX_DISTANCE) {
+                truck.worldY = player.worldY + MAX_DISTANCE;
+                distance = MAX_DISTANCE;
+            }
 
             // Update truck visual Y position based on distance
-            // When distance=500m, truck near top; when distance=0, truck at player.y
-            // Allow truck to go off screen if distance increases beyond initial
             const maxVisualDist = player.y - 100; // pixels from player to near top of screen
-            const visualRatio = Math.max(0, distance / INITIAL_DISTANCE);
+            const visualRatio = Math.max(0, (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE));
             truck.y = player.y - maxVisualDist * visualRatio;
 
             // Move truck to avoid obstacles
@@ -1101,8 +1137,8 @@
                 }
             }
 
-            // Spawn obstacles
-            if (gameTime - lastObstacleTime > 1.5 + Math.random()) {
+            // Spawn obstacles (easier - longer gaps)
+            if (gameTime - lastObstacleTime > 2.0 + Math.random() * 1.5) {
                 const newObstacle = createObstacle();
                 if (newObstacle) {
                     obstacles.push(newObstacle);
@@ -1111,7 +1147,7 @@
             }
 
             // Update obstacles
-            const obstacleSpeed = player.speed * 0.15;
+            const obstacleSpeed = player.speed * 0.12; // Slightly slower obstacles
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 obstacles[i].y += obstacleSpeed * dt * 60;
 
@@ -1128,15 +1164,17 @@
                 }
             }
 
-            // Check win condition
-            if (distance <= 0) {
-                handleWin();
-            }
-
             // Update HUD
             document.getElementById('speed-value').textContent = toDisplaySpeed(player.speed);
-            document.getElementById('distance-value').textContent = Math.max(0, Math.round(distance));
-            document.getElementById('truck-speed-value').textContent = toDisplaySpeed(truck.speed);
+            document.getElementById('timer-value').textContent = formatTime(gameTime);
+            document.getElementById('distance-value').textContent = Math.round(distance);
+        }
+        
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
         // Collision detection
@@ -1216,8 +1254,9 @@
             document.body.classList.remove('game-playing');
             
             const { m1, v1, m2, v1f, v2f } = crashData;
+            const survivalTime = formatTime(gameTime);
 
-            document.getElementById('result-title').textContent = '💥 CRASH!';
+            document.getElementById('result-title').textContent = `💥 CRASHED! Time: ${survivalTime}`;
             document.getElementById('result-title').className = 'crash';
 
             // Convert to display units for nice round numbers
@@ -1271,31 +1310,6 @@
             document.getElementById('result-screen').classList.add('visible');
         }
 
-        // Handle win
-        function handleWin() {
-            gameState = 'result';
-            document.body.classList.remove('game-playing');
-
-            document.getElementById('result-title').textContent = '🥛 GOT THE MILK!';
-            document.getElementById('result-title').className = 'win';
-
-            const displayMass = toDisplayMass(player.mass);
-            const displaySpeed = toDisplaySpeed(player.speed);
-            const displayMomentum = displayMass * displaySpeed;
-
-            document.getElementById('collision-math').innerHTML = `
-                <strong>You caught the milk truck!</strong><br><br>
-                Your car's momentum helped you catch up:<br>
-                <span class="values">p = mv = ${displayMass} lbs × ${displaySpeed} mph</span><br>
-                <span class="values">p = ${displayMomentum} lb·mph</span><br><br>
-                
-                A heavier car at the same speed has more momentum,<br>
-                and takes more force to stop!
-            `;
-
-            document.getElementById('result-screen').classList.add('visible');
-        }
-
         // Reset game
         function resetGame() {
             player = createPlayer();
@@ -1314,7 +1328,8 @@
             crashParticles = [];
 
             document.getElementById('mass-value').textContent = toDisplayMass(selectedMass);
-            document.getElementById('truck-speed-value').textContent = toDisplaySpeed(TRUCK_SPEED);
+            document.getElementById('timer-value').textContent = '0:00';
+            document.getElementById('distance-value').textContent = INITIAL_DISTANCE;
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('visible');
         }
