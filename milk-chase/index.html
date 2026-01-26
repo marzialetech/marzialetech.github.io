@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Milk Truck Chase!</title>
+    <!-- KaTeX for LaTeX math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -158,22 +161,20 @@
 
         .car-options {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
         }
 
         .car-option {
-            width: 100px;
-            height: 80px;
+            width: 70px;
             border: 3px solid #444;
             border-radius: 10px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             transition: all 0.2s;
-            background: rgba(255,255,255,0.05);
+            overflow: hidden;
         }
 
         .car-option:hover {
@@ -186,14 +187,73 @@
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
         }
 
-        .car-option .car-icon {
-            font-size: 30px;
-            margin-bottom: 5px;
+        .car-option .car-design {
+            width: 100%;
+            height: 60px;
+            position: relative;
+        }
+
+        /* USA flag design */
+        .car-option[data-car="usa"] .car-design {
+            background: linear-gradient(
+                to bottom,
+                #B22234 0%, #B22234 7.7%,
+                #fff 7.7%, #fff 15.4%,
+                #B22234 15.4%, #B22234 23.1%,
+                #fff 23.1%, #fff 30.8%,
+                #B22234 30.8%, #B22234 38.5%,
+                #fff 38.5%, #fff 46.2%,
+                #B22234 46.2%, #B22234 53.9%,
+                #fff 53.9%, #fff 61.6%,
+                #B22234 61.6%, #B22234 69.3%,
+                #fff 69.3%, #fff 77%,
+                #B22234 77%, #B22234 84.7%,
+                #fff 84.7%, #fff 92.4%,
+                #B22234 92.4%, #B22234 100%
+            );
+        }
+        .car-option[data-car="usa"] .car-design::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 40%;
+            height: 54%;
+            background: #3C3B6E;
+        }
+
+        /* Classic red design */
+        .car-option[data-car="red"] .car-design {
+            background: linear-gradient(135deg, #cc2222 0%, #aa0000 50%, #880000 100%);
+        }
+        .car-option[data-car="red"] .car-design::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 100%;
+            background: #fff;
+        }
+
+        /* Cow print design */
+        .car-option[data-car="cow"] .car-design {
+            background: #fff;
+            background-image: 
+                radial-gradient(ellipse 25px 20px at 20% 30%, #111 100%, transparent 100%),
+                radial-gradient(ellipse 18px 22px at 70% 25%, #111 100%, transparent 100%),
+                radial-gradient(ellipse 22px 18px at 45% 70%, #111 100%, transparent 100%),
+                radial-gradient(ellipse 15px 20px at 80% 75%, #111 100%, transparent 100%);
         }
 
         .car-option .car-name {
-            font-size: 10px;
+            font-size: 9px;
             color: #aaa;
+            padding: 4px 0;
+            background: rgba(0,0,0,0.8);
+            width: 100%;
+            text-align: center;
         }
 
         .mass-slider {
@@ -351,6 +411,24 @@
             font-size: 12px;
             margin-top: 10px;
             animation: flashHint 0.8s ease-in-out infinite alternate;
+        }
+        
+        .step-text {
+            margin-bottom: 8px;
+        }
+        
+        .step-latex {
+            margin: 6px 0;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        
+        .physics-step.active .step-latex .katex {
+            color: #00ddff;
+        }
+        
+        .physics-step.completed .step-latex .katex {
+            color: #666;
         }
 
         #physics-explanation p {
@@ -516,15 +594,15 @@
                 <label>Choose Your Car</label>
                 <div class="car-options">
                     <div class="car-option selected" data-car="usa">
-                        <div class="car-icon">🇺🇸</div>
+                        <div class="car-design"></div>
                         <div class="car-name">USA</div>
                     </div>
                     <div class="car-option" data-car="red">
-                        <div class="car-icon">🔴</div>
+                        <div class="car-design"></div>
                         <div class="car-name">Classic Red</div>
                     </div>
                     <div class="car-option" data-car="cow">
-                        <div class="car-icon">🐄</div>
+                        <div class="car-design"></div>
                         <div class="car-name">Cow Print</div>
                     </div>
                 </div>
@@ -602,10 +680,14 @@
         const LANE_SPEED = 300; // was 400 (horizontal movement)
         // ROAD_LEFT, ROAD_RIGHT, LANE_WIDTH are now dynamic (set in updateRoadDimensions)
         
-        // Truck stays between 100-500m from player
-        const MIN_DISTANCE = 100; // meters - truck speeds up when closer
-        const MAX_DISTANCE = 500; // meters - truck slows down when further
-        const INITIAL_DISTANCE = 300; // meters - start in the middle
+        // Truck stays between 300-600m from player
+        const MIN_DISTANCE = 300; // meters - truck speeds up when closer
+        const MAX_DISTANCE = 600; // meters - truck slows down when further
+        const INITIAL_DISTANCE = 600; // meters - start far away
+        
+        // Time-based distance control
+        const CATCH_UP_TIME = 5 + Math.random() * 10; // 5-15s to get close
+        const PULL_AWAY_TIME = 3 + Math.random() * 3; // 3-6s to get far
         
         // Display conversion functions (keep gameplay the same, show nice numbers)
         // Speed: 0-135 internal → 0-10 display mph
@@ -617,7 +699,7 @@
             return Math.round((internalMass - 500) / 250 + 2); // 500→2, 1000→4, 1500→6, 2000→8
         }
         function toDisplayObstacleMass(internalMass) {
-            return Math.round((internalMass - 200) / 200 + 1); // 300→1.5→2, 500→2.5→3, 700→3.5→4
+            return Math.round(internalMass / 100); // 100→1, 200→2, etc. (1 lb per cow)
         }
 
         // Input
@@ -679,14 +761,13 @@
             };
         }
         
-        // Obstacle
+        // Cow obstacles
         const MIN_VERTICAL_GAP = 150; // Minimum vertical gap in pixels for car to pass
         
         function createObstacle() {
             const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
             
             // Find which lanes are blocked near the spawn point
-            // A lane is "blocked" if there's an obstacle within MIN_VERTICAL_GAP of y=-100
             const blockedLanes = new Set();
             for (const obs of obstacles) {
                 if (obs.y < MIN_VERTICAL_GAP) {
@@ -710,15 +791,44 @@
             // Pick a random available lane
             const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
             
+            // 1-5 cows, each cow = 1 lb (internal mass for display)
+            const numCows = 1 + Math.floor(Math.random() * 5);
+            
             return {
                 x: lanes[lane],
                 y: -100,
-                width: 60,
-                height: 60,
+                width: 40 + numCows * 8, // Wider with more cows
+                height: 40 + numCows * 6,
                 lane: lane,
-                mass: 300 + Math.random() * 400, // 300-700 kg
-                type: Math.random() > 0.5 ? 'barrel' : 'cone'
+                numCows: numCows,
+                mass: numCows * 100, // Internal mass (100 per cow for physics)
+                hasMooed: false // Track if already played moo sound
             };
+        }
+        
+        // Audio context for moo sounds with doppler effect
+        let audioCtx = null;
+        function playMoo(pitchMultiplier) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            // Cow moo sound (low frequency)
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(120 * pitchMultiplier, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(80 * pitchMultiplier, audioCtx.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.4);
         }
 
         // Draw road
@@ -1016,35 +1126,50 @@
             ctx.restore();
         }
         
-        // Draw obstacle
+        // Draw obstacle (cows)
         function drawObstacle(obs) {
             ctx.save();
             ctx.translate(obs.x, obs.y);
 
-            if (obs.type === 'barrel') {
-                // Orange barrel
-                ctx.fillStyle = '#ff6600';
-                ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+            // Draw group of cows
+            const cowSpacing = obs.width / (obs.numCows + 1);
+            for (let i = 0; i < obs.numCows; i++) {
+                const cowX = -obs.width/2 + cowSpacing * (i + 1);
+                const cowY = (i % 2) * 8 - 4; // Slight offset for variety
+                
+                // Cow body (white with black spots)
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(-obs.width/2, -5, obs.width, 10);
-            } else {
-                // Traffic cone
-                ctx.fillStyle = '#ff4400';
                 ctx.beginPath();
-                ctx.moveTo(0, -obs.height/2);
-                ctx.lineTo(obs.width/2, obs.height/2);
-                ctx.lineTo(-obs.width/2, obs.height/2);
-                ctx.closePath();
+                ctx.ellipse(cowX, cowY, 12, 8, 0, 0, Math.PI * 2);
                 ctx.fill();
+                
+                // Black spots
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.ellipse(cowX - 5, cowY - 2, 4, 3, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(cowX + 4, cowY + 2, 3, 4, -0.2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Head
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(-obs.width/3, -5, obs.width * 2/3, 8);
+                ctx.beginPath();
+                ctx.ellipse(cowX + 10, cowY - 2, 5, 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eyes
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(cowX + 11, cowY - 3, 1.5, 0, Math.PI * 2);
+                ctx.fill();
             }
 
-            // Mass label
+            // Mass label (number of cows)
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 12px Arial';
+            ctx.font = 'bold 11px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(`${toDisplayObstacleMass(obs.mass)} lbs`, 0, obs.height/2 + 15);
+            ctx.fillText(`${obs.numCows} cow${obs.numCows > 1 ? 's' : ''}`, 0, obs.height/2 + 12);
 
             ctx.restore();
         }
@@ -1086,18 +1211,23 @@
             // Calculate distance before updating positions
             distance = truck.worldY - player.worldY;
             
-            // Dynamic truck speed based on distance
-            // When far (500m): truck goes ~80% of player speed (player catches up)
-            // When close (100m): truck goes ~110% of player speed (truck pulls away)
+            // Dynamic truck speed based on time-controlled catching/fleeing
+            // Catch up: 5-15s to go from 600m to 300m (truck at 80-100% speed)
+            // Pull away: 3-6s to go from 300m to 600m (truck at 110% speed)
             let truckSpeedRatio;
-            if (distance <= MIN_DISTANCE) {
-                truckSpeedRatio = 1.1; // Truck speeds up to escape
-            } else if (distance >= MAX_DISTANCE) {
-                truckSpeedRatio = 0.8; // Truck slows down to let player catch up
+            const distRange = MAX_DISTANCE - MIN_DISTANCE; // 300m
+            
+            if (distance <= MIN_DISTANCE + 10) {
+                // Very close - truck runs fast
+                truckSpeedRatio = 1.15;
+            } else if (distance >= MAX_DISTANCE - 10) {
+                // Very far - truck slows down a lot
+                truckSpeedRatio = 0.75;
             } else {
-                // Linear interpolation between 80% and 100%
-                const t = (distance - MIN_DISTANCE) / (MAX_DISTANCE - MIN_DISTANCE);
-                truckSpeedRatio = 1.0 - (t * 0.2); // 100% at close, 80% at far
+                // Smooth transition based on position in range
+                const t = (distance - MIN_DISTANCE) / distRange; // 0=close, 1=far
+                // When close (t=0): 105%, when far (t=1): 85%
+                truckSpeedRatio = 1.05 - (t * 0.2);
             }
             truck.speed = player.speed * truckSpeedRatio;
             
@@ -1146,17 +1276,29 @@
             // Update obstacles
             const obstacleSpeed = player.speed * 0.12; // Slightly slower obstacles
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].y += obstacleSpeed * dt * 60;
+                const obs = obstacles[i];
+                obs.y += obstacleSpeed * dt * 60;
+
+                // Doppler moo effect when passing by cows
+                // Play moo when cow passes player Y position
+                if (!obs.hasMooed && obs.y > player.y - 50 && obs.y < player.y + 100) {
+                    obs.hasMooed = true;
+                    // Doppler effect: higher pitch when approaching (above), lower when receding (below)
+                    const relativeY = obs.y - player.y;
+                    // -50 to +100 range, map to pitch 1.3 to 0.7
+                    const pitchMultiplier = 1.3 - (relativeY + 50) / 150 * 0.6;
+                    playMoo(pitchMultiplier * (0.8 + Math.random() * 0.4)); // Add some randomness
+                }
 
                 // Remove if off screen
-                if (obstacles[i].y > H + 100) {
+                if (obs.y > H + 100) {
                     obstacles.splice(i, 1);
                     continue;
                 }
 
                 // Check collision with player
-                if (checkCollision(player, obstacles[i])) {
-                    handleCrash(obstacles[i]);
+                if (checkCollision(player, obs)) {
+                    handleCrash(obs);
                     return;
                 }
             }
@@ -1276,33 +1418,75 @@
             const keBefore = 0.5 * dm1 * dv1 * dv1;
             const keAfter = 0.5 * dm1 * dv1f * dv1f + 0.5 * dm2 * dv2f * dv2f;
             
-            // Build step-by-step physics explanation
+            // Number of cows for display
+            const numCows = dm2;
+            
+            // Build step-by-step physics explanation with LaTeX
+            // Using mcar, mcow, vcar, vcow notation
             physicsSteps = [
-                `<b>THE SETUP:</b> Your car (m₁ = ${dm1} lbs) at ${dv1} mph hits a stationary obstacle (m₂ = ${dm2} lbs).`,
-                
-                `<b>TWO CONSERVATION LAWS</b> must both be satisfied:`,
-                
-                `<b>1. Conservation of Momentum:</b><br><span class="formula">m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'</span><br>${dm1}×${dv1} + ${dm2}×0 = ${dm1}×v₁' + ${dm2}×v₂'<br><b>${pBefore} = ${dm1}v₁' + ${dm2}v₂'</b>`,
-                
-                `<b>2. Conservation of Kinetic Energy:</b><br><span class="formula">½m₁v₁² + ½m₂v₂² = ½m₁v₁'² + ½m₂v₂'²</span><br>½×${dm1}×${dv1}² = ½×${dm1}×v₁'² + ½×${dm2}×v₂'²<br><b>${Math.round(keBefore)} = ${dm1/2}v₁'² + ${dm2/2}v₂'²</b>`,
-                
-                `<b>SOLVING:</b> We have 2 equations and 2 unknowns (v₁' and v₂'). Solving simultaneously...`,
-                
-                `<b>From momentum equation:</b><br>v₂' = (${pBefore} - ${dm1}v₁') / ${dm2}<br>Substitute into energy equation...`,
-                
-                `<b>After algebra, the formulas are:</b><br><span class="formula">v₁' = v₁ × (m₁ - m₂)/(m₁ + m₂)</span><br><span class="formula">v₂' = v₁ × 2m₁/(m₁ + m₂)</span>`,
-                
-                `<b>PLUGGING IN VALUES:</b><br>v₁' = ${dv1} × (${dm1} - ${dm2})/(${dm1} + ${dm2})<br>v₁' = ${dv1} × ${dm1 - dm2}/${dm1 + dm2} = <b>${dv1f} mph</b>`,
-                
-                `v₂' = ${dv1} × 2×${dm1}/(${dm1} + ${dm2})<br>v₂' = ${dv1} × ${2*dm1}/${dm1 + dm2} = <b>${dv2f} mph</b>`,
-                
-                `<b>VERIFICATION:</b><br>Momentum: ${dm1}×${dv1f} + ${dm2}×${dv2f} = ${pAfter} ✓<br>Energy: ½×${dm1}×${dv1f}² + ½×${dm2}×${dv2f}² = ${Math.round(keAfter)} ✓`,
-                
-                dm1 > dm2 ? 
-                    `<b>INTERPRETATION:</b> Your heavier car (${dm1} lbs) kept moving at ${dv1f} mph while the lighter obstacle (${dm2} lbs) flew off at ${dv2f} mph.` : 
-                    dm1 < dm2 ? 
-                    `<b>INTERPRETATION:</b> The heavier obstacle (${dm2} lbs) absorbed momentum, moving slowly at ${dv2f} mph while your lighter car bounced back.` :
-                    `<b>INTERPRETATION:</b> Equal masses! Your car stopped completely, transferring ALL momentum to the obstacle.`
+                {
+                    text: `<b>THE SETUP</b>`,
+                    latex: `m_{\\text{car}} = ${dm1} \\text{ lbs}, \\quad v_{\\text{car}} = ${dv1} \\text{ mph}`,
+                    latex2: `m_{\\text{cow}} = ${numCows} \\text{ lb${numCows > 1 ? 's' : ''}}, \\quad v_{\\text{cow}} = 0 \\text{ mph}`
+                },
+                {
+                    text: `<b>TWO CONSERVATION LAWS</b> must both hold:`,
+                    latex: null
+                },
+                {
+                    text: `<b>1. Conservation of Momentum</b>`,
+                    latex: `m_{\\text{car}} v_{\\text{car}} + m_{\\text{cow}} v_{\\text{cow}} = m_{\\text{car}} v'_{\\text{car}} + m_{\\text{cow}} v'_{\\text{cow}}`,
+                    latex2: `${dm1} \\cdot ${dv1} + ${numCows} \\cdot 0 = ${dm1} \\cdot v'_{\\text{car}} + ${numCows} \\cdot v'_{\\text{cow}}`,
+                    latex3: `${pBefore} = ${dm1} v'_{\\text{car}} + ${numCows} v'_{\\text{cow}}`
+                },
+                {
+                    text: `<b>2. Conservation of Kinetic Energy</b>`,
+                    latex: `\\frac{1}{2} m_{\\text{car}} v_{\\text{car}}^2 = \\frac{1}{2} m_{\\text{car}} v'^2_{\\text{car}} + \\frac{1}{2} m_{\\text{cow}} v'^2_{\\text{cow}}`,
+                    latex2: `\\frac{1}{2}(${dm1})(${dv1})^2 = \\frac{1}{2}(${dm1}) v'^2_{\\text{car}} + \\frac{1}{2}(${numCows}) v'^2_{\\text{cow}}`,
+                    latex3: `${Math.round(keBefore)} = ${dm1/2} v'^2_{\\text{car}} + ${numCows/2} v'^2_{\\text{cow}}`
+                },
+                {
+                    text: `<b>SOLVING</b> — Two equations, two unknowns...`,
+                    latex: null
+                },
+                {
+                    text: `<b>From momentum:</b>`,
+                    latex: `v'_{\\text{cow}} = \\frac{${pBefore} - ${dm1} v'_{\\text{car}}}{${numCows}}`,
+                    latex2: `\\text{Substitute into energy equation...}`
+                },
+                {
+                    text: `<b>Solving gives the elastic collision formulas:</b>`,
+                    latex: `v'_{\\text{car}} = v_{\\text{car}} \\cdot \\frac{m_{\\text{car}} - m_{\\text{cow}}}{m_{\\text{car}} + m_{\\text{cow}}}`,
+                    latex2: `v'_{\\text{cow}} = v_{\\text{car}} \\cdot \\frac{2 m_{\\text{car}}}{m_{\\text{car}} + m_{\\text{cow}}}`
+                },
+                {
+                    text: `<b>CALCULATE v'<sub>car</sub>:</b>`,
+                    latex: `v'_{\\text{car}} = ${dv1} \\cdot \\frac{${dm1} - ${numCows}}{${dm1} + ${numCows}} = ${dv1} \\cdot \\frac{${dm1 - numCows}}{${dm1 + numCows}}`,
+                    latex2: `v'_{\\text{car}} = \\boxed{${dv1f} \\text{ mph}}`
+                },
+                {
+                    text: `<b>CALCULATE v'<sub>cow</sub>:</b>`,
+                    latex: `v'_{\\text{cow}} = ${dv1} \\cdot \\frac{2 \\cdot ${dm1}}{${dm1} + ${numCows}} = ${dv1} \\cdot \\frac{${2*dm1}}{${dm1 + numCows}}`,
+                    latex2: `v'_{\\text{cow}} = \\boxed{${dv2f} \\text{ mph}}`
+                },
+                {
+                    text: `<b>VERIFY MOMENTUM:</b>`,
+                    latex: `p_{\\text{after}} = ${dm1}(${dv1f}) + ${numCows}(${dv2f}) = ${pAfter}`,
+                    latex2: `p_{\\text{before}} = ${pBefore} \\quad \\checkmark`
+                },
+                {
+                    text: `<b>VERIFY ENERGY:</b>`,
+                    latex: `KE_{\\text{after}} = \\frac{1}{2}(${dm1})(${dv1f})^2 + \\frac{1}{2}(${numCows})(${dv2f})^2 = ${Math.round(keAfter)}`,
+                    latex2: `KE_{\\text{before}} = ${Math.round(keBefore)} \\quad \\checkmark`
+                },
+                {
+                    text: dm1 > numCows ? 
+                        `<b>RESULT:</b> Your heavier car kept moving at ${dv1f} mph. The ${numCows} cow${numCows > 1 ? 's' : ''} flew off at ${dv2f} mph!` : 
+                        dm1 < numCows ? 
+                        `<b>RESULT:</b> The ${numCows} cows absorbed momentum. Your lighter car bounced back at ${Math.abs(dv1f)} mph!` :
+                        `<b>RESULT:</b> Equal masses! Your car stopped completely, transferring ALL momentum to the cows.`,
+                    latex: null
+                }
             ];
             
             currentStep = 0;
@@ -1320,8 +1504,33 @@
                 if (i < currentStep) className += ' completed';
                 if (i === currentStep) className += ' active';
                 if (i > currentStep) return ''; // Don't show future steps
-                return `<div class="${className}">${step}</div>`;
+                
+                let html = `<div class="${className}">`;
+                html += `<div class="step-text">${step.text}</div>`;
+                if (step.latex) {
+                    html += `<div class="step-latex" data-latex="${step.latex.replace(/"/g, '&quot;')}"></div>`;
+                }
+                if (step.latex2) {
+                    html += `<div class="step-latex" data-latex="${step.latex2.replace(/"/g, '&quot;')}"></div>`;
+                }
+                if (step.latex3) {
+                    html += `<div class="step-latex" data-latex="${step.latex3.replace(/"/g, '&quot;')}"></div>`;
+                }
+                html += '</div>';
+                return html;
             }).join('');
+            
+            // Render LaTeX with KaTeX
+            container.querySelectorAll('.step-latex').forEach(el => {
+                const latex = el.dataset.latex;
+                if (latex && window.katex) {
+                    try {
+                        katex.render(latex, el, { displayMode: true, throwOnError: false });
+                    } catch (e) {
+                        el.textContent = latex;
+                    }
+                }
+            });
             
             // Scroll to current step
             const activeStep = container.querySelector('.active');
