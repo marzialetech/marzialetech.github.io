@@ -168,8 +168,8 @@
         }
 
         #car-preview-container {
-            width: 200px;
-            height: 200px;
+            width: 300px;
+            height: 300px;
             margin: 20px auto;
             position: relative;
             display: flex;
@@ -905,12 +905,10 @@
                 </div>
                 </div>
 
-                <div class="option-group">
-                    <label>Car Color</label>
+                <div class="option-group" style="display: flex; gap: 20px; justify-content: center; align-items: center;">
+                    <label style="margin: 0;">Car Color</label>
                     <input type="color" id="car-color-picker" value="#cc2222" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
-                </div>
-                <div class="option-group">
-                    <label>Wheels Color</label>
+                    <label style="margin: 0;">Wheels Color</label>
                     <input type="color" id="wheels-color-picker" value="#000000" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
                 </div>
 
@@ -1235,15 +1233,25 @@
         // Car preview canvas
         const previewCanvas = document.getElementById('car-preview-canvas');
         const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
-        let previewRotation = 0;
+        
+        // Preview car state (driving around logo)
+        let previewCar = {
+            angle: 0, // Current angle around logo (radians)
+            speed: 0.02, // Angular speed
+            targetSpeed: 0.02, // Target speed (changes randomly)
+            turnRate: 0, // Current turning rate
+            targetTurnRate: 0, // Target turn rate
+            forward: true, // Moving forward or reverse
+            lastChangeTime: 0 // Time of last direction/speed change
+        };
         
         // Set preview canvas size
         if (previewCanvas) {
-            previewCanvas.width = 200;
-            previewCanvas.height = 200;
+            previewCanvas.width = 300;
+            previewCanvas.height = 300;
         }
         
-        // Load school logos, USA flag, cow print, and Stewart's logo for car skins and truck
+        // Load school logos, USA flag, cow print, Stewart's logo, and start logo for car skins, truck, and preview
         const southLewisLogo = new Image();
         southLewisLogo.src = 'southlewis-logo.png';
         const lowvilleLogo = new Image();
@@ -1254,6 +1262,8 @@
         cowPrint.src = 'cow.png';
         const stewartsLogo = new Image();
         stewartsLogo.src = 'stewarts-logo.png';
+        const startLogo = new Image();
+        startLogo.src = 'logo.png';
         
         // Dynamic canvas sizing
         let W, H;
@@ -1760,30 +1770,79 @@
             ctx.restore();
         }
 
-        // Draw car preview on start screen (rotating)
+        // Draw car preview on start screen (driving around logo)
         function drawCarPreview() {
             if (!previewCtx || !previewCanvas) return;
+            
+            const currentTime = Date.now();
+            const centerX = previewCanvas.width / 2;
+            const centerY = previewCanvas.height / 2;
+            const orbitRadius = 100; // Distance from logo center
+            
+            // Pseudo-random behavior changes every 2-4 seconds
+            if (currentTime - previewCar.lastChangeTime > 2000 + Math.random() * 2000) {
+                previewCar.lastChangeTime = currentTime;
+                
+                // Randomly change direction (forward/reverse)
+                if (Math.random() > 0.7) {
+                    previewCar.forward = !previewCar.forward;
+                }
+                
+                // Randomly change speed
+                previewCar.targetSpeed = 0.01 + Math.random() * 0.03;
+                
+                // Randomly change turn rate (for more dynamic movement)
+                previewCar.targetTurnRate = (Math.random() - 0.5) * 0.01;
+            }
+            
+            // Smoothly interpolate speed and turn rate
+            previewCar.speed += (previewCar.targetSpeed - previewCar.speed) * 0.1;
+            previewCar.turnRate += (previewCar.targetTurnRate - previewCar.turnRate) * 0.1;
+            
+            // Update angle (with turn rate for more dynamic movement)
+            const direction = previewCar.forward ? 1 : -1;
+            previewCar.angle += previewCar.speed * direction + previewCar.turnRate;
+            
+            // Calculate car position (elliptical orbit for variety)
+            const ellipseX = Math.cos(previewCar.angle) * orbitRadius;
+            const ellipseY = Math.sin(previewCar.angle) * orbitRadius * 0.7; // Slightly flattened
+            const carX = centerX + ellipseX;
+            const carY = centerY + ellipseY;
+            
+            // Calculate car rotation (direction of movement)
+            // Use velocity vector to determine angle
+            const nextAngle = previewCar.angle + previewCar.speed * direction + previewCar.turnRate;
+            const nextX = centerX + Math.cos(nextAngle) * orbitRadius;
+            const nextY = centerY + Math.sin(nextAngle) * orbitRadius * 0.7;
+            const dx = nextX - carX;
+            const dy = nextY - carY;
+            const carRotation = Math.atan2(dy, dx);
             
             // Clear canvas
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
-            // Update rotation (slow rotation)
-            previewRotation += 0.005; // Slow rotation speed
+            // Draw logo in center
+            if (startLogo && startLogo.complete) {
+                const logoSize = 120;
+                previewCtx.save();
+                previewCtx.filter = 'invert(1)'; // Convert black logo to white
+                previewCtx.drawImage(startLogo, centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
+                previewCtx.restore();
+            }
             
+            // Draw car at calculated position
             previewCtx.save();
-            // Center of canvas
-            previewCtx.translate(previewCanvas.width / 2, previewCanvas.height / 2);
-            // Rotate
-            previewCtx.rotate(previewRotation);
+            previewCtx.translate(carX, carY);
+            previewCtx.rotate(carRotation);
             
-            // Scale for preview (car is 50x80, scale to fit nicely in 200x200)
-            const scale = 1.5;
+            // Scale for preview (car is 50x80, scale down for preview)
+            const scale = 0.8;
             const w = 50 * scale;
             const h = 80 * scale;
             
             // Shadow
             previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
-            previewCtx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
+            previewCtx.fillRect(-w/2 + 3, -h/2 + 3, w, h);
 
             // Car body (always use selected car color)
             previewCtx.fillStyle = selectedCarColor;
@@ -1792,13 +1851,13 @@
             // Racing stripe for "red" design
             if (selectedCar === 'red') {
                 previewCtx.fillStyle = '#fff';
-                previewCtx.fillRect(-3 * scale, -h/2, 6 * scale, h);
+                previewCtx.fillRect(-2, -h/2, 4, h);
             }
 
             // Skin design as patch in top left corner
             const patchSize = Math.min(w, h) * 0.4;
-            const patchX = -w/2 + 5 * scale;
-            const patchY = -h/2 + 5 * scale;
+            const patchX = -w/2 + 4;
+            const patchY = -h/2 + 4;
             
             if (selectedCar === 'usa') {
                 if (usaFlag && usaFlag.complete) {
@@ -1820,14 +1879,14 @@
 
             // Windshield (always light blue)
             previewCtx.fillStyle = '#66ccff';
-            previewCtx.fillRect(-w/2 + 8 * scale, -h/2, w - 16 * scale, 20 * scale);
+            previewCtx.fillRect(-w/2 + 6, -h/2, w - 12, 15);
 
             // Wheels
             previewCtx.fillStyle = selectedWheelsColor;
-            previewCtx.fillRect(-w/2 - 5 * scale, -h/2 + 10 * scale, 8 * scale, 20 * scale);
-            previewCtx.fillRect(w/2 - 3 * scale, -h/2 + 10 * scale, 8 * scale, 20 * scale);
-            previewCtx.fillRect(-w/2 - 5 * scale, h/2 - 30 * scale, 8 * scale, 20 * scale);
-            previewCtx.fillRect(w/2 - 3 * scale, h/2 - 30 * scale, 8 * scale, 20 * scale);
+            previewCtx.fillRect(-w/2 - 4, -h/2 + 8, 6, 15);
+            previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
+            previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
+            previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
 
             previewCtx.restore();
             
