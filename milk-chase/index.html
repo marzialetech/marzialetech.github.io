@@ -461,26 +461,31 @@
             text-align: center;
         }
         
-        #score-entry {
-            margin-bottom: 15px;
-        }
-        
         .score-label {
             font-size: 18px;
             color: #ffcc00;
             margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        #score-entry-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         
         #player-name {
-            width: 100%;
-            padding: 10px 15px;
-            font-size: 16px;
+            width: 100px;
+            padding: 8px 10px;
+            font-size: 14px;
             border: 2px solid #00ff88;
-            border-radius: 8px;
+            border-radius: 6px;
             background: #111;
             color: #fff;
             text-align: center;
-            margin-bottom: 10px;
         }
         
         #player-name:focus {
@@ -488,35 +493,8 @@
             box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
         
-        #submit-score-btn {
-            padding: 10px 30px;
-            font-size: 14px;
-            background: #000;
-            border: 2px solid #00ff88;
-            border-radius: 8px;
-            color: #00ff88;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        #submit-score-btn:hover {
-            background: rgba(0, 255, 136, 0.1);
-        }
-        
-        #submit-score-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .school-selector {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        
         .school-btn {
-            padding: 8px 16px;
+            padding: 8px 12px;
             font-size: 12px;
             background: #111;
             border: 2px solid #555;
@@ -534,6 +512,26 @@
         
         .school-btn:hover {
             border-color: #ffcc00;
+        }
+        
+        #submit-score-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            background: #000;
+            border: 2px solid #00ff88;
+            border-radius: 6px;
+            color: #00ff88;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        #submit-score-btn:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        #submit-score-btn:disabled, .school-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         #school-tabs {
@@ -780,7 +778,6 @@
 
         <div id="hud">
             <div class="timer-row"><span class="label">Time: </span><span class="value timer" id="timer-value">0:00</span></div>
-            <div><span class="label">Mass: </span><span class="value" id="mass-value">4</span><span class="label"> lbs</span></div>
         </div>
 
         <div id="speedometer">
@@ -821,14 +818,6 @@
                 </div>
             </div>
 
-            <div class="option-group">
-                <label>Car Mass</label>
-                <div class="mass-slider">
-                    <input type="range" id="mass-input" min="500" max="2000" value="1000" step="250">
-                    <div class="mass-display"><span id="mass-preview">4</span> lbs</div>
-                </div>
-            </div>
-
             <div class="button-row">
                 <button id="start-btn">Start Chase</button>
                 <button id="math-btn">The Math</button>
@@ -849,14 +838,12 @@
             
             <!-- Leaderboard section (shown immediately) -->
             <div id="leaderboard-section">
-                <div id="score-entry">
-                    <div class="score-label">Your Time: <span id="final-time">0:00</span></div>
-                    <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
-                    <div class="school-selector">
-                        <button class="school-btn selected" data-school="lowville">Lowville</button>
-                        <button class="school-btn" data-school="southlewis">South Lewis</button>
-                    </div>
-                    <button id="submit-score-btn">Submit Score</button>
+                <div class="score-label">Your Time: <span id="final-time">0:00</span></div>
+                <div id="score-entry-row">
+                    <input type="text" id="player-name" placeholder="Name" maxlength="15">
+                    <button class="school-btn selected" data-school="lowville">LV</button>
+                    <button class="school-btn" data-school="southlewis">SL</button>
+                    <button id="submit-score-btn">Submit</button>
                 </div>
                 <div id="leaderboard">
                     <div class="leaderboard-title">Leaderboard</div>
@@ -2076,13 +2063,19 @@
                 </div>
                 
                 <div class="math-section">
+                    <div class="math-section-title">What is Kinetic Energy?</div>
+                    Kinetic energy is the energy of motion — it depends on mass and the <i>square</i> of velocity.
+                    <div class="math-formula" data-latex="KE = \\frac{1}{2} m v^2"></div>
+                </div>
+                
+                <div class="math-section">
                     <div class="math-section-title">Conservation of Momentum</div>
                     In a collision, total momentum before = total momentum after.
                     <div class="math-formula" data-latex="m_{car} v_{car} + m_{cow} v_{cow} = m_{car} v'_{car} + m_{cow} v'_{cow}"></div>
                 </div>
                 
                 <div class="math-section">
-                    <div class="math-section-title">Conservation of Energy</div>
+                    <div class="math-section-title">Conservation of Kinetic Energy</div>
                     In an elastic (bouncy) collision, kinetic energy is also conserved.
                     <div class="math-formula" data-latex="\\frac{1}{2}m_{car}v_{car}^2 = \\frac{1}{2}m_{car}v'^2_{car} + \\frac{1}{2}m_{cow}v'^2_{cow}"></div>
                 </div>
@@ -2224,7 +2217,6 @@
             crashTimer = 0;
             crashParticles = [];
 
-            document.getElementById('mass-value').textContent = toDisplayMass(selectedMass);
             document.getElementById('timer-value').textContent = '0:00';
             document.getElementById('start-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('visible');
@@ -2382,16 +2374,6 @@
                 selectedCar = option.dataset.car;
             });
         });
-
-        // Mass slider
-        const massInput = document.getElementById('mass-input');
-        const massPreview = document.getElementById('mass-preview');
-        if (massInput) {
-            massInput.addEventListener('input', (e) => {
-                selectedMass = parseInt(e.target.value);
-                if (massPreview) massPreview.textContent = toDisplayMass(selectedMass);
-            });
-        }
 
         // Start button
         const startBtn = document.getElementById('start-btn');
