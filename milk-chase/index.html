@@ -840,8 +840,8 @@
             }
             
             try {
-                // Use a free cow moo sound from a public CDN
-                const response = await fetch('https://cdn.freesound.org/previews/58/58277_634166-lq.mp3');
+                // Load local moo sound file
+                const response = await fetch('moo.mp3');
                 const arrayBuffer = await response.arrayBuffer();
                 mooBuffer = await audioCtx.decodeAudioData(arrayBuffer);
             } catch (e) {
