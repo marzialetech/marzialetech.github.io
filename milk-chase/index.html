@@ -974,77 +974,18 @@
                 </div>
                 </div>
 
-                <div class="option-group">
-                    <label>Car Color</label>
-                    <div class="car-options">
-                        <div class="car-option selected" data-color="#cc2222" style="background: #cc2222;">
-                            <div class="car-design" style="background: #cc2222;"></div>
-                            <div class="car-name">Red</div>
-                        </div>
-                        <div class="car-option" data-color="#0000ff" style="background: #0000ff;">
-                            <div class="car-design" style="background: #0000ff;"></div>
-                            <div class="car-name">Blue</div>
-                        </div>
-                        <div class="car-option" data-color="#00ff00" style="background: #00ff00;">
-                            <div class="car-design" style="background: #00ff00;"></div>
-                            <div class="car-name">Green</div>
-                        </div>
-                        <div class="car-option" data-color="#ffff00" style="background: #ffff00;">
-                            <div class="car-design" style="background: #ffff00;"></div>
-                            <div class="car-name">Yellow</div>
-                        </div>
-                        <div class="car-option" data-color="#ff00ff" style="background: #ff00ff;">
-                            <div class="car-design" style="background: #ff00ff;"></div>
-                            <div class="car-name">Pink</div>
-                        </div>
-                        <div class="car-option" data-color="#00ffff" style="background: #00ffff;">
-                            <div class="car-design" style="background: #00ffff;"></div>
-                            <div class="car-name">Cyan</div>
-                        </div>
-                        <div class="car-option" data-color="#ffffff" style="background: #ffffff;">
-                            <div class="car-design" style="background: #ffffff;"></div>
-                            <div class="car-name">White</div>
-                        </div>
-                        <div class="car-option" data-color="#000000" style="background: #000000;">
-                            <div class="car-design" style="background: #000000;"></div>
-                            <div class="car-name">Black</div>
-                        </div>
-                        <div class="car-option" id="car-color-custom" style="position: relative; overflow: hidden;">
-                            <input type="color" id="car-color-picker" value="#cc2222" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                            <div class="car-design" style="background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);"></div>
-                            <div class="car-name">Custom</div>
-                        </div>
+                <div class="option-group" style="display: flex; gap: 20px; justify-content: center; align-items: center;">
+                    <label style="margin: 0;">Car Color</label>
+                    <div class="car-option" id="car-color-custom" style="position: relative; overflow: hidden;">
+                        <input type="color" id="car-color-picker" value="#cc2222" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <div class="car-design" id="car-color-display" style="background: #333;"></div>
+                        <div class="car-name" id="car-color-label">Select</div>
                     </div>
-                </div>
-
-                <div class="option-group">
-                    <label>Wheels Color</label>
-                    <div class="car-options">
-                        <div class="car-option selected" data-wheels-color="#000000" style="background: #000000;">
-                            <div class="car-design" style="background: #000000;"></div>
-                            <div class="car-name">Black</div>
-                        </div>
-                        <div class="car-option" data-wheels-color="#ffffff" style="background: #ffffff;">
-                            <div class="car-design" style="background: #ffffff;"></div>
-                            <div class="car-name">White</div>
-                        </div>
-                        <div class="car-option" data-wheels-color="#cc2222" style="background: #cc2222;">
-                            <div class="car-design" style="background: #cc2222;"></div>
-                            <div class="car-name">Red</div>
-                        </div>
-                        <div class="car-option" data-wheels-color="#0000ff" style="background: #0000ff;">
-                            <div class="car-design" style="background: #0000ff;"></div>
-                            <div class="car-name">Blue</div>
-                        </div>
-                        <div class="car-option" data-wheels-color="#ffaa00" style="background: #ffaa00;">
-                            <div class="car-design" style="background: #ffaa00;"></div>
-                            <div class="car-name">Gold</div>
-                        </div>
-                        <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden;">
-                            <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
-                            <div class="car-design" style="background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);"></div>
-                            <div class="car-name">Custom</div>
-                        </div>
+                    <label style="margin: 0;">Wheels Color</label>
+                    <div class="car-option" id="wheels-color-custom" style="position: relative; overflow: hidden;">
+                        <input type="color" id="wheels-color-picker" value="#000000" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <div class="car-design" id="wheels-color-display" style="background: #333;"></div>
+                        <div class="car-name" id="wheels-color-label">Select</div>
                     </div>
                 </div>
 
@@ -2736,47 +2677,35 @@
             });
         });
 
-        // Color selection buttons
-        document.querySelectorAll('.car-option[data-color]').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.car-option[data-color]').forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
-                selectedCarColor = option.dataset.color;
-                // Update custom picker value
-                const customPicker = document.getElementById('car-color-picker');
-                if (customPicker) customPicker.value = selectedCarColor;
-            });
-        });
-
-        // Wheels color selection buttons
-        document.querySelectorAll('.car-option[data-wheels-color]').forEach(option => {
-            option.addEventListener('click', () => {
-                document.querySelectorAll('.car-option[data-wheels-color]').forEach(o => o.classList.remove('selected'));
-                option.classList.add('selected');
-                selectedWheelsColor = option.dataset.wheelsColor;
-                // Update custom picker value
-                const customPicker = document.getElementById('wheels-color-picker');
-                if (customPicker) customPicker.value = selectedWheelsColor;
-            });
-        });
-
         // Custom color pickers
         const carColorPicker = document.getElementById('car-color-picker');
+        const carColorDisplay = document.getElementById('car-color-display');
+        const carColorLabel = document.getElementById('car-color-label');
+        
         if (carColorPicker) {
             carColorPicker.addEventListener('input', (e) => {
                 selectedCarColor = e.target.value;
-                // Unselect preset buttons when using custom
-                document.querySelectorAll('.car-option[data-color]').forEach(o => o.classList.remove('selected'));
+                if (carColorDisplay) carColorDisplay.style.background = selectedCarColor;
+                if (carColorLabel) carColorLabel.textContent = '';
             });
+            
+            // Initialize display with default color
+            if (carColorDisplay) carColorDisplay.style.background = selectedCarColor;
         }
 
         const wheelsColorPicker = document.getElementById('wheels-color-picker');
+        const wheelsColorDisplay = document.getElementById('wheels-color-display');
+        const wheelsColorLabel = document.getElementById('wheels-color-label');
+        
         if (wheelsColorPicker) {
             wheelsColorPicker.addEventListener('input', (e) => {
                 selectedWheelsColor = e.target.value;
-                // Unselect preset buttons when using custom
-                document.querySelectorAll('.car-option[data-wheels-color]').forEach(o => o.classList.remove('selected'));
+                if (wheelsColorDisplay) wheelsColorDisplay.style.background = selectedWheelsColor;
+                if (wheelsColorLabel) wheelsColorLabel.textContent = '';
             });
+            
+            // Initialize display with default color
+            if (wheelsColorDisplay) wheelsColorDisplay.style.background = selectedWheelsColor;
         }
 
 
