@@ -302,7 +302,7 @@
     // Dialogue sequence - 5 slides for middle school audience
     const sequence = [
       { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
-      { img: 3, dialogue: "I studied physics in school and got my PhD. My research was all about rockets!", animation: 'rockets' },
+      { img: 3, dialogue: "I studied math in school and got my PhD. My research was all about modeling physics using computers!", animation: 'rockets' },
       { img: 1, dialogue: "I used computers to simulate how rockets move through space.", animation: 'code' },
       { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
       { img: 7, dialogue: "These ideas help us understand how things move and crash into each other..." },
@@ -454,7 +454,8 @@
     function animateRockets() {
       if (!rocketAnimationActive) return;
       
-      rocketCtx.fillStyle = '#000';
+      // Clear with slight fade for trail effect
+      rocketCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
       rocketCtx.fillRect(0, 0, rocketCanvas.width, rocketCanvas.height);
       
       // Spawn new rockets occasionally
@@ -481,25 +482,38 @@
         r.x += r.vx;
         r.y += r.vy;
         
-        // Draw trail
+        // Draw trail (bright and visible)
         r.trail.forEach((t, idx) => {
           const alpha = idx / r.trail.length;
-          rocketCtx.fillStyle = `rgba(255, ${100 + idx * 20}, 0, ${alpha * 0.8})`;
+          const brightness = 200 + idx * 10;
+          rocketCtx.fillStyle = `rgba(255, ${brightness}, 0, ${alpha * 0.9})`;
           rocketCtx.beginPath();
           rocketCtx.arc(t.x, t.y, r.size * alpha * 0.5, 0, Math.PI * 2);
           rocketCtx.fill();
         });
         
-        // Draw rocket
-        rocketCtx.fillStyle = '#ff6600';
+        // Draw rocket body (bright white/orange, visible on black)
+        rocketCtx.fillStyle = '#ffffff';
         rocketCtx.beginPath();
         rocketCtx.arc(r.x, r.y, r.size, 0, Math.PI * 2);
         rocketCtx.fill();
         
-        // Flame
+        // Rocket body highlight
+        rocketCtx.fillStyle = '#ffaa00';
+        rocketCtx.beginPath();
+        rocketCtx.arc(r.x, r.y, r.size * 0.7, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        // Bright flame (very visible)
         rocketCtx.fillStyle = '#ffff00';
         rocketCtx.beginPath();
-        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.6, 0, Math.PI * 2);
+        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.8, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        // Inner flame
+        rocketCtx.fillStyle = '#ff6600';
+        rocketCtx.beginPath();
+        rocketCtx.arc(r.x, r.y + r.size, r.size * 0.5, 0, Math.PI * 2);
         rocketCtx.fill();
         
         // Remove if off screen
