@@ -168,19 +168,21 @@
         }
 
         #car-preview-container {
-            width: 300px;
-            height: 300px;
-            margin: 20px auto;
-            position: relative;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: none; /* Allow clicks to pass through */
         }
 
         #car-preview-canvas {
             width: 100%;
             height: 100%;
-            display: block;
+            background: transparent;
         }
 
         .option-group {
@@ -871,13 +873,14 @@
 
         <div id="start-screen">
             <div id="start-screen-content">
-                <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
+                <div style="position: relative; width: 400px; margin: 0 auto;">
+                    <img id="start-logo" src="logo.png" alt="Lewis County Milk Chase">
+                    <div id="car-preview-container">
+                        <canvas id="car-preview-canvas"></canvas>
+                    </div>
+                </div>
                 <h1><span>Milk Truck</span> Chase!</h1>
                 <div class="subtitle">Chase the milk truck!! But watch out for cows!!</div>
-
-                <div id="car-preview-container">
-                    <canvas id="car-preview-canvas"></canvas>
-                </div>
 
                 <div class="option-group">
                     <label>Choose Your Car Skin</label>
@@ -1314,21 +1317,16 @@
         const previewCanvas = document.getElementById('car-preview-canvas');
         const previewCtx = previewCanvas ? previewCanvas.getContext('2d') : null;
         
-        // Preview car state (driving around logo)
-        let previewCar = {
-            angle: 0, // Current angle around logo (radians)
-            speed: 0.02, // Angular speed
-            targetSpeed: 0.02, // Target speed (changes randomly)
-            turnRate: 0, // Current turning rate
-            targetTurnRate: 0, // Target turn rate
-            forward: true, // Moving forward or reverse
-            lastChangeTime: 0 // Time of last direction/speed change
-        };
+        // Preview car state (driving left to right over logo)
+        let previewCarX = -50; // Start off-screen left (car width is ~40px scaled)
+        const previewCarSpeed = 2; // Pixels per frame
+        const previewCarResetX = -50; // Reset position (off-screen left)
+        const previewCarEndX = 450; // End position (off-screen right, assuming 400px container)
         
-        // Set preview canvas size
+        // Set preview canvas size to match logo container
         if (previewCanvas) {
-            previewCanvas.width = 300;
-            previewCanvas.height = 300;
+            previewCanvas.width = 400;
+            previewCanvas.height = 400;
         }
         
         // Load school logos, USA flag, cow print, Stewart's logo, and start logo for car skins, truck, and preview
@@ -1342,8 +1340,6 @@
         cowPrint.src = 'cow.png';
         const stewartsLogo = new Image();
         stewartsLogo.src = 'stewarts-logo.png';
-        const startLogo = new Image();
-        startLogo.src = 'logo.png';
         
         // Dynamic canvas sizing
         let W, H;
@@ -1918,73 +1914,32 @@
             }
         }
 
-        // Draw car preview on start screen (driving around logo)
+        // Draw car preview on start screen (driving left to right over logo)
         function drawCarPreview() {
             if (!previewCtx || !previewCanvas) return;
             
-            const currentTime = Date.now();
-            const centerX = previewCanvas.width / 2;
-            const centerY = previewCanvas.height / 2;
-            const orbitRadius = 100; // Distance from logo center
+            // Update car position (left to right)
+            previewCarX += previewCarSpeed;
             
-            // Pseudo-random behavior changes every 2-4 seconds
-            if (currentTime - previewCar.lastChangeTime > 2000 + Math.random() * 2000) {
-                previewCar.lastChangeTime = currentTime;
-                
-                // Randomly change direction (forward/reverse)
-                if (Math.random() > 0.7) {
-                    previewCar.forward = !previewCar.forward;
-                }
-                
-                // Randomly change speed
-                previewCar.targetSpeed = 0.01 + Math.random() * 0.03;
-                
-                // Randomly change turn rate (for more dynamic movement)
-                previewCar.targetTurnRate = (Math.random() - 0.5) * 0.01;
+            // Reset to left side when car goes off-screen right
+            if (previewCarX > previewCarEndX) {
+                previewCarX = previewCarResetX;
             }
             
-            // Smoothly interpolate speed and turn rate
-            previewCar.speed += (previewCar.targetSpeed - previewCar.speed) * 0.1;
-            previewCar.turnRate += (previewCar.targetTurnRate - previewCar.turnRate) * 0.1;
-            
-            // Update angle (with turn rate for more dynamic movement)
-            const direction = previewCar.forward ? 1 : -1;
-            previewCar.angle += previewCar.speed * direction + previewCar.turnRate;
-            
-            // Calculate car position (elliptical orbit for variety)
-            const ellipseX = Math.cos(previewCar.angle) * orbitRadius;
-            const ellipseY = Math.sin(previewCar.angle) * orbitRadius * 0.7; // Slightly flattened
-            const carX = centerX + ellipseX;
-            const carY = centerY + ellipseY;
-            
-            // Calculate car rotation (direction of movement)
-            // Use velocity vector to determine angle
-            const nextAngle = previewCar.angle + previewCar.speed * direction + previewCar.turnRate;
-            const nextX = centerX + Math.cos(nextAngle) * orbitRadius;
-            const nextY = centerY + Math.sin(nextAngle) * orbitRadius * 0.7;
-            const dx = nextX - carX;
-            const dy = nextY - carY;
-            const carRotation = Math.atan2(dy, dx);
-            
-            // Clear canvas
+            // Clear canvas (transparent)
             previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             
-            // Draw logo in center
-            if (startLogo && startLogo.complete) {
-                const logoSize = 120;
-                previewCtx.save();
-                previewCtx.filter = 'invert(1)'; // Convert black logo to white
-                previewCtx.drawImage(startLogo, centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
-                previewCtx.restore();
-            }
+            // Car is always horizontal (driving left to right)
+            const carRotation = 0; // Horizontal, facing right
+            const carY = previewCanvas.height / 2; // Center vertically
             
-            // Draw car at calculated position
+            // Draw car at current position
             previewCtx.save();
-            previewCtx.translate(carX, carY);
+            previewCtx.translate(previewCarX, carY);
             previewCtx.rotate(carRotation);
             
             // Scale for preview (car is 50x80, scale down for preview)
-            const scale = 0.8;
+            const scale = 0.5;
             const w = 50 * scale;
             const h = 80 * scale;
             
