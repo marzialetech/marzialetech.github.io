@@ -906,12 +906,12 @@
                 </div>
 
                 <div class="option-group">
-                    <label>Wheels Color</label>
-                    <input type="color" id="wheels-color-picker" value="#000000" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
+                    <label>Car Color</label>
+                    <input type="color" id="car-color-picker" value="#cc2222" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
                 </div>
                 <div class="option-group">
-                    <label>Windshield Color</label>
-                    <input type="color" id="windshield-color-picker" value="#66ccff" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
+                    <label>Wheels Color</label>
+                    <input type="color" id="wheels-color-picker" value="#000000" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
                 </div>
 
                 <div class="button-row">
@@ -1007,7 +1007,7 @@
         }
         
         // Leaderboard functions
-        async function submitScore(name, timeSeconds, school, carDesign, wheelsColor, windshieldColor) {
+        async function submitScore(name, timeSeconds, school, carDesign, carColor, wheelsColor) {
             initSupabase();
             if (!supabaseClient || !name.trim()) return null;
             
@@ -1019,8 +1019,8 @@
                         time_seconds: timeSeconds,
                         school: school,
                         car_design: carDesign || 'usa',
-                        car_color: wheelsColor || '#000000',
-                        car_windshield_color: windshieldColor || '#66ccff'
+                        car_color: carColor || '#cc2222',
+                        car_wheels_color: wheelsColor || '#000000'
                     }])
                     .select();
                 
@@ -1047,7 +1047,7 @@
                 // Use from() with explicit schema to ensure it works regardless of auth state
                 let query = supabaseClient
                     .from('milk_chase_scores')
-                    .select('id, player_name, time_seconds, school, car_design, car_color, car_windshield_color, created_at')
+                    .select('id, player_name, time_seconds, school, car_design, car_color, car_wheels_color, created_at')
                     .order('time_seconds', { ascending: false })
                     .limit(50);
                 
@@ -1076,7 +1076,7 @@
         }
         
         // Create car preview canvas - matches in-game appearance, rotated 90 degrees
-        function createCarPreview(design, wheelsColor, windshieldColor) {
+        function createCarPreview(design, carColor, wheelsColor) {
             const canvas = document.createElement('canvas');
             // Rotated: swap width/height (was 30x48, now 48x30 for horizontal display)
             canvas.width = 48;
@@ -1096,49 +1096,41 @@
             ctx.rotate(Math.PI / 2);
             ctx.translate(-h / 2, -w / 2);
             
-            // Car body based on design (same as in-game)
-            if (design === 'usa') {
-                if (usaFlag && usaFlag.complete) {
-                    ctx.drawImage(usaFlag, 0, 0, h, w);
-                } else {
-                    ctx.fillStyle = '#B22234';
-                    ctx.fillRect(0, 0, h, w);
-                }
-            } else if (design === 'red') {
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(0, 0, h, w);
-                // Racing stripe (horizontal when rotated)
+            // Car body (always use car color)
+            ctx.fillStyle = carColor || '#cc2222';
+            ctx.fillRect(0, 0, h, w);
+            
+            // Racing stripe for "red" design
+            if (design === 'red') {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(0, centerX - 1.8, h, 3.6);
-            } else if (design === 'cow') {
-                if (cowPrint && cowPrint.complete) {
-                    ctx.drawImage(cowPrint, 0, 0, h, w);
-                } else {
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(0, 0, h, w);
-                }
-            } else if (design === 'southlewis') {
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(0, 0, h, w);
-                if (southLewisLogo && southLewisLogo.complete) {
-                    const logoSize = Math.min(h, w) * 0.8;
-                    ctx.drawImage(southLewisLogo, (h - logoSize)/2, (w - logoSize)/2, logoSize, logoSize);
-                }
-            } else if (design === 'lowville') {
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(0, 0, h, w);
-                if (lowvilleLogo && lowvilleLogo.complete) {
-                    const logoSize = Math.min(h, w) * 0.8;
-                    ctx.drawImage(lowvilleLogo, (h - logoSize)/2, (w - logoSize)/2, logoSize, logoSize);
-                }
-            } else {
-                // Default: red
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(0, 0, h, w);
             }
             
-            // Windshield (rotated: was at top, now at left)
-            ctx.fillStyle = windshieldColor || '#66ccff';
+            // Skin design as patch in top left corner (when rotated, top left is at 0, 0)
+            const patchSize = Math.min(h, w) * 0.4;
+            const patchX = 5 * scale;
+            const patchY = 5 * scale;
+            
+            if (design === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (design === 'cow') {
+                if (cowPrint && cowPrint.complete) {
+                    ctx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (design === 'southlewis') {
+                if (southLewisLogo && southLewisLogo.complete) {
+                    ctx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
+                }
+            } else if (design === 'lowville') {
+                if (lowvilleLogo && lowvilleLogo.complete) {
+                    ctx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
+                }
+            }
+            
+            // Windshield (always light blue, rotated: was at top, now at left)
+            ctx.fillStyle = '#66ccff';
             ctx.fillRect(0, 8 * scale, 20 * scale, w - 16 * scale);
             
             // Wheels (use selected color, rotated positions)
@@ -1174,7 +1166,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#000000', entry.car_windshield_color || '#66ccff');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1217,7 +1209,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#000000', entry.car_windshield_color || '#66ccff');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
                 
                 return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1300,8 +1292,8 @@
 
         // Settings
         let selectedCar = 'usa';
+        let selectedCarColor = '#cc2222';
         let selectedWheelsColor = '#000000';
-        let selectedWindshieldColor = '#66ccff';
         let selectedMass = 1000;
 
         // Physics (scaled down 0.75x for easier gameplay)
@@ -1721,53 +1713,41 @@
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
             ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
 
-            // Car body based on design
-            if (player.design === 'usa') {
-                // Draw USA flag image
-                if (usaFlag && usaFlag.complete) {
-                    ctx.drawImage(usaFlag, -player.width/2, -player.height/2, player.width, player.height);
-                } else {
-                    // Fallback: red background if image not loaded
-                    ctx.fillStyle = '#B22234';
-                    ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                }
-            } else if (player.design === 'red') {
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                // Racing stripe
+            // Car body (always use selected car color)
+            ctx.fillStyle = selectedCarColor;
+            ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+
+            // Racing stripe for "red" design
+            if (player.design === 'red') {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(-3, -player.height/2, 6, player.height);
+            }
+
+            // Skin design as patch in top left corner
+            const patchSize = Math.min(player.width, player.height) * 0.4;
+            const patchX = -player.width/2 + 5;
+            const patchY = -player.height/2 + 5;
+            
+            if (player.design === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    ctx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
             } else if (player.design === 'cow') {
-                // Draw cow print image
                 if (cowPrint && cowPrint.complete) {
-                    ctx.drawImage(cowPrint, -player.width/2, -player.height/2, player.width, player.height);
-                } else {
-                    // Fallback: white background if image not loaded
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                    ctx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
                 }
             } else if (player.design === 'southlewis') {
-                // Red background with South Lewis logo
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                // Draw logo image
                 if (southLewisLogo && southLewisLogo.complete) {
-                    const logoSize = Math.min(player.width, player.height) * 0.8;
-                    ctx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                    ctx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
                 }
             } else if (player.design === 'lowville') {
-                // Red background with Lowville logo
-                ctx.fillStyle = '#cc2222';
-                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
-                // Draw logo image
                 if (lowvilleLogo && lowvilleLogo.complete) {
-                    const logoSize = Math.min(player.width, player.height) * 0.8;
-                    ctx.drawImage(lowvilleLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                    ctx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
                 }
             }
 
-            // Windshield
-            ctx.fillStyle = selectedWindshieldColor;
+            // Windshield (always light blue)
+            ctx.fillStyle = '#66ccff';
             ctx.fillRect(-player.width/2 + 8, -player.height/2, player.width - 16, 20);
 
             // Wheels (use selected color)
@@ -1805,44 +1785,41 @@
             previewCtx.fillStyle = 'rgba(0,0,0,0.3)';
             previewCtx.fillRect(-w/2 + 5, -h/2 + 5, w, h);
 
-            // Car body based on design
-            if (selectedCar === 'usa') {
-                if (usaFlag && usaFlag.complete) {
-                    previewCtx.drawImage(usaFlag, -w/2, -h/2, w, h);
-                } else {
-                    previewCtx.fillStyle = '#B22234';
-                    previewCtx.fillRect(-w/2, -h/2, w, h);
-                }
-            } else if (selectedCar === 'red') {
-                previewCtx.fillStyle = '#cc2222';
-                previewCtx.fillRect(-w/2, -h/2, w, h);
+            // Car body (always use selected car color)
+            previewCtx.fillStyle = selectedCarColor;
+            previewCtx.fillRect(-w/2, -h/2, w, h);
+
+            // Racing stripe for "red" design
+            if (selectedCar === 'red') {
                 previewCtx.fillStyle = '#fff';
                 previewCtx.fillRect(-3 * scale, -h/2, 6 * scale, h);
+            }
+
+            // Skin design as patch in top left corner
+            const patchSize = Math.min(w, h) * 0.4;
+            const patchX = -w/2 + 5 * scale;
+            const patchY = -h/2 + 5 * scale;
+            
+            if (selectedCar === 'usa') {
+                if (usaFlag && usaFlag.complete) {
+                    previewCtx.drawImage(usaFlag, patchX, patchY, patchSize, patchSize);
+                }
             } else if (selectedCar === 'cow') {
                 if (cowPrint && cowPrint.complete) {
-                    previewCtx.drawImage(cowPrint, -w/2, -h/2, w, h);
-                } else {
-                    previewCtx.fillStyle = '#fff';
-                    previewCtx.fillRect(-w/2, -h/2, w, h);
+                    previewCtx.drawImage(cowPrint, patchX, patchY, patchSize, patchSize);
                 }
             } else if (selectedCar === 'southlewis') {
-                previewCtx.fillStyle = '#cc2222';
-                previewCtx.fillRect(-w/2, -h/2, w, h);
                 if (southLewisLogo && southLewisLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.8;
-                    previewCtx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                    previewCtx.drawImage(southLewisLogo, patchX, patchY, patchSize, patchSize);
                 }
             } else if (selectedCar === 'lowville') {
-                previewCtx.fillStyle = '#cc2222';
-                previewCtx.fillRect(-w/2, -h/2, w, h);
                 if (lowvilleLogo && lowvilleLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.8;
-                    previewCtx.drawImage(lowvilleLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
+                    previewCtx.drawImage(lowvilleLogo, patchX, patchY, patchSize, patchSize);
                 }
             }
 
-            // Windshield
-            previewCtx.fillStyle = selectedWindshieldColor;
+            // Windshield (always light blue)
+            previewCtx.fillStyle = '#66ccff';
             previewCtx.fillRect(-w/2 + 8 * scale, -h/2, w - 16 * scale, 20 * scale);
 
             // Wheels
@@ -2450,7 +2427,7 @@
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedWheelsColor, selectedWindshieldColor);
+            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedCarColor, selectedWheelsColor);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
@@ -2653,18 +2630,18 @@
         });
 
         // Color pickers
-        const wheelsColorPicker = document.getElementById('wheels-color-picker');
-        if (wheelsColorPicker) {
-            wheelsColorPicker.addEventListener('input', (e) => {
-                selectedWheelsColor = e.target.value;
+        const carColorPicker = document.getElementById('car-color-picker');
+        if (carColorPicker) {
+            carColorPicker.addEventListener('input', (e) => {
+                selectedCarColor = e.target.value;
                 // Preview will update automatically on next frame
             });
         }
 
-        const windshieldColorPicker = document.getElementById('windshield-color-picker');
-        if (windshieldColorPicker) {
-            windshieldColorPicker.addEventListener('input', (e) => {
-                selectedWindshieldColor = e.target.value;
+        const wheelsColorPicker = document.getElementById('wheels-color-picker');
+        if (wheelsColorPicker) {
+            wheelsColorPicker.addEventListener('input', (e) => {
+                selectedWheelsColor = e.target.value;
                 // Preview will update automatically on next frame
             });
         }
