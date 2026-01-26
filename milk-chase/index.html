@@ -1203,8 +1203,8 @@
                 const centerX = previewCanvas.width * 0.22; // Moved 10% to the left from 32%
                 const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
                 
-                // Rotate 45 degrees to face northeast (top right)
-                const rotation = Math.PI / 4; // 45 degrees
+                // Rotate to point more toward the top (less top-right)
+                const rotation = Math.PI / 6; // 30 degrees (was 45 degrees)
                 
                 previewCtx.save();
                 previewCtx.translate(centerX, centerY);
