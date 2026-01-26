@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milk Truck Chase!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #00aaff;
+        }
+
+        #hud div {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        #hud .label {
+            color: #888;
+        }
+
+        #hud .value {
+            color: #00ffaa;
+            font-weight: bold;
+        }
+
+        /* Speedometer */
+        #speedometer {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 130px;
+            height: 130px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 50%;
+            border: 4px solid #ff6600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #speed-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff6600;
+        }
+
+        #speed-unit {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Physics bar */
+        #physics-bar {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 2px solid #ffcc00;
+        }
+
+        #physics-bar .equation {
+            font-size: 18px;
+            color: #ffcc00;
+        }
+
+        /* Start screen */
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        #start-screen.hidden {
+            display: none;
+        }
+
+        #start-screen h1 {
+            font-size: 42px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        #start-screen h1 span {
+            color: #00aaff;
+        }
+
+        #start-screen .subtitle {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .option-group {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .option-group label {
+            display: block;
+            color: #ffcc00;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .car-options {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .car-option {
+            width: 100px;
+            height: 80px;
+            border: 3px solid #444;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .car-option:hover {
+            border-color: #00aaff;
+            transform: scale(1.05);
+        }
+
+        .car-option.selected {
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .car-option .car-icon {
+            font-size: 30px;
+            margin-bottom: 5px;
+        }
+
+        .car-option .car-name {
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        .mass-slider {
+            width: 250px;
+        }
+
+        .mass-slider input {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #00aaff, #ff00aa);
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .mass-slider input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            cursor: pointer;
+        }
+
+        .mass-display {
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        #start-btn {
+            margin-top: 20px;
+            padding: 15px 50px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 255, 100, 0.5);
+            transition: transform 0.2s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Result screen */
+        #result-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            padding: 30px;
+        }
+
+        #result-screen.visible {
+            display: flex;
+        }
+
+        #result-title {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        #result-title.crash {
+            color: #ff4444;
+        }
+
+        #result-title.win {
+            color: #00ff88;
+        }
+
+        #physics-explanation {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 15px;
+            max-width: 500px;
+            margin-bottom: 25px;
+        }
+
+        #physics-explanation h3 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+        }
+
+        #physics-explanation p {
+            color: #ccc;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        #physics-explanation .formula {
+            background: rgba(0, 170, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 20px;
+            color: #00aaff;
+            text-align: center;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        #physics-explanation .values {
+            font-family: monospace;
+            color: #00ff88;
+        }
+
+        #retry-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #00aaff, #0066cc);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        #retry-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 2px solid #00aaff;
+        }
+
+        #instructions p {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        #instructions kbd {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="game"></canvas>
+
+        <div id="hud">
+            <div><span class="label">Distance to truck: </span><span class="value" id="distance-value">500</span><span class="label"> m</span></div>
+            <div><span class="label">Truck speed: </span><span class="value" id="truck-speed-value">144</span><span class="label"> km/h</span></div>
+            <div><span class="label">Speed limit: </span><span class="value" id="speed-limit-value" style="color: #ff6666;">171</span><span class="label"> km/h</span></div>
+            <div><span class="label">Your mass: </span><span class="value" id="mass-value">1000</span><span class="label"> kg</span></div>
+        </div>
+
+        <div id="physics-bar">
+            <div class="equation">p = mv (momentum)</div>
+        </div>
+
+        <div id="speedometer">
+            <div id="speed-value">0</div>
+            <div id="speed-unit">km/h</div>
+        </div>
+
+        <div id="instructions">
+            <p><kbd>↑</kbd> Accelerate &nbsp; <kbd>←</kbd> <kbd>→</kbd> Dodge</p>
+        </div>
+
+        <div id="start-screen">
+            <h1>🥛 <span>Milk Truck</span> Chase!</h1>
+            <div class="subtitle">Catch the milk truck! But watch out for obstacles...</div>
+
+            <div class="option-group">
+                <label>Choose Your Car</label>
+                <div class="car-options">
+                    <div class="car-option selected" data-car="usa">
+                        <div class="car-icon">🇺🇸</div>
+                        <div class="car-name">USA</div>
+                    </div>
+                    <div class="car-option" data-car="red">
+                        <div class="car-icon">🔴</div>
+                        <div class="car-name">Classic Red</div>
+                    </div>
+                    <div class="car-option" data-car="cow">
+                        <div class="car-icon">🐄</div>
+                        <div class="car-name">Cow Print</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label>Car Mass</label>
+                <div class="mass-slider">
+                    <input type="range" id="mass-input" min="500" max="2000" value="1000" step="100">
+                    <div class="mass-display"><span id="mass-preview">1000</span> kg</div>
+                </div>
+            </div>
+
+            <button id="start-btn">🏁 START CHASE</button>
+        </div>
+
+        <div id="result-screen">
+            <div id="result-title">CRASH!</div>
+            <div id="physics-explanation">
+                <h3>📚 Conservation of Momentum</h3>
+                <p>When your car hit the obstacle, momentum was conserved!</p>
+                <div class="formula">m₁v₁ = m₁v₁' + m₂v₂'</div>
+                <p id="collision-math"></p>
+            </div>
+            <button id="retry-btn">🔄 Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        
+        // Dynamic canvas sizing
+        let W, H;
+        function resizeCanvas() {
+            W = window.innerWidth;
+            H = window.innerHeight;
+            canvas.width = W;
+            canvas.height = H;
+            
+            // Update road dimensions based on screen size
+            updateRoadDimensions();
+        }
+        
+        // Road dimensions (will be set by resizeCanvas)
+        let ROAD_LEFT, ROAD_RIGHT, LANE_WIDTH;
+        
+        function updateRoadDimensions() {
+            const roadWidth = Math.min(400, W * 0.5);
+            ROAD_LEFT = (W - roadWidth) / 2;
+            ROAD_RIGHT = (W + roadWidth) / 2;
+            LANE_WIDTH = roadWidth / 3;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game state
+        let gameState = 'start';
+        let player = null;
+        let truck = null;
+        let obstacles = [];
+        let roadOffset = 0;
+        let distance = 0; // meters to truck (set in resetGame)
+        let gameTime = 0;
+        let lastObstacleTime = 0;
+
+        // Settings
+        let selectedCar = 'usa';
+        let selectedMass = 1000;
+
+        // Physics
+        const ACCELERATION = 80;
+        const FRICTION = 15;
+        const MAX_SPEED = 180; // km/h = 50 m/s
+        const LANE_SPEED = 400; // Horizontal movement speed (pixels/s)
+        // ROAD_LEFT, ROAD_RIGHT, LANE_WIDTH are now dynamic (set in updateRoadDimensions)
+        
+        // Truck speed = 80% of max speed
+        const TRUCK_SPEED = MAX_SPEED * 0.8; // 144 km/h
+        const INITIAL_DISTANCE = 500; // meters
+        
+        // Speed limit = 95% of max speed
+        const SPEED_LIMIT = MAX_SPEED * 0.95; // 171 km/h
+        const SPEEDING_THRESHOLD = 3; // seconds before cops chase
+
+        // Input
+        let keys = { up: false, left: false, right: false };
+        
+        // Cop chase state
+        let speedingTime = 0;
+        let copsChasing = false;
+        let cops = [];
+        
+        // Crash state
+        let crashData = null;
+        let crashTimer = 0;
+        const CRASH_DURATION = 3; // seconds to show crash animation
+        let crashParticles = [];
+
+        // Player car
+        function createPlayer() {
+            return {
+                x: W / 2,
+                y: H - 180, // Visual Y position (fixed on screen, near bottom)
+                width: 50,
+                height: 80,
+                speed: 0, // km/h
+                worldY: 0, // Meters traveled
+                mass: selectedMass,
+                design: selectedCar,
+                // Physics for crash
+                vx: 0, // velocity x (pixels/s)
+                vy: 0, // velocity y (pixels/s)
+                rotation: 0, // current rotation angle
+                angularVel: 0 // rotation speed (radians/s)
+            };
+        }
+
+        // Milk truck
+        function createTruck() {
+            return {
+                x: W / 2,
+                y: 150, // Visual Y position (calculated from distance)
+                width: 60,
+                height: 100,
+                lane: 1, // 0, 1, or 2
+                worldY: INITIAL_DISTANCE, // Meters ahead of player
+                speed: TRUCK_SPEED // km/h - independent velocity
+            };
+        }
+        
+        // Police car
+        function createCop(lane) {
+            const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+            return {
+                x: lanes[lane],
+                y: H + 100, // Visual position (calculated in drawCop)
+                width: 50,
+                height: 80,
+                lane: lane,
+                speed: MAX_SPEED * 0.95, // Cops are fast!
+                worldY: player ? player.worldY - 20 : -20 // Start 20m behind player (visible on screen)
+            };
+        }
+
+        // Obstacle
+        const MIN_VERTICAL_GAP = 150; // Minimum vertical gap in pixels for car to pass
+        
+        function createObstacle() {
+            const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+            
+            // Find which lanes are blocked near the spawn point
+            // A lane is "blocked" if there's an obstacle within MIN_VERTICAL_GAP of y=-100
+            const blockedLanes = new Set();
+            for (const obs of obstacles) {
+                if (obs.y < MIN_VERTICAL_GAP) {
+                    blockedLanes.add(obs.lane);
+                }
+            }
+            
+            // Get available lanes (must leave at least one lane open)
+            let availableLanes = [0, 1, 2].filter(l => !blockedLanes.has(l));
+            
+            // If all lanes would be blocked, don't spawn
+            if (availableLanes.length === 0) {
+                return null;
+            }
+            
+            // If only one lane is available, 50% chance to skip spawning to keep it open
+            if (availableLanes.length === 1 && Math.random() < 0.5) {
+                return null;
+            }
+            
+            // Pick a random available lane
+            const lane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+            
+            return {
+                x: lanes[lane],
+                y: -100,
+                width: 60,
+                height: 60,
+                lane: lane,
+                mass: 300 + Math.random() * 400, // 300-700 kg
+                type: Math.random() > 0.5 ? 'barrel' : 'cone'
+            };
+        }
+
+        // Draw road
+        function drawRoad() {
+            // Road background
+            ctx.fillStyle = '#333';
+            ctx.fillRect(ROAD_LEFT, 0, ROAD_RIGHT - ROAD_LEFT, H);
+
+            // Road lines (animated)
+            roadOffset = (roadOffset + player.speed * 0.1) % 80;
+
+            // Center lines
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([40, 40]);
+            
+            for (let y = -80 + roadOffset; y < H; y += 80) {
+                ctx.beginPath();
+                ctx.moveTo(ROAD_LEFT + LANE_WIDTH, y);
+                ctx.lineTo(ROAD_LEFT + LANE_WIDTH, y + 40);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(ROAD_RIGHT - LANE_WIDTH, y);
+                ctx.lineTo(ROAD_RIGHT - LANE_WIDTH, y + 40);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Road edges
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(ROAD_LEFT, 0);
+            ctx.lineTo(ROAD_LEFT, H);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(ROAD_RIGHT, 0);
+            ctx.lineTo(ROAD_RIGHT, H);
+            ctx.stroke();
+
+            // Grass sides
+            ctx.fillStyle = '#2d5a27';
+            ctx.fillRect(0, 0, ROAD_LEFT, H);
+            ctx.fillRect(ROAD_RIGHT, 0, W - ROAD_RIGHT, H);
+        }
+
+        // Draw player car
+        function drawPlayer() {
+            if (!player) return;
+
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Apply rotation during crash
+            if (player.rotation) {
+                ctx.rotate(player.rotation);
+            }
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(-player.width/2 + 5, -player.height/2 + 5, player.width, player.height);
+
+            // Car body based on design
+            if (player.design === 'usa') {
+                // Blue body
+                ctx.fillStyle = '#0044aa';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                // Red stripe
+                ctx.fillStyle = '#cc0000';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, 20);
+                // White stripe
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-player.width/2, -player.height/2 + 20, player.width, 10);
+                
+                // American flag on front face (the side we're viewing)
+                // Blue field with stars
+                ctx.fillStyle = '#002868';
+                ctx.fillRect(-player.width/2, -player.height/2, 20, 15);
+                // White stars (simplified as dots)
+                ctx.fillStyle = '#fff';
+                for (let i = 0; i < 5; i++) {
+                    ctx.beginPath();
+                    ctx.arc(-player.width/2 + 5 + (i % 2) * 8, -player.height/2 + 3 + Math.floor(i/2) * 4, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                // Red and white stripes
+                for (let i = 0; i < 7; i++) {
+                    ctx.fillStyle = i % 2 === 0 ? '#cc0000' : '#ffffff';
+                    ctx.fillRect(-player.width/2 + 20, -player.height/2 + i * 2, player.width - 20, 2);
+                }
+            } else if (player.design === 'red') {
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                // Racing stripe
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-3, -player.height/2, 6, player.height);
+            } else if (player.design === 'cow') {
+                // White base
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
+                // Black spots (more spots for cow print)
+                ctx.fillStyle = '#111';
+                // Front face spots
+                ctx.beginPath();
+                ctx.arc(-15, -25, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(5, -30, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(-8, -15, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(12, -10, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(-5, 5, 11, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(15, 10, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(-10, 25, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(8, 30, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Windshield
+            ctx.fillStyle = '#66ccff';
+            ctx.fillRect(-player.width/2 + 8, -player.height/2, player.width - 16, 20);
+
+            // Wheels
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-player.width/2 - 5, -player.height/2 + 10, 8, 20);
+            ctx.fillRect(player.width/2 - 3, -player.height/2 + 10, 8, 20);
+            ctx.fillRect(-player.width/2 - 5, player.height/2 - 30, 8, 20);
+            ctx.fillRect(player.width/2 - 3, player.height/2 - 30, 8, 20);
+
+            ctx.restore();
+        }
+
+        // Draw milk truck
+        function drawTruck() {
+            if (!truck) return;
+
+            // Check if truck is off screen (top)
+            const truckOffScreen = truck.y + truck.height/2 < 0;
+
+            if (truckOffScreen) {
+                // Draw arrow indicator at top of screen
+                drawTruckArrow();
+                return;
+            }
+
+            ctx.save();
+            ctx.translate(truck.x, truck.y);
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(-truck.width/2 + 5, -truck.height/2 + 5, truck.width, truck.height);
+
+            // Truck body (white base for cow print)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-truck.width/2, -truck.height/2, truck.width, truck.height);
+            
+            // Cow print spots on truck body
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(-20, -30, 12, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(15, -35, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-10, -10, 11, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(20, -5, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-15, 15, 10, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(10, 25, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-25, 35, 9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(18, 40, 7, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cab (cow print too)
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-truck.width/2, truck.height/2 - 30, truck.width, 30);
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(-15, truck.height/2 - 15, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(12, truck.height/2 - 20, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Stewart's logo (simplified - red circle with white "S")
+            ctx.fillStyle = '#cc0000';
+            ctx.beginPath();
+            ctx.arc(0, -10, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('S', 0, -5);
+            
+            // "STEWART'S" text below logo
+            ctx.fillStyle = '#cc0000';
+            ctx.font = 'bold 10px Arial';
+            ctx.fillText('STEWART\'S', 0, 15);
+
+            // Wheels
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-truck.width/2 - 5, -truck.height/2 + 15, 8, 25);
+            ctx.fillRect(truck.width/2 - 3, -truck.height/2 + 15, 8, 25);
+            ctx.fillRect(-truck.width/2 - 5, truck.height/2 - 35, 8, 25);
+            ctx.fillRect(truck.width/2 - 3, truck.height/2 - 35, 8, 25);
+
+            ctx.restore();
+        }
+
+        // Draw arrow pointing to off-screen truck
+        function drawTruckArrow() {
+            if (!truck) return;
+
+            ctx.save();
+            
+            // Arrow at top of screen, following truck's x position
+            const arrowX = truck.x;
+            const arrowY = 40;
+            
+            // Pulsing effect
+            const pulse = 1 + 0.1 * Math.sin(Date.now() / 150);
+            
+            // Draw arrow background
+            ctx.fillStyle = 'rgba(0, 170, 255, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY - 25 * pulse);
+            ctx.lineTo(arrowX - 20 * pulse, arrowY + 5 * pulse);
+            ctx.lineTo(arrowX - 8, arrowY + 5 * pulse);
+            ctx.lineTo(arrowX - 8, arrowY + 25 * pulse);
+            ctx.lineTo(arrowX + 8, arrowY + 25 * pulse);
+            ctx.lineTo(arrowX + 8, arrowY + 5 * pulse);
+            ctx.lineTo(arrowX + 20 * pulse, arrowY + 5 * pulse);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Outline
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Milk icon
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('🥛', arrowX, arrowY + 50);
+            
+            // Distance text
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.fillText(`${Math.round(distance)}m`, arrowX, arrowY + 70);
+
+            ctx.restore();
+        }
+        
+        // Draw police car
+        function drawCop(cop) {
+            if (!cop) return;
+            
+            // Calculate visual Y based on world position relative to player
+            // distBehind > 0 means cop is behind player (should appear lower on screen)
+            const distBehind = player.worldY - cop.worldY;
+            // Use larger scale factor for fullscreen - 15 pixels per meter of distance
+            cop.y = player.y + distBehind * 15;
+            
+            // Don't draw if off screen
+            if (cop.y < -100 || cop.y > H + 150) return;
+            
+            ctx.save();
+            ctx.translate(cop.x, cop.y);
+            
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(-cop.width/2 + 5, -cop.height/2 + 5, cop.width, cop.height);
+            
+            // Police car body (black and white)
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-cop.width/2, -cop.height/2, cop.width, cop.height);
+            
+            // White door panels
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-cop.width/2, -cop.height/4, cop.width, cop.height/2);
+            
+            // Windshield
+            ctx.fillStyle = '#66ccff';
+            ctx.fillRect(-cop.width/2 + 8, -cop.height/2, cop.width - 16, 18);
+            
+            // Light bar (flashing)
+            const flash = Math.floor(Date.now() / 150) % 2;
+            ctx.fillStyle = flash ? '#ff0000' : '#0066ff';
+            ctx.fillRect(-cop.width/2 + 5, -cop.height/2 - 8, 15, 8);
+            ctx.fillStyle = flash ? '#0066ff' : '#ff0000';
+            ctx.fillRect(cop.width/2 - 20, -cop.height/2 - 8, 15, 8);
+            
+            // Wheels
+            ctx.fillStyle = '#111';
+            ctx.fillRect(-cop.width/2 - 5, -cop.height/2 + 10, 8, 20);
+            ctx.fillRect(cop.width/2 - 3, -cop.height/2 + 10, 8, 20);
+            ctx.fillRect(-cop.width/2 - 5, cop.height/2 - 30, 8, 20);
+            ctx.fillRect(cop.width/2 - 3, cop.height/2 - 30, 8, 20);
+            
+            ctx.restore();
+        }
+
+        // Draw obstacle
+        function drawObstacle(obs) {
+            ctx.save();
+            ctx.translate(obs.x, obs.y);
+
+            if (obs.type === 'barrel') {
+                // Orange barrel
+                ctx.fillStyle = '#ff6600';
+                ctx.fillRect(-obs.width/2, -obs.height/2, obs.width, obs.height);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-obs.width/2, -5, obs.width, 10);
+            } else {
+                // Traffic cone
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath();
+                ctx.moveTo(0, -obs.height/2);
+                ctx.lineTo(obs.width/2, obs.height/2);
+                ctx.lineTo(-obs.width/2, obs.height/2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-obs.width/3, -5, obs.width * 2/3, 8);
+            }
+
+            // Mass label
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.round(obs.mass)}kg`, 0, obs.height/2 + 15);
+
+            ctx.restore();
+        }
+
+        // Update game
+        function update(dt) {
+            if (gameState !== 'playing') return;
+
+            gameTime += dt;
+
+            // Player acceleration
+            if (keys.up) {
+                player.speed += ACCELERATION * dt;
+                if (player.speed > MAX_SPEED) player.speed = MAX_SPEED;
+            } else {
+                player.speed -= FRICTION * dt;
+                if (player.speed < 0) player.speed = 0;
+            }
+
+            // Horizontal movement
+            if (keys.left) {
+                player.x -= LANE_SPEED * dt;
+            }
+            if (keys.right) {
+                player.x += LANE_SPEED * dt;
+            }
+
+            // Clamp to road
+            player.x = Math.max(ROAD_LEFT + player.width/2 + 10, 
+                               Math.min(ROAD_RIGHT - player.width/2 - 10, player.x));
+
+            // Track speeding
+            if (player.speed > SPEED_LIMIT) {
+                speedingTime += dt;
+                if (speedingTime >= SPEEDING_THRESHOLD && !copsChasing) {
+                    // Cops start chasing!
+                    copsChasing = true;
+                    // Spawn 2 cops in different lanes
+                    const playerLane = player.x < W/2 - 50 ? 0 : (player.x > W/2 + 50 ? 2 : 1);
+                    const copLanes = [0, 1, 2].filter(l => l !== playerLane);
+                    cops.push(createCop(copLanes[0]));
+                    cops.push(createCop(copLanes[1]));
+                }
+            } else {
+                // Reset speeding timer if under limit (but cops keep chasing once started)
+                speedingTime = Math.max(0, speedingTime - dt * 0.5); // Slowly decrease
+            }
+            
+            // Update cops
+            if (copsChasing) {
+                for (let i = cops.length - 1; i >= 0; i--) {
+                    const cop = cops[i];
+                    const copSpeedMS = cop.speed / 3.6;
+                    cop.worldY += copSpeedMS * dt;
+                    
+                    // Cops try to match player's lane
+                    const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+                    const targetX = player.x;
+                    cop.x += (targetX - cop.x) * 0.02;
+                    cop.x = Math.max(ROAD_LEFT + cop.width/2, Math.min(ROAD_RIGHT - cop.width/2, cop.x));
+                    
+                    // Check if cop caught player
+                    const distToPlayer = player.worldY - cop.worldY;
+                    if (distToPlayer < 5 && Math.abs(cop.x - player.x) < 40) {
+                        handleBusted();
+                        return;
+                    }
+                    
+                    // Remove cop if too far behind
+                    if (cop.worldY < player.worldY - 100) {
+                        cops.splice(i, 1);
+                    }
+                }
+            }
+
+            // Update world positions (convert km/h to m/s: divide by 3.6)
+            const playerSpeedMS = player.speed / 3.6;
+            const truckSpeedMS = truck.speed / 3.6;
+            
+            player.worldY += playerSpeedMS * dt;
+            truck.worldY += truckSpeedMS * dt;
+            
+            // Distance is how far ahead the truck is
+            distance = truck.worldY - player.worldY;
+
+            // Update truck visual Y position based on distance
+            // When distance=500m, truck near top; when distance=0, truck at player.y
+            // Allow truck to go off screen if distance increases beyond initial
+            const maxVisualDist = player.y - 100; // pixels from player to near top of screen
+            const visualRatio = Math.max(0, distance / INITIAL_DISTANCE);
+            truck.y = player.y - maxVisualDist * visualRatio;
+
+            // Move truck to avoid obstacles
+            if (obstacles.length > 0) {
+                const nearestObs = obstacles.find(o => o.y > 0 && o.y < 200);
+                if (nearestObs) {
+                    const lanes = [ROAD_LEFT + LANE_WIDTH/2, W/2, ROAD_RIGHT - LANE_WIDTH/2];
+                    // Move to a different lane than the obstacle
+                    const safeLane = nearestObs.lane === 1 ? 0 : 1;
+                    truck.x += (lanes[safeLane] - truck.x) * 0.05;
+                }
+            }
+
+            // Spawn obstacles
+            if (gameTime - lastObstacleTime > 1.5 + Math.random()) {
+                const newObstacle = createObstacle();
+                if (newObstacle) {
+                    obstacles.push(newObstacle);
+                }
+                lastObstacleTime = gameTime;
+            }
+
+            // Update obstacles
+            const obstacleSpeed = player.speed * 0.15;
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += obstacleSpeed * dt * 60;
+
+                // Remove if off screen
+                if (obstacles[i].y > H + 100) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+
+                // Check collision with player
+                if (checkCollision(player, obstacles[i])) {
+                    handleCrash(obstacles[i]);
+                    return;
+                }
+            }
+
+            // Check win condition
+            if (distance <= 0) {
+                handleWin();
+            }
+
+            // Update HUD
+            document.getElementById('speed-value').textContent = Math.round(player.speed);
+            document.getElementById('distance-value').textContent = Math.max(0, Math.round(distance));
+            document.getElementById('truck-speed-value').textContent = Math.round(truck.speed);
+        }
+
+        // Collision detection
+        function checkCollision(a, b) {
+            return Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 10 &&
+                   Math.abs(a.y - b.y) < (a.height + b.height) / 2 - 10;
+        }
+
+        // Handle crash
+        function handleCrash(obstacle) {
+            gameState = 'crashing';
+            crashTimer = 0;
+
+            const m1 = player.mass;
+            const v1 = player.speed;
+            const m2 = obstacle.mass;
+
+            // Calculate final velocities using conservation of momentum (elastic collision)
+            const v1f = ((m1 - m2) * v1) / (m1 + m2);
+            const v2f = (2 * m1 * v1) / (m1 + m2);
+
+            // Calculate collision angle based on relative positions
+            const dx = player.x - obstacle.x;
+            const dy = player.y - obstacle.y;
+            const collisionAngle = Math.atan2(dy, dx);
+            
+            // Convert player's forward speed to pixel velocity and apply collision
+            const speedPixels = player.speed * 2; // Scale for visual effect
+            
+            // Bounce direction based on collision angle
+            // Player bounces away from obstacle
+            player.vx = Math.cos(collisionAngle) * Math.abs(v1f) * 3 + (dx > 0 ? 150 : -150);
+            player.vy = Math.sin(collisionAngle) * Math.abs(v1f) * 0.5 - speedPixels * 0.3;
+            
+            // Add spin based on which side was hit
+            player.angularVel = (dx > 0 ? 1 : -1) * (3 + Math.random() * 4);
+            
+            // Store obstacle velocity for animation
+            obstacle.vx = 0;
+            obstacle.vy = v2f * 2; // Obstacle gets pushed forward
+            obstacle.hit = true;
+
+            // Store crash data for result screen
+            crashData = {
+                m1: m1,
+                v1: v1,
+                m2: m2,
+                v1f: v1f,
+                v2f: v2f,
+                initialMomentum: m1 * v1,
+                finalMomentum: m1 * v1f + m2 * v2f,
+                obstacle: obstacle
+            };
+            
+            // Spawn crash particles (sparks and debris)
+            crashParticles = [];
+            const collisionX = (player.x + obstacle.x) / 2;
+            const collisionY = (player.y + obstacle.y) / 2;
+            for (let i = 0; i < 30; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 100 + Math.random() * 300;
+                crashParticles.push({
+                    x: collisionX,
+                    y: collisionY,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 100,
+                    life: 1 + Math.random() * 1.5,
+                    size: 3 + Math.random() * 8,
+                    color: Math.random() > 0.5 ? '#ff6600' : (Math.random() > 0.5 ? '#ffcc00' : '#ff3300')
+                });
+            }
+        }
+        
+        // Show crash result after animation
+        function showCrashResult() {
+            gameState = 'result';
+            
+            const { m1, v1, m2, v1f, v2f, initialMomentum, finalMomentum } = crashData;
+
+            document.getElementById('result-title').textContent = '💥 CRASH!';
+            document.getElementById('result-title').className = 'crash';
+
+            document.getElementById('collision-math').innerHTML = `
+                <strong>Before collision:</strong><br>
+                <span class="values">Your car: ${m1} kg × ${v1.toFixed(1)} km/h = ${(m1 * v1).toFixed(0)} kg·km/h</span><br>
+                <span class="values">Obstacle: ${m2.toFixed(0)} kg × 0 km/h = 0 kg·km/h</span><br><br>
+                
+                <strong>Total momentum before:</strong> <span class="values">${initialMomentum.toFixed(0)} kg·km/h</span><br><br>
+                
+                <strong>After collision:</strong><br>
+                <span class="values">Your car: ${m1} kg × ${v1f.toFixed(1)} km/h = ${(m1 * v1f).toFixed(0)} kg·km/h</span><br>
+                <span class="values">Obstacle: ${m2.toFixed(0)} kg × ${v2f.toFixed(1)} km/h = ${(m2 * v2f).toFixed(0)} kg·km/h</span><br><br>
+                
+                <strong>Total momentum after:</strong> <span class="values">${finalMomentum.toFixed(0)} kg·km/h</span><br><br>
+                
+                <em>Momentum is conserved! ✓</em>
+            `;
+
+            document.getElementById('result-screen').classList.add('visible');
+        }
+
+        // Handle win
+        // Handle getting busted by cops
+        function handleBusted() {
+            gameState = 'result';
+
+            document.getElementById('result-title').textContent = '🚔 BUSTED!';
+            document.getElementById('result-title').className = 'crash';
+
+            const copMass = 1800; // Police cruiser mass
+            const copSpeed = MAX_SPEED * 0.9;
+            
+            document.getElementById('collision-math').innerHTML = `
+                <strong>The police caught you for speeding!</strong><br><br>
+                Speed limit: <span class="values">${Math.round(SPEED_LIMIT)} km/h</span><br>
+                Your speed: <span class="values">${player.speed.toFixed(1)} km/h</span><br><br>
+                
+                When the cop car stopped you, momentum was transferred:<br>
+                <span class="values">Your momentum: ${player.mass} kg × ${player.speed.toFixed(1)} km/h = ${(player.mass * player.speed).toFixed(0)} kg·km/h</span><br>
+                <span class="values">Cop momentum: ${copMass} kg × ${copSpeed.toFixed(1)} km/h = ${(copMass * copSpeed).toFixed(0)} kg·km/h</span><br><br>
+                
+                The heavier police cruiser had more momentum,<br>
+                making it easier to force you to stop!
+            `;
+
+            document.getElementById('result-screen').classList.add('visible');
+        }
+        
+        function handleWin() {
+            gameState = 'result';
+
+            document.getElementById('result-title').textContent = '🥛 GOT THE MILK!';
+            document.getElementById('result-title').className = 'win';
+
+            document.getElementById('collision-math').innerHTML = `
+                <strong>You caught the milk truck!</strong><br><br>
+                Your car's momentum helped you catch up:<br>
+                <span class="values">p = mv = ${player.mass} kg × ${player.speed.toFixed(1)} km/h</span><br>
+                <span class="values">p = ${(player.mass * player.speed).toFixed(0)} kg·km/h</span><br><br>
+                
+                A heavier car at the same speed has more momentum,<br>
+                and takes more force to stop!
+            `;
+
+            document.getElementById('result-screen').classList.add('visible');
+        }
+
+        // Reset game
+        function resetGame() {
+            player = createPlayer();
+            truck = createTruck();
+            obstacles = [];
+            distance = INITIAL_DISTANCE;
+            gameTime = 0;
+            lastObstacleTime = 0;
+            roadOffset = 0;
+            gameState = 'playing';
+            
+            // Reset cop chase state
+            speedingTime = 0;
+            copsChasing = false;
+            cops = [];
+            
+            // Reset crash state
+            crashData = null;
+            crashTimer = 0;
+            crashParticles = [];
+
+            document.getElementById('mass-value').textContent = selectedMass;
+            document.getElementById('truck-speed-value').textContent = Math.round(TRUCK_SPEED);
+            document.getElementById('speed-limit-value').textContent = Math.round(SPEED_LIMIT);
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('visible');
+        }
+
+        // Draw game
+        function draw() {
+            // Sky
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, W, H);
+
+            drawRoad();
+
+            for (const obs of obstacles) {
+                drawObstacle(obs);
+            }
+
+            drawTruck();
+            drawPlayer();
+            
+            // Draw cops
+            for (const cop of cops) {
+                drawCop(cop);
+            }
+            
+            // Draw crash particles
+            if (gameState === 'crashing') {
+                for (const p of crashParticles) {
+                    ctx.save();
+                    ctx.globalAlpha = Math.min(1, p.life);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+                
+                // Flash effect at start of crash
+                if (crashTimer < 0.2) {
+                    ctx.save();
+                    ctx.globalAlpha = (0.2 - crashTimer) * 3;
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, W, H);
+                    ctx.restore();
+                }
+            }
+            
+            // Draw speed warning
+            if (player.speed > SPEED_LIMIT && gameState === 'playing') {
+                drawSpeedWarning();
+            }
+        }
+        
+        // Draw speed limit warning
+        function drawSpeedWarning() {
+            ctx.save();
+            
+            const warningY = H - 220;
+            const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 100);
+            
+            // Warning background
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.3 * pulse})`;
+            ctx.fillRect(0, 0, W, H);
+            
+            // Warning text
+            ctx.fillStyle = `rgba(255, 50, 50, ${pulse})`;
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            
+            if (copsChasing) {
+                ctx.fillText('🚔 COPS CHASING! 🚔', W/2, 100);
+            } else {
+                const timeLeft = Math.max(0, SPEEDING_THRESHOLD - speedingTime);
+                ctx.fillText(`⚠️ SPEEDING! Cops in ${timeLeft.toFixed(1)}s ⚠️`, W/2, 100);
+            }
+            
+            ctx.restore();
+        }
+
+        // Game loop
+        let lastTime = 0;
+        // Update crash physics
+        function updateCrash(dt) {
+            crashTimer += dt;
+            
+            // Apply friction/drag to crash velocities
+            const drag = 0.98;
+            const angularDrag = 0.97;
+            
+            player.vx *= drag;
+            player.vy *= drag;
+            player.angularVel *= angularDrag;
+            
+            // Update player position during crash
+            player.x += player.vx * dt;
+            player.y += player.vy * dt;
+            player.rotation += player.angularVel * dt;
+            
+            // Add some gravity effect
+            player.vy += 200 * dt;
+            
+            // Update hit obstacle
+            if (crashData && crashData.obstacle) {
+                const obs = crashData.obstacle;
+                if (obs.vy) {
+                    obs.y += obs.vy * dt;
+                    obs.vy *= 0.95;
+                }
+            }
+            
+            // Update particles
+            for (let i = crashParticles.length - 1; i >= 0; i--) {
+                const p = crashParticles[i];
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.vy += 400 * dt; // gravity
+                p.vx *= 0.99;
+                p.life -= dt;
+                if (p.life <= 0) {
+                    crashParticles.splice(i, 1);
+                }
+            }
+            
+            // Bounce off screen edges
+            if (player.x < 50) {
+                player.x = 50;
+                player.vx = Math.abs(player.vx) * 0.5;
+                player.angularVel += 2;
+            }
+            if (player.x > W - 50) {
+                player.x = W - 50;
+                player.vx = -Math.abs(player.vx) * 0.5;
+                player.angularVel -= 2;
+            }
+            
+            // Show result after crash duration
+            if (crashTimer >= CRASH_DURATION) {
+                showCrashResult();
+            }
+        }
+        
+        function gameLoop(timestamp) {
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+
+            if (gameState === 'playing') {
+                update(dt);
+                draw();
+            } else if (gameState === 'crashing') {
+                updateCrash(dt);
+                draw();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handlers
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowUp') {
+                e.preventDefault();
+                keys.up = true;
+                if (gameState === 'start') resetGame();
+            }
+            if (e.code === 'ArrowLeft') {
+                e.preventDefault();
+                keys.left = true;
+            }
+            if (e.code === 'ArrowRight') {
+                e.preventDefault();
+                keys.right = true;
+            }
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'result') resetGame();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowUp') keys.up = false;
+            if (e.code === 'ArrowLeft') keys.left = false;
+            if (e.code === 'ArrowRight') keys.right = false;
+        });
+
+        // Car selection
+        document.querySelectorAll('.car-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.car-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedCar = option.dataset.car;
+            });
+        });
+
+        // Mass slider
+        document.getElementById('mass-input').addEventListener('input', (e) => {
+            selectedMass = parseInt(e.target.value);
+            document.getElementById('mass-preview').textContent = selectedMass;
+        });
+
+        // Start button
+        document.getElementById('start-btn').addEventListener('click', resetGame);
+        document.getElementById('retry-btn').addEventListener('click', () => {
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('result-screen').classList.remove('visible');
+            gameState = 'start';
+        });
+
+        // Start
+        gameLoop(0);
+    </script>
+</body>
+</html>
