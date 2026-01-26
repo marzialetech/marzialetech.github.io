@@ -138,6 +138,24 @@
       opacity: 1;
     }
 
+    /* Fireworks canvases for final slide */
+    .fireworks-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .fireworks-bg {
+      z-index: 8;
+    }
+
+    .fireworks-fg {
+      z-index: 12;
+    }
+
     /* Final slide - logo and button */
     .final-slide {
       position: fixed;
@@ -165,8 +183,14 @@
       width: 70vw;
       max-width: 600px;
       height: auto;
-      filter: invert(1);
+      filter: invert(1)
+              drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4))
+              drop-shadow(0 0 80px rgba(255, 0, 255, 0.3));
       animation: float 3s ease-in-out infinite;
+      position: relative;
+      z-index: 11;
     }
 
     @keyframes float {
@@ -264,8 +288,10 @@
 
   <!-- Final slide with logo and button -->
   <div class="final-slide" id="finalSlide">
+    <canvas class="fireworks-canvas fireworks-bg" id="fireworksBg"></canvas>
     <img class="final-logo" src="../milk-chase/logo.png" alt="Lewis County Milk Chase">
     <a href="/milk-chase" class="play-button">Play the Game!</a>
+    <canvas class="fireworks-canvas fireworks-fg" id="fireworksFg"></canvas>
   </div>
 
   <script>
@@ -306,7 +332,7 @@
       { img: 1, dialogue: "I used computers to simulate everything that goes on inside of a rocket once it turns on.", animation: 'codeAndRockets' },
       { img: 6, dialogue: "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.", animation: 'physics' },
       { img: 7, dialogue: "These ideas help us understand how things move and crash into each other, whether it's a rocket or a car!" },
-      { img: 8, dialogue: "And that's exactly what I want to show you!" },
+      { img: 8, dialogue: "...And speaking of cars, I want to show you something!" },
     ];
 
     const imageMap = {
@@ -339,6 +365,192 @@
     const characterImg = document.getElementById('characterImg');
     const promptIcon = document.getElementById('promptIcon');
     const finalSlide = document.getElementById('finalSlide');
+    
+    // Fireworks for final slide
+    const bgCanvas = document.getElementById('fireworksBg');
+    const fgCanvas = document.getElementById('fireworksFg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const fgCtx = fgCanvas.getContext('2d');
+    
+    let fireworksActive = false;
+    let fireworksRockets = [];
+    let fireworksExplosions = [];
+    let fireworksDebris = [];
+    
+    const fireworksColors = ['#ff0040', '#00ff80', '#0080ff', '#ff8000', '#ff00ff', '#ffff00', '#00ffff', '#ff4080'];
+    
+    function resizeFireworksCanvases() {
+      bgCanvas.width = fgCanvas.width = window.innerWidth;
+      bgCanvas.height = fgCanvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resizeFireworksCanvases);
+    resizeFireworksCanvases();
+    
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    function createFireworksRocket() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const logoWidth = window.innerWidth * 0.35;
+      
+      fireworksRockets.push({
+        x: centerX + random(-logoWidth, logoWidth),
+        y: centerY + random(-30, 30),
+        vx: random(-1, 1),
+        vy: random(-5, -3),
+        color: fireworksColors[Math.floor(Math.random() * fireworksColors.length)],
+        trail: []
+      });
+    }
+    
+    function createFireworksExplosion(x, y, color) {
+      const particleCount = 60 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
+        const speed = random(1, 4);
+        
+        fireworksExplosions.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: color,
+          life: 1,
+          decay: random(0.005, 0.012),
+          size: random(2, 4)
+        });
+      }
+      
+      setTimeout(() => {
+        for (let i = 0; i < 15; i++) {
+          fireworksDebris.push({
+            x: x + random(-100, 100),
+            y: random(-150, -50),
+            vx: random(-0.5, 0.5),
+            vy: random(0.3, 1),
+            color: color,
+            life: 1,
+            decay: random(0.002, 0.005),
+            size: random(4, 8)
+          });
+        }
+      }, 400);
+    }
+    
+    function updateFireworks() {
+      for (let i = fireworksRockets.length - 1; i >= 0; i--) {
+        const r = fireworksRockets[i];
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 15) r.trail.shift();
+        
+        r.x += r.vx;
+        r.y += r.vy;
+        r.vy += 0.05;
+        
+        if (r.vy > -0.5 || r.y < window.innerHeight * 0.25) {
+          createFireworksExplosion(r.x, r.y, r.color);
+          fireworksRockets.splice(i, 1);
+        }
+      }
+      
+      for (let i = fireworksExplosions.length - 1; i >= 0; i--) {
+        const p = fireworksExplosions[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.vx *= 0.99;
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+          fireworksExplosions.splice(i, 1);
+        }
+      }
+      
+      for (let i = fireworksDebris.length - 1; i >= 0; i--) {
+        const d = fireworksDebris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.008;
+        d.vx += random(-0.05, 0.05);
+        d.life -= d.decay;
+        
+        if (d.life <= 0 || d.y > window.innerHeight + 20) {
+          fireworksDebris.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawFireworks() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      
+      fireworksRockets.forEach(r => {
+        r.trail.forEach((t, i) => {
+          const alpha = i / r.trail.length * 0.5;
+          bgCtx.fillStyle = r.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+          bgCtx.beginPath();
+          bgCtx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+          bgCtx.fill();
+        });
+        
+        bgCtx.fillStyle = r.color;
+        bgCtx.beginPath();
+        bgCtx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      
+      fireworksExplosions.forEach(p => {
+        bgCtx.globalAlpha = p.life;
+        bgCtx.fillStyle = p.color;
+        bgCtx.beginPath();
+        bgCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      bgCtx.globalAlpha = 1;
+      
+      fireworksDebris.forEach(d => {
+        fgCtx.globalAlpha = d.life;
+        fgCtx.fillStyle = d.color;
+        fgCtx.shadowColor = d.color;
+        fgCtx.shadowBlur = 10;
+        fgCtx.beginPath();
+        fgCtx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        fgCtx.fill();
+      });
+      fgCtx.globalAlpha = 1;
+      fgCtx.shadowBlur = 0;
+    }
+    
+    function fireworksLoop() {
+      if (!fireworksActive) return;
+      
+      updateFireworks();
+      drawFireworks();
+      
+      if (Math.random() < 0.0087) {
+        createFireworksRocket();
+      }
+      
+      requestAnimationFrame(fireworksLoop);
+    }
+    
+    function startFireworks() {
+      if (fireworksActive) return;
+      fireworksActive = true;
+      fireworksLoop();
+    }
+    
+    function stopFireworks() {
+      fireworksActive = false;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      fireworksRockets = [];
+      fireworksExplosions = [];
+      fireworksDebris = [];
+    }
     
     // Animation canvases
     const rocketCanvas = document.getElementById('rocketAnimation');
@@ -413,6 +625,7 @@
       setTimeout(() => {
         mainContainer.classList.add('hidden');
         finalSlide.classList.add('visible');
+        startFireworks();
       }, 800);
     }
 
@@ -691,11 +904,11 @@
         }
       }
       
-      // Draw smaller terminal window (centered, not full screen)
-      const termWidth = Math.min(500, codeCanvas.width * 0.6);
-      const termHeight = 250;
+      // Draw larger terminal window (centered, not full screen)
+      const termWidth = Math.min(700, codeCanvas.width * 0.75);
+      const termHeight = 350;
       const termX = (codeCanvas.width - termWidth) / 2;
-      const termY = codeCanvas.height * 0.3; // Position in upper portion
+      const termY = codeCanvas.height * 0.25; // Position in upper portion
       
       // Draw terminal background
       codeCtx.fillStyle = '#0a0a0a';
@@ -707,19 +920,19 @@
       codeCtx.strokeRect(termX, termY, termWidth, termHeight);
       
       // Draw code lines
-      codeCtx.font = '14px "Courier New", monospace';
+      codeCtx.font = '18px "Courier New", monospace';
       codeCtx.fillStyle = '#00ff00';
       
       codeLines.forEach((line, idx) => {
-        const lineY = termY + 30 + idx * 25;
-        codeCtx.fillText(line.text, termX + 20, lineY);
+        const lineY = termY + 35 + idx * 30;
+        codeCtx.fillText(line.text, termX + 25, lineY);
         
         // Blinking cursor
         if (!line.complete && idx === codeLines.length - 1) {
           const metrics = codeCtx.measureText(line.text);
-          const cursorX = termX + 20 + metrics.width;
+          const cursorX = termX + 25 + metrics.width;
           if (Math.floor(Date.now() / 500) % 2) {
-            codeCtx.fillRect(cursorX, lineY - 12, 6, 16);
+            codeCtx.fillRect(cursorX, lineY - 15, 8, 20);
           }
         }
       });
@@ -796,48 +1009,89 @@
         physicsCtx.restore();
       });
       
-      // Draw definitions in top right corner
-      const defX = physicsCanvas.width - 350;
+      // Draw definitions in top right corner (larger)
+      const defX = physicsCanvas.width - 480;
       const defY = 30;
       
       // Momentum definition box
-      physicsCtx.fillStyle = 'rgba(0, 50, 100, 0.8)';
-      physicsCtx.fillRect(defX - 10, defY - 10, 340, 120);
+      physicsCtx.fillStyle = 'rgba(0, 50, 100, 0.85)';
+      physicsCtx.fillRect(defX - 15, defY - 15, 470, 160);
       physicsCtx.strokeStyle = '#0080ff';
-      physicsCtx.lineWidth = 2;
-      physicsCtx.strokeRect(defX - 10, defY - 10, 340, 120);
+      physicsCtx.lineWidth = 3;
+      physicsCtx.strokeRect(defX - 15, defY - 15, 470, 160);
       
-      physicsCtx.font = 'bold 16px "Courier New", monospace';
+      physicsCtx.font = 'bold 22px "Courier New", monospace';
       physicsCtx.fillStyle = '#0080ff';
-      physicsCtx.fillText('Momentum', defX, defY + 20);
+      physicsCtx.fillText('Momentum', defX, defY + 30);
+      
+      physicsCtx.font = '18px "Courier New", monospace';
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('p = m × v', defX, defY + 60);
+      
+      physicsCtx.font = '15px "Courier New", monospace';
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(mass × velocity)', defX, defY + 85);
       
       physicsCtx.font = '14px "Courier New", monospace';
       physicsCtx.fillStyle = '#ffffff';
-      physicsCtx.fillText('p = m × v', defX, defY + 45);
-      
-      physicsCtx.font = '12px "Courier New", monospace';
-      physicsCtx.fillStyle = '#cccccc';
-      physicsCtx.fillText('(mass × velocity)', defX, defY + 65);
+      const momentumDef = 'Momentum is the quantity of motion an object has, calculated by multiplying its mass by its velocity.';
+      const momentumWords = momentumDef.split(' ');
+      let momentumY = defY + 115;
+      let currentLine = '';
+      momentumWords.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = physicsCtx.measureText(testLine);
+        if (metrics.width > 440 && currentLine) {
+          physicsCtx.fillText(currentLine, defX, momentumY);
+          momentumY += 20;
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) {
+        physicsCtx.fillText(currentLine, defX, momentumY);
+      }
       
       // Energy definition box
-      physicsCtx.fillStyle = 'rgba(100, 80, 0, 0.8)';
-      physicsCtx.fillRect(defX - 10, defY + 120, 340, 120);
+      physicsCtx.fillStyle = 'rgba(100, 80, 0, 0.85)';
+      physicsCtx.fillRect(defX - 15, defY + 160, 470, 180);
       physicsCtx.strokeStyle = '#ffcc00';
-      physicsCtx.lineWidth = 2;
-      physicsCtx.strokeRect(defX - 10, defY + 120, 340, 120);
+      physicsCtx.lineWidth = 3;
+      physicsCtx.strokeRect(defX - 15, defY + 160, 470, 180);
       
-      physicsCtx.font = 'bold 16px "Courier New", monospace';
+      physicsCtx.font = 'bold 22px "Courier New", monospace';
       physicsCtx.fillStyle = '#ffcc00';
-      physicsCtx.fillText('Energy', defX, defY + 150);
+      physicsCtx.fillText('Energy', defX, defY + 190);
+      
+      physicsCtx.font = '18px "Courier New", monospace';
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('KE = ½ × m × v²', defX, defY + 220);
+      
+      physicsCtx.font = '15px "Courier New", monospace';
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(kinetic energy)', defX, defY + 245);
       
       physicsCtx.font = '14px "Courier New", monospace';
       physicsCtx.fillStyle = '#ffffff';
-      physicsCtx.fillText('KE = ½ × m × v²', defX, defY + 175);
-      
-      physicsCtx.font = '12px "Courier New", monospace';
-      physicsCtx.fillStyle = '#cccccc';
-      physicsCtx.fillText('(kinetic energy)', defX, defY + 195);
-      physicsCtx.fillText('(energy of motion)', defX, defY + 215);
+      const energyDef = 'Energy is the ability to do work, and kinetic energy is the energy an object has because of its motion.';
+      const energyWords = energyDef.split(' ');
+      let energyY = defY + 270;
+      currentLine = '';
+      energyWords.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = physicsCtx.measureText(testLine);
+        if (metrics.width > 440 && currentLine) {
+          physicsCtx.fillText(currentLine, defX, energyY);
+          energyY += 20;
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) {
+        physicsCtx.fillText(currentLine, defX, energyY);
+      }
       
       requestAnimationFrame(animatePhysics);
     }
