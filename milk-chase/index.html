@@ -912,6 +912,28 @@
                     <input type="color" id="wheels-color-picker" value="#000000" style="width: 100px; height: 40px; border: 2px solid #00ff88; border-radius: 6px; cursor: pointer;">
                 </div>
 
+                <div class="option-group">
+                    <label>Car Effect</label>
+                    <div class="car-options" style="justify-content: center;">
+                        <div class="car-option selected" data-effect="none">
+                            <div style="width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 10px;">None</div>
+                            <div class="car-name">None</div>
+                        </div>
+                        <div class="car-option" data-effect="bubbles">
+                            <div style="width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; color: #66ccff; font-size: 10px;">○ ○ ○</div>
+                            <div class="car-name">Bubbles</div>
+                        </div>
+                        <div class="car-option" data-effect="flames">
+                            <div style="width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; color: #ff6600; font-size: 10px;">🔥</div>
+                            <div class="car-name">Flames</div>
+                        </div>
+                        <div class="car-option" data-effect="tracks">
+                            <div style="width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 10px;">═══</div>
+                            <div class="car-name">Tire Tracks</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="button-row">
                     <button id="start-btn">Start Chase</button>
                     <button id="math-btn">The Math</button>
@@ -1005,7 +1027,7 @@
         }
         
         // Leaderboard functions
-        async function submitScore(name, timeSeconds, school, carDesign, carColor, wheelsColor) {
+        async function submitScore(name, timeSeconds, school, carDesign, carColor, wheelsColor, effect) {
             initSupabase();
             if (!supabaseClient || !name.trim()) return null;
             
@@ -1018,7 +1040,8 @@
                         school: school,
                         car_design: carDesign || 'usa',
                         car_color: carColor || '#cc2222',
-                        car_wheels_color: wheelsColor || '#000000'
+                        car_wheels_color: wheelsColor || '#000000',
+                        car_effect: effect || 'none'
                     }])
                     .select();
                 
@@ -1045,7 +1068,7 @@
                 // Use from() with explicit schema to ensure it works regardless of auth state
                 let query = supabaseClient
                     .from('milk_chase_scores')
-                    .select('id, player_name, time_seconds, school, car_design, car_color, car_wheels_color, created_at')
+                    .select('id, player_name, time_seconds, school, car_design, car_color, car_wheels_color, car_effect, created_at')
                     .order('time_seconds', { ascending: false })
                     .limit(50);
                 
@@ -1074,7 +1097,7 @@
         }
         
         // Create car preview canvas - matches in-game appearance, rotated 90 degrees
-        function createCarPreview(design, carColor, wheelsColor) {
+        function createCarPreview(design, carColor, wheelsColor, effect) {
             const canvas = document.createElement('canvas');
             // Rotated: swap width/height (was 30x48, now 48x30 for horizontal display)
             canvas.width = 48;
@@ -1104,10 +1127,10 @@
                 ctx.fillRect(0, centerX - 1.8, h, 3.6);
             }
             
-            // Skin design as patch in top left corner (when rotated, top left is at 0, 0)
+            // Skin design as patch in bottom left corner (when rotated, bottom left is at h - patchSize, w - patchSize)
             const patchSize = Math.min(h, w) * 0.4;
             const patchX = 5 * scale;
-            const patchY = 5 * scale;
+            const patchY = w - patchSize - 5 * scale; // Bottom when rotated
             
             if (design === 'usa') {
                 if (usaFlag && usaFlag.complete) {
@@ -1142,6 +1165,63 @@
             // Back right (now bottom right when rotated)
             ctx.fillRect(h - 30 * scale, h - 3 * scale, 20 * scale, 8 * scale);
             
+            // Draw car effect behind the car (back is at h, centerY when rotated)
+            if (effect && effect !== 'none') {
+                const carObj = { width: h, height: w };
+                // Adjust for rotated coordinate system
+                ctx.save();
+                ctx.translate(h, centerY);
+                if (effect === 'bubbles') {
+                    // Bubbles rising
+                    for (let i = 0; i < 2; i++) {
+                        const offsetX = (i - 0.5) * 4;
+                        const offsetY = -3 - i * 2;
+                        ctx.strokeStyle = '#66ccff';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(offsetX, offsetY, 2, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                } else if (effect === 'flames') {
+                    // Flames
+                    ctx.fillStyle = '#ff6600';
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 0);
+                    ctx.lineTo(-6, -4);
+                    ctx.lineTo(-2, -3);
+                    ctx.lineTo(0, -5);
+                    ctx.lineTo(2, -3);
+                    ctx.lineTo(6, -4);
+                    ctx.lineTo(4, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.moveTo(-3, 0);
+                    ctx.lineTo(-4, -2);
+                    ctx.lineTo(0, -2);
+                    ctx.lineTo(4, -2);
+                    ctx.lineTo(3, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                } else if (effect === 'tracks') {
+                    // Tire tracks
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 2]);
+                    ctx.beginPath();
+                    ctx.moveTo(-carObj.width/2, 0);
+                    ctx.lineTo(-carObj.width/2, -6);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(carObj.width/2, 0);
+                    ctx.lineTo(carObj.width/2, -6);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                ctx.restore();
+            }
+            
             ctx.restore();
             
             return canvas.toDataURL();
@@ -1164,7 +1244,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000', entry.car_effect || 'none');
                 
                 return `<div class="leaderboard-entry${isHighlight ? ' highlight' : ''}" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1207,7 +1287,7 @@
                 const mins = Math.floor(entry.time_seconds / 60);
                 const secs = Math.floor(entry.time_seconds % 60);
                 const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
-                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000');
+                const carPreview = createCarPreview(entry.car_design || 'usa', entry.car_color || '#cc2222', entry.car_wheels_color || '#000000', entry.car_effect || 'none');
                 
                 return `<div class="leaderboard-entry" data-entry-id="${entry.id}">
                     <span class="rank">#${i + 1}</span>
@@ -1304,6 +1384,7 @@
         let selectedCar = 'usa';
         let selectedCarColor = '#cc2222';
         let selectedWheelsColor = '#000000';
+        let selectedEffect = 'none';
         let selectedMass = 1000;
 
         // Physics (scaled down 0.75x for easier gameplay)
@@ -1376,6 +1457,7 @@
                 worldY: 0, // Meters traveled
                 mass: selectedMass,
                 design: selectedCar,
+                effect: selectedEffect,
                 // Physics for crash
                 vx: 0, // velocity x (pixels/s)
                 vy: 0, // velocity y (pixels/s)
@@ -1733,10 +1815,10 @@
                 ctx.fillRect(-3, -player.height/2, 6, player.height);
             }
 
-            // Skin design as patch in top left corner
+            // Skin design as patch in bottom left corner
             const patchSize = Math.min(player.width, player.height) * 0.4;
             const patchX = -player.width/2 + 5;
-            const patchY = -player.height/2 + 5;
+            const patchY = player.height/2 - patchSize - 5;
             
             if (player.design === 'usa') {
                 if (usaFlag && usaFlag.complete) {
@@ -1767,7 +1849,73 @@
             ctx.fillRect(-player.width/2 - 5, player.height/2 - 30, 8, 20);
             ctx.fillRect(player.width/2 - 3, player.height/2 - 30, 8, 20);
 
+            // Draw car effect behind the car
+            drawCarEffect(ctx, player, player.effect);
+
             ctx.restore();
+        }
+
+        // Draw car effect (bubbles, flames, or tire tracks)
+        function drawCarEffect(ctx, car, effect) {
+            if (!effect || effect === 'none') return;
+            
+            const backX = 0; // Car center x (already translated)
+            const backY = car.height/2; // Back of car
+            
+            if (effect === 'bubbles') {
+                // Draw bubbles rising from back
+                const bubbleCount = 3;
+                for (let i = 0; i < bubbleCount; i++) {
+                    const offsetX = (i - 1) * 8;
+                    const offsetY = 5 + i * 3;
+                    const size = 3 + i;
+                    ctx.strokeStyle = '#66ccff';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(backX + offsetX, backY + offsetY, size, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            } else if (effect === 'flames') {
+                // Draw flames from exhaust
+                ctx.fillStyle = '#ff6600';
+                ctx.beginPath();
+                ctx.moveTo(backX - 8, backY);
+                ctx.lineTo(backX - 12, backY + 8);
+                ctx.lineTo(backX - 6, backY + 6);
+                ctx.lineTo(backX, backY + 10);
+                ctx.lineTo(backX + 6, backY + 6);
+                ctx.lineTo(backX + 12, backY + 8);
+                ctx.lineTo(backX + 8, backY);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Inner yellow flame
+                ctx.fillStyle = '#ffcc00';
+                ctx.beginPath();
+                ctx.moveTo(backX - 6, backY);
+                ctx.lineTo(backX - 8, backY + 5);
+                ctx.lineTo(backX, backY + 4);
+                ctx.lineTo(backX + 8, backY + 5);
+                ctx.lineTo(backX + 6, backY);
+                ctx.closePath();
+                ctx.fill();
+            } else if (effect === 'tracks') {
+                // Draw tire tracks
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                // Left track
+                ctx.beginPath();
+                ctx.moveTo(backX - player.width/2, backY);
+                ctx.lineTo(backX - player.width/2, backY + 15);
+                ctx.stroke();
+                // Right track
+                ctx.beginPath();
+                ctx.moveTo(backX + player.width/2, backY);
+                ctx.lineTo(backX + player.width/2, backY + 15);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
         }
 
         // Draw car preview on start screen (driving around logo)
@@ -1854,10 +2002,10 @@
                 previewCtx.fillRect(-2, -h/2, 4, h);
             }
 
-            // Skin design as patch in top left corner
+            // Skin design as patch in bottom left corner
             const patchSize = Math.min(w, h) * 0.4;
             const patchX = -w/2 + 4;
-            const patchY = -h/2 + 4;
+            const patchY = h/2 - patchSize - 4;
             
             if (selectedCar === 'usa') {
                 if (usaFlag && usaFlag.complete) {
@@ -1887,6 +2035,10 @@
             previewCtx.fillRect(w/2 - 2, -h/2 + 8, 6, 15);
             previewCtx.fillRect(-w/2 - 4, h/2 - 23, 6, 15);
             previewCtx.fillRect(w/2 - 2, h/2 - 23, 6, 15);
+
+            // Draw car effect behind the car
+            const previewCarObj = { width: w, height: h };
+            drawCarEffect(previewCtx, previewCarObj, selectedEffect);
 
             previewCtx.restore();
             
@@ -2486,7 +2638,7 @@
             btn.disabled = true;
             btn.textContent = 'Submitting...';
             
-            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedCarColor, selectedWheelsColor);
+            const id = await submitScore(name, gameTime, selectedSchool, selectedCar, selectedCarColor, selectedWheelsColor, selectedEffect);
             lastSubmittedId = id;
             
             btn.textContent = 'Submitted!';
@@ -2679,11 +2831,21 @@
         });
 
         // Car selection
-        document.querySelectorAll('.car-option').forEach(option => {
+        document.querySelectorAll('.car-option[data-car]').forEach(option => {
             option.addEventListener('click', () => {
-                document.querySelectorAll('.car-option').forEach(o => o.classList.remove('selected'));
+                document.querySelectorAll('.car-option[data-car]').forEach(o => o.classList.remove('selected'));
                 option.classList.add('selected');
                 selectedCar = option.dataset.car;
+                // Preview will update automatically on next frame
+            });
+        });
+
+        // Effect selection
+        document.querySelectorAll('.car-option[data-effect]').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.car-option[data-effect]').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedEffect = option.dataset.effect;
                 // Preview will update automatically on next frame
             });
         });
