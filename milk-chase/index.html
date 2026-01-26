@@ -315,7 +315,7 @@
             box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
         }
 
-        /* Result screen - full black background, single slide format */
+        /* Result screen - continuous text that fits on one screen */
         #result-screen {
             position: absolute;
             top: 0;
@@ -326,8 +326,9 @@
             display: none;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: flex-start;
+            padding: 10px 15px;
+            padding-top: 50px;
             overflow: hidden;
             touch-action: manipulation;
         }
@@ -337,10 +338,9 @@
         }
 
         #result-title {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 18px;
             position: absolute;
-            top: 15px;
+            top: 8px;
             left: 0;
             right: 0;
             text-align: center;
@@ -353,115 +353,110 @@
         #physics-steps {
             display: flex;
             flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            max-width: 500px;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        /* Continuous text with highlighting */
+        .physics-line {
+            display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            max-width: 90%;
+            margin: 2px 0;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: #555;
+            transition: all 0.2s ease;
             width: 100%;
         }
         
-        /* Single slide physics styling */
-        .physics-step {
-            display: none;
-            padding: 20px;
-            text-align: center;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .physics-step.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .step-text {
-            font-size: 20px;
+        .physics-line.active {
             color: #00ddff;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            text-shadow: 0 0 10px rgba(0, 221, 255, 0.5);
+            background: rgba(0, 200, 255, 0.15);
+            text-shadow: 0 0 8px rgba(0, 221, 255, 0.5);
         }
         
-        .step-text b {
+        .physics-line.completed {
+            color: #888;
+        }
+        
+        .physics-line b {
+            color: inherit;
+        }
+        
+        .physics-line.active b {
             color: #ffcc00;
         }
         
-        .step-label {
+        .physics-line .math-inline {
             display: inline-block;
-            background: rgba(0, 200, 255, 0.2);
-            border: 1px solid rgba(0, 200, 255, 0.4);
-            border-radius: 6px;
-            padding: 3px 10px;
-            margin: 2px 4px;
-            font-weight: bold;
-            color: #00ffaa;
+            margin: 0 3px;
+            font-size: 10px;
         }
         
-        .step-latex {
-            margin: 12px 0;
-            font-size: 18px;
-        }
-        
-        .step-latex .katex {
+        .physics-line.active .katex {
             color: #fff;
         }
         
-        .tap-to-continue {
-            color: #00ff88;
-            font-size: 14px;
-            position: absolute;
-            bottom: 80px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            animation: flashHint 0.8s ease-in-out infinite alternate;
+        .physics-line .katex {
+            color: #666;
         }
         
-        .step-counter {
+        .tap-hint {
             position: absolute;
-            bottom: 110px;
+            bottom: 55px;
             left: 0;
             right: 0;
             text-align: center;
-            color: #666;
-            font-size: 12px;
+            font-size: 10px;
+            color: #444;
+        }
+        
+        .tap-hint span {
+            color: #00ff88;
         }
         
         #retry-btn {
             position: absolute;
-            bottom: 30px;
+            bottom: 15px;
         }
         
         /* Mobile result screen */
         @media (max-width: 768px) {
+            #result-screen {
+                padding: 8px 10px;
+                padding-top: 45px;
+            }
+            
             #result-title {
-                font-size: 20px;
-                top: 10px;
-            }
-            
-            .step-text {
                 font-size: 16px;
+                top: 6px;
             }
             
-            .step-latex {
-                font-size: 14px;
+            #physics-steps {
+                font-size: 10px;
             }
             
-            .step-label {
-                font-size: 12px;
-                padding: 2px 6px;
+            .physics-line {
+                padding: 2px 4px;
+                margin: 1px 0;
             }
             
-            .tap-to-continue {
-                font-size: 12px;
-                bottom: 70px;
+            .physics-line .math-inline {
+                font-size: 9px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            #physics-steps {
+                font-size: 9px;
             }
             
-            .step-counter {
-                bottom: 95px;
+            .physics-line .math-inline {
+                font-size: 8px;
             }
         }
             color: #00aaff;
@@ -643,8 +638,7 @@
         <div id="result-screen">
             <div id="result-title">CRASH!</div>
             <div id="physics-steps"></div>
-            <div class="step-counter" id="stepCounter">1 / 18</div>
-            <div class="tap-to-continue" id="tapPrompt">TAP TO CONTINUE</div>
+            <div class="tap-hint">Tap <span>RIGHT</span> = next | Tap <span>LEFT</span> = back</div>
             <button id="retry-btn" style="display: none;">Try Again</button>
         </div>
     </div>
@@ -1719,86 +1713,31 @@
             // Number of cows for display
             const numCows = dm2;
             
-            // Build step-by-step physics explanation - kid-friendly with labeled terms
+            // Build continuous physics explanation - all visible, highlight current
             const cowWord = numCows === 1 ? 'cow' : 'cows';
             
             physicsSteps = [
-                {
-                    text: `<b>What just happened?</b><br>Your car crashed into ${numCows} ${cowWord}! Let's figure out how fast everything moves after the crash.`
-                },
-                {
-                    text: `<b>Before the crash:</b>`,
-                    latex: `\\underbrace{${dm1} \\text{ lbs}}_{\\text{car mass}} \\quad \\underbrace{${dv1} \\text{ mph}}_{\\text{car speed}}`,
-                    latex2: `\\underbrace{${numCows} \\text{ lb${numCows > 1 ? 's' : ''}}}_{\\text{cow mass}} \\quad \\underbrace{0 \\text{ mph}}_{\\text{cow speed}}`
-                },
-                {
-                    text: `<b>The Big Rule #1: Momentum is Conserved</b><br>Momentum = mass × speed. The total "oomph" before and after the crash stays the same!`
-                },
-                {
-                    text: `<b>Let's find the</b> <span class="step-label">momentum of car before crash</span>`,
-                    latex: `${dm1} \\text{ lbs} \\times ${dv1} \\text{ mph} = \\boxed{${pBefore}}`,
-                    latex2: `\\text{(This is the car's "oomph")}`
-                },
-                {
-                    text: `<b>The</b> <span class="step-label">momentum of ${cowWord} before crash</span> is easy:`,
-                    latex: `${numCows} \\text{ lb${numCows > 1 ? 's' : ''}} \\times 0 \\text{ mph} = \\boxed{0}`,
-                    latex2: `\\text{(The ${cowWord} ${numCows === 1 ? "wasn't" : "weren't"} moving!)}`
-                },
-                {
-                    text: `<b>So the</b> <span class="step-label">total momentum before</span> is:`,
-                    latex: `${pBefore} + 0 = \\boxed{${pBefore}}`
-                },
-                {
-                    text: `<b>The Big Rule #2: Energy is Conserved</b><br>In a perfect "bouncy" crash, no energy is lost — it just gets shared!`
-                },
-                {
-                    text: `<b>Here's the magic formula for the</b> <span class="step-label">car's speed after crash</span>`,
-                    latex: `v'_{\\text{car}} = v_{\\text{car}} \\times \\frac{m_{\\text{car}} - m_{\\text{cow}}}{m_{\\text{car}} + m_{\\text{cow}}}`
-                },
-                {
-                    text: `<b>Let's plug in our numbers:</b>`,
-                    latex: `v'_{\\text{car}} = ${dv1} \\times \\frac{${dm1} - ${numCows}}{${dm1} + ${numCows}}`,
-                    latex2: `v'_{\\text{car}} = ${dv1} \\times \\frac{${dm1 - numCows}}{${dm1 + numCows}}`
-                },
-                {
-                    text: `<b>The</b> <span class="step-label">car's speed after crash</span>`,
-                    latex: `v'_{\\text{car}} = \\boxed{${dv1f} \\text{ mph}}`
-                },
-                {
-                    text: `<b>Now the formula for the</b> <span class="step-label">${cowWord}'s speed after crash</span>`,
-                    latex: `v'_{\\text{cow}} = v_{\\text{car}} \\times \\frac{2 \\times m_{\\text{car}}}{m_{\\text{car}} + m_{\\text{cow}}}`
-                },
-                {
-                    text: `<b>Plug in the numbers:</b>`,
-                    latex: `v'_{\\text{cow}} = ${dv1} \\times \\frac{2 \\times ${dm1}}{${dm1} + ${numCows}}`,
-                    latex2: `v'_{\\text{cow}} = ${dv1} \\times \\frac{${2 * dm1}}{${dm1 + numCows}}`
-                },
-                {
-                    text: `<b>The</b> <span class="step-label">${cowWord}'s speed after crash</span>`,
-                    latex: `v'_{\\text{cow}} = \\boxed{${dv2f} \\text{ mph}}`
-                },
-                {
-                    text: `<b>Let's check!</b> Does <span class="step-label">total momentum after</span> = <span class="step-label">total momentum before</span>?`
-                },
-                {
-                    text: `<b>Momentum of car after:</b>`,
-                    latex: `${dm1} \\times ${dv1f} = ${dm1 * dv1f}`
-                },
-                {
-                    text: `<b>Momentum of ${cowWord} after:</b>`,
-                    latex: `${numCows} \\times ${dv2f} = ${numCows * dv2f}`
-                },
-                {
-                    text: `<span class="step-label">Total momentum after</span>`,
-                    latex: `${dm1 * dv1f} + ${numCows * dv2f} = \\boxed{${pAfter}}`,
-                    latex2: `\\text{Before it was } ${pBefore} \\text{ — same! } \\checkmark`
-                },
-                {
-                    text: dm1 > numCows ? 
-                        `<b>What happened?</b><br>Your heavier car kept going at <b>${dv1f} mph</b>.<br>The lighter ${cowWord} went flying at <b>${dv2f} mph</b>!` : 
-                        dm1 < numCows ? 
-                        `<b>What happened?</b><br>The ${cowWord} ${numCows === 1 ? 'was' : 'were'} heavier! Your car bounced back at <b>${Math.abs(dv1f)} mph</b>.<br>The ${cowWord} started moving at <b>${dv2f} mph</b>.` :
-                        `<b>What happened?</b><br>The masses were equal! Your car stopped completely and transferred ALL its momentum to the ${cowWord}, which now moves at <b>${dv2f} mph</b>!`
+                { text: `You crashed into <b>${numCows} ${cowWord}</b>!` },
+                { text: `Car: <b>${dm1} lbs</b> at <b>${dv1} mph</b>`, math: `m_{car}=${dm1}, v_{car}=${dv1}` },
+                { text: `Cow: <b>${numCows} lb${numCows > 1 ? 's' : ''}</b> at <b>0 mph</b>`, math: `m_{cow}=${numCows}, v_{cow}=0` },
+                { text: `<b>Rule 1:</b> Momentum is conserved (total "oomph" stays same)` },
+                { text: `Car momentum before:`, math: `${dm1} \\times ${dv1} = ${pBefore}` },
+                { text: `Cow momentum before:`, math: `${numCows} \\times 0 = 0` },
+                { text: `<b>Total momentum before = ${pBefore}</b>` },
+                { text: `<b>Rule 2:</b> Energy is conserved (bouncy crash)` },
+                { text: `Formula for car's new speed:`, math: `v'_{car} = v_{car} \\times \\frac{m_{car} - m_{cow}}{m_{car} + m_{cow}}` },
+                { text: `Plug in:`, math: `v'_{car} = ${dv1} \\times \\frac{${dm1}-${numCows}}{${dm1}+${numCows}} = ${dv1} \\times \\frac{${dm1 - numCows}}{${dm1 + numCows}}` },
+                { text: `<b>Car's new speed = ${dv1f} mph</b>` },
+                { text: `Formula for cow's new speed:`, math: `v'_{cow} = v_{car} \\times \\frac{2 \\times m_{car}}{m_{car} + m_{cow}}` },
+                { text: `Plug in:`, math: `v'_{cow} = ${dv1} \\times \\frac{2 \\times ${dm1}}{${dm1}+${numCows}} = ${dv1} \\times \\frac{${2*dm1}}{${dm1 + numCows}}` },
+                { text: `<b>Cow's new speed = ${dv2f} mph</b>` },
+                { text: `Check: momentum after =`, math: `${dm1}(${dv1f}) + ${numCows}(${dv2f}) = ${pAfter}` },
+                { text: `<b>Before was ${pBefore} — same!</b>` },
+                { text: dm1 > numCows ? 
+                    `<b>Result:</b> Heavier car kept going (${dv1f} mph), lighter cow flew off (${dv2f} mph)!` : 
+                    dm1 < numCows ? 
+                    `<b>Result:</b> Heavier cow absorbed momentum! Car bounced back (${Math.abs(dv1f)} mph).` :
+                    `<b>Result:</b> Equal masses! Car stopped, cow got ALL the momentum (${dv2f} mph)!`
                 }
             ];
             
@@ -1806,47 +1745,36 @@
             renderPhysicsSteps();
             
             document.getElementById('result-screen').classList.add('visible');
-            document.getElementById('retry-btn').style.display = 'none';
-            document.getElementById('tapPrompt').style.display = 'block';
+            document.getElementById('retry-btn').style.display = 'inline-block';
         }
         
         function renderPhysicsSteps() {
             const container = document.getElementById('physics-steps');
             
-            // Only render the current step (slide format)
-            const step = physicsSteps[currentStep];
-            if (!step) {
-                container.innerHTML = '';
-                return;
+            // Render all lines, highlight current
+            let html = '';
+            for (let i = 0; i < physicsSteps.length; i++) {
+                const step = physicsSteps[i];
+                let className = 'physics-line';
+                if (i < currentStep) className += ' completed';
+                if (i === currentStep) className += ' active';
+                
+                html += `<div class="${className}">`;
+                html += step.text;
+                if (step.math) {
+                    html += ` <span class="math-inline" data-latex="${step.math.replace(/"/g, '&quot;')}"></span>`;
+                }
+                html += '</div>';
             }
-            
-            let html = `<div class="physics-step active">`;
-            html += `<div class="step-text">${step.text}</div>`;
-            if (step.latex) {
-                html += `<div class="step-latex" data-latex="${step.latex.replace(/"/g, '&quot;')}"></div>`;
-            }
-            if (step.latex2) {
-                html += `<div class="step-latex" data-latex="${step.latex2.replace(/"/g, '&quot;')}"></div>`;
-            }
-            if (step.latex3) {
-                html += `<div class="step-latex" data-latex="${step.latex3.replace(/"/g, '&quot;')}"></div>`;
-            }
-            html += '</div>';
             
             container.innerHTML = html;
             
-            // Update step counter
-            const counter = document.getElementById('stepCounter');
-            if (counter) {
-                counter.textContent = `${currentStep + 1} / ${physicsSteps.length}`;
-            }
-            
             // Render LaTeX with KaTeX
-            container.querySelectorAll('.step-latex').forEach(el => {
+            container.querySelectorAll('.math-inline').forEach(el => {
                 const latex = el.dataset.latex;
                 if (latex && window.katex) {
                     try {
-                        katex.render(latex, el, { displayMode: true, throwOnError: false });
+                        katex.render(latex, el, { displayMode: false, throwOnError: false });
                     } catch (e) {
                         el.textContent = latex;
                     }
@@ -1854,26 +1782,41 @@
             });
         }
         
-        function advancePhysicsStep() {
+        function changePhysicsStep(delta) {
             if (gameState !== 'result') return;
             
-            currentStep++;
-            if (currentStep >= physicsSteps.length) {
-                // All steps shown - show retry button
-                document.getElementById('retry-btn').style.display = 'inline-block';
-                document.getElementById('tapPrompt').style.display = 'none';
-            }
+            currentStep += delta;
+            if (currentStep < 0) currentStep = 0;
+            if (currentStep >= physicsSteps.length) currentStep = physicsSteps.length - 1;
             renderPhysicsSteps();
         }
         
-        // Tap/click to advance physics steps
+        // Tap left/right to navigate physics steps (prevent double-fire)
+        let lastTapTime = 0;
         document.getElementById('result-screen').addEventListener('click', (e) => {
-            if (e.target.id === 'retry-btn') return; // Don't advance if clicking retry
-            advancePhysicsStep();
+            if (e.target.id === 'retry-btn') return;
+            const now = Date.now();
+            if (now - lastTapTime < 100) return; // Debounce
+            lastTapTime = now;
+            
+            const screenMidX = window.innerWidth / 2;
+            if (e.clientX > screenMidX) {
+                changePhysicsStep(1); // Right = next
+            } else {
+                changePhysicsStep(-1); // Left = back
+            }
         });
         document.getElementById('result-screen').addEventListener('touchend', (e) => {
             if (e.target.id === 'retry-btn') return;
-            advancePhysicsStep();
+            e.preventDefault(); // Prevent click from also firing
+            
+            const touch = e.changedTouches[0];
+            const screenMidX = window.innerWidth / 2;
+            if (touch.clientX > screenMidX) {
+                changePhysicsStep(1);
+            } else {
+                changePhysicsStep(-1);
+            }
         });
 
         // Reset game
