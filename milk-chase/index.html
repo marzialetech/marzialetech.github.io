@@ -151,7 +151,7 @@
 
         #start-logo {
             max-width: 90%;
-            width: 400px;
+            width: 320px; /* 80% of 400px */
             margin-bottom: 20px;
             filter: invert(1); /* Convert black logo to white */
             height: auto;
@@ -768,7 +768,7 @@
             
             #start-logo {
                 max-width: 95%;
-                width: min(400px, 95vw);
+                width: min(320px, 95vw); /* 80% of 400px */
             }
             
             #start-screen-content {
@@ -1191,9 +1191,10 @@
                 // Clear canvas
                 previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
                 
-                // Position: 40% to the right of logo (logo is 400px, container is 400px)
+                // Position: adjusted for logo being 80% size (320px instead of 400px)
                 // Car should be at right edge, centered vertically, then moved down 15% (was 25%, now 15%)
-                const centerX = previewCanvas.width * 0.4; // 40% to the right
+                // Logo is now 80% of original, so adjust car position proportionally (40% * 0.8 = 32%)
+                const centerX = previewCanvas.width * 0.32; // Adjusted from 40% to 32% to match logo scale
                 const centerY = previewCanvas.height / 2 + previewCanvas.height * 0.15; // Moved down 15%
                 
                 // Rotate 45 degrees to face northeast (top right)
