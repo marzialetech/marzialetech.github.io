@@ -1755,6 +1755,11 @@
             bgMusic = new Audio('song.mp3');
             bgMusic.loop = true;
             bgMusic.volume = 0.4;
+            // Ensure it loops even if browser doesn't respect loop property
+            bgMusic.addEventListener('ended', () => {
+                bgMusic.currentTime = 0;
+                bgMusic.play().catch(e => console.log('Music restart blocked'));
+            });
         }
         
         function playBackgroundMusic() {
