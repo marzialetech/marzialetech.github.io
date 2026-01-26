@@ -871,27 +871,55 @@
             transform: scale(1.05);
         }
 
-        /* Instructions */
-        #instructions {
+        /* Desktop instructions - styled to match mobile */
+        #desktop-instructions {
+            display: none;
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 12px 18px;
-            border-radius: 10px;
-            border: 2px solid #00aaff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px 35px;
+            border-radius: 15px;
+            border: 2px solid #00ffaa;
+            box-shadow: 0 0 30px rgba(0, 255, 170, 0.5);
         }
 
-        #instructions p {
-            font-size: 12px;
-            color: #aaa;
+        .key-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin: 12px 0;
+            animation: flashHint 0.8s ease-in-out infinite alternate;
         }
 
-        #instructions kbd {
-            background: #333;
-            padding: 2px 6px;
-            border-radius: 3px;
-            border: 1px solid #555;
+        .key-hint .arrow {
+            font-size: 32px;
+            color: #00ffaa;
+            text-shadow: 0 0 15px #00ffaa;
+            min-width: 40px;
+        }
+
+        .key-hint .action {
+            color: #00ffaa;
+            text-shadow: 0 0 10px rgba(0, 255, 170, 0.6);
+        }
+
+        .key-hint .equals {
+            color: #888;
+            margin: 0 8px;
+        }
+
+        .key-hint .result {
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
         }
 
         /* Mobile tap instructions */
@@ -950,9 +978,9 @@
             100% { opacity: 1; }
         }
 
-        /* Hide desktop instructions on mobile */
-        body.is-mobile #instructions {
-            display: none;
+        /* Show desktop instructions on desktop ONLY during gameplay before first key press */
+        body:not(.is-mobile).game-playing.show-hints #desktop-instructions {
+            display: block;
         }
 
         /* Show mobile instructions on mobile ONLY during gameplay before first tap */
@@ -1006,8 +1034,20 @@
             <div id="speed-unit">mph</div>
         </div>
 
-        <div id="instructions">
-            <p><kbd>↑</kbd> Accelerate &nbsp; <kbd>←</kbd> <kbd>→</kbd> Dodge</p>
+        <!-- Desktop arrow key instructions (shown until first key press) -->
+        <div id="desktop-instructions">
+            <div class="key-hint">
+                <span class="arrow">←</span>
+                <span class="action">Arrow Left</span>
+                <span class="equals">=</span>
+                <span class="result">Move Left</span>
+            </div>
+            <div class="key-hint">
+                <span class="arrow">→</span>
+                <span class="action">Arrow Right</span>
+                <span class="equals">=</span>
+                <span class="result">Move Right</span>
+            </div>
         </div>
 
         <!-- Mobile tap instructions (shown until first tap) -->
@@ -1693,7 +1733,8 @@
                          (window.innerWidth <= 768);
         
         let playerLane = 1; // 0 = left, 1 = center, 2 = right
-        let mobileHintsShown = true; // Show hints until first tap
+        let mobileHintsShown = true; // Show hints until first tap (mobile)
+        let desktopHintsShown = true; // Show hints until first key press (desktop)
         
         if (isMobile) {
             document.body.classList.add('is-mobile');
@@ -2787,13 +2828,15 @@
             gameState = 'playing';
             document.body.classList.add('game-playing');
             
-            // Reset lane and hints for mobile
+            // Reset lane and hints
             playerLane = 1; // Start in center lane
             player.x = getLaneX(1);
             if (isMobile) {
                 mobileHintsShown = true;
-                document.body.classList.add('show-hints');
+            } else {
+                desktopHintsShown = true;
             }
+            document.body.classList.add('show-hints');
             
             // Reset crash state
             crashData = null;
@@ -2932,10 +2975,20 @@
             if (e.code === 'ArrowLeft') {
                 e.preventDefault();
                 keys.left = true;
+                // Hide desktop hints after first arrow key press
+                if (!isMobile && desktopHintsShown && gameState === 'playing') {
+                    desktopHintsShown = false;
+                    document.body.classList.remove('show-hints');
+                }
             }
             if (e.code === 'ArrowRight') {
                 e.preventDefault();
                 keys.right = true;
+                // Hide desktop hints after first arrow key press
+                if (!isMobile && desktopHintsShown && gameState === 'playing') {
+                    desktopHintsShown = false;
+                    document.body.classList.remove('show-hints');
+                }
             }
             if (e.code === 'Space') {
                 e.preventDefault();
