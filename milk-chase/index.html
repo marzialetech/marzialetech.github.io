@@ -2681,31 +2681,33 @@
         const carColorPicker = document.getElementById('car-color-picker');
         const carColorDisplay = document.getElementById('car-color-display');
         const carColorLabel = document.getElementById('car-color-label');
+        let carColorSelected = false;
         
         if (carColorPicker) {
             carColorPicker.addEventListener('input', (e) => {
                 selectedCarColor = e.target.value;
                 if (carColorDisplay) carColorDisplay.style.background = selectedCarColor;
-                if (carColorLabel) carColorLabel.textContent = '';
+                if (carColorLabel && !carColorSelected) {
+                    carColorLabel.textContent = '';
+                    carColorSelected = true;
+                }
             });
-            
-            // Initialize display with default color
-            if (carColorDisplay) carColorDisplay.style.background = selectedCarColor;
         }
 
         const wheelsColorPicker = document.getElementById('wheels-color-picker');
         const wheelsColorDisplay = document.getElementById('wheels-color-display');
         const wheelsColorLabel = document.getElementById('wheels-color-label');
+        let wheelsColorSelected = false;
         
         if (wheelsColorPicker) {
             wheelsColorPicker.addEventListener('input', (e) => {
                 selectedWheelsColor = e.target.value;
                 if (wheelsColorDisplay) wheelsColorDisplay.style.background = selectedWheelsColor;
-                if (wheelsColorLabel) wheelsColorLabel.textContent = '';
+                if (wheelsColorLabel && !wheelsColorSelected) {
+                    wheelsColorLabel.textContent = '';
+                    wheelsColorSelected = true;
+                }
             });
-            
-            // Initialize display with default color
-            if (wheelsColorDisplay) wheelsColorDisplay.style.background = selectedWheelsColor;
         }
 
 
