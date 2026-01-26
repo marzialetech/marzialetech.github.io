@@ -620,8 +620,8 @@
         }
         
         .leaderboard-entry .car-preview {
-            width: 30px;
-            height: 48px;
+            width: 48px;
+            height: 30px;
             margin-right: 8px;
             border: 1px solid #555;
             border-radius: 3px;
@@ -1152,9 +1152,13 @@
         
         async function fetchLeaderboard(schoolFilter = 'all') {
             initSupabase();
-            if (!supabaseClient) return [];
+            if (!supabaseClient) {
+                console.warn('Supabase client not initialized');
+                return [];
+            }
             
             try {
+                // Use from() with explicit schema to ensure it works regardless of auth state
                 let query = supabaseClient
                     .from('milk_chase_scores')
                     .select('id, player_name, time_seconds, school, car_design, car_color, created_at')
@@ -1169,22 +1173,28 @@
                 
                 if (error) {
                     console.error('Fetch error:', error);
+                    console.error('Error details:', JSON.stringify(error, null, 2));
                     return [];
                 }
                 
-                return data || [];
+                if (!data) {
+                    console.warn('No data returned from leaderboard query');
+                    return [];
+                }
+                
+                return data;
             } catch (e) {
                 console.error('Fetch failed:', e);
                 return [];
             }
         }
         
-        // Create car preview canvas - matches in-game appearance
+        // Create car preview canvas - matches in-game appearance, rotated 90 degrees
         function createCarPreview(design, color) {
             const canvas = document.createElement('canvas');
-            // Scale: game car is 50x80, preview is 30x48 (maintains 5:8 aspect ratio)
-            canvas.width = 30;
-            canvas.height = 48;
+            // Rotated: swap width/height (was 30x48, now 48x30 for horizontal display)
+            canvas.width = 48;
+            canvas.height = 30;
             const ctx = canvas.getContext('2d');
             
             // Scale factor: 30/50 = 0.6
@@ -1194,61 +1204,69 @@
             const centerX = w / 2;
             const centerY = h / 2;
             
+            // Rotate 90 degrees clockwise (car will be horizontal)
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(Math.PI / 2);
+            ctx.translate(-h / 2, -w / 2);
+            
             // Car body based on design (same as in-game)
             if (design === 'usa') {
                 if (usaFlag && usaFlag.complete) {
-                    ctx.drawImage(usaFlag, 0, 0, w, h);
+                    ctx.drawImage(usaFlag, 0, 0, h, w);
                 } else {
                     ctx.fillStyle = '#B22234';
-                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillRect(0, 0, h, w);
                 }
             } else if (design === 'red') {
-                ctx.fillStyle = color || '#cc2222';
-                ctx.fillRect(0, 0, w, h);
-                // Racing stripe
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(0, 0, h, w);
+                // Racing stripe (horizontal when rotated)
                 ctx.fillStyle = '#fff';
-                ctx.fillRect(centerX - 1.8, 0, 3.6, h);
+                ctx.fillRect(0, centerX - 1.8, h, 3.6);
             } else if (design === 'cow') {
                 if (cowPrint && cowPrint.complete) {
-                    ctx.drawImage(cowPrint, 0, 0, w, h);
+                    ctx.drawImage(cowPrint, 0, 0, h, w);
                 } else {
                     ctx.fillStyle = '#fff';
-                    ctx.fillRect(0, 0, w, h);
+                    ctx.fillRect(0, 0, h, w);
                 }
             } else if (design === 'southlewis') {
-                ctx.fillStyle = color || '#cc2222';
-                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(0, 0, h, w);
                 if (southLewisLogo && southLewisLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.8;
-                    ctx.drawImage(southLewisLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
+                    const logoSize = Math.min(h, w) * 0.8;
+                    ctx.drawImage(southLewisLogo, (h - logoSize)/2, (w - logoSize)/2, logoSize, logoSize);
                 }
             } else if (design === 'lowville') {
-                ctx.fillStyle = color || '#cc2222';
-                ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(0, 0, h, w);
                 if (lowvilleLogo && lowvilleLogo.complete) {
-                    const logoSize = Math.min(w, h) * 0.8;
-                    ctx.drawImage(lowvilleLogo, (w - logoSize)/2, (h - logoSize)/2, logoSize, logoSize);
+                    const logoSize = Math.min(h, w) * 0.8;
+                    ctx.drawImage(lowvilleLogo, (h - logoSize)/2, (w - logoSize)/2, logoSize, logoSize);
                 }
             } else {
-                // Default: use color
-                ctx.fillStyle = color || '#cc2222';
-                ctx.fillRect(0, 0, w, h);
+                // Default: red
+                ctx.fillStyle = '#cc2222';
+                ctx.fillRect(0, 0, h, w);
             }
             
-            // Windshield (matches in-game: -player.width/2 + 8, -player.height/2, player.width - 16, 20)
+            // Windshield (rotated: was at top, now at left)
             ctx.fillStyle = '#66ccff';
-            ctx.fillRect(8 * scale, 0, (w - 16 * scale), 20 * scale);
+            ctx.fillRect(0, 8 * scale, 20 * scale, w - 16 * scale);
             
-            // Wheels (matches in-game positions)
-            ctx.fillStyle = '#111';
-            // Front left: -player.width/2 - 5, -player.height/2 + 10, 8, 20
-            ctx.fillRect(-5 * scale, 10 * scale, 8 * scale, 20 * scale);
-            // Front right: player.width/2 - 3, -player.height/2 + 10, 8, 20
-            ctx.fillRect(w - 3 * scale, 10 * scale, 8 * scale, 20 * scale);
-            // Back left: -player.width/2 - 5, player.height/2 - 30, 8, 20
-            ctx.fillRect(-5 * scale, h - 30 * scale, 8 * scale, 20 * scale);
-            // Back right: player.width/2 - 3, player.height/2 - 30, 8, 20
-            ctx.fillRect(w - 3 * scale, h - 30 * scale, 8 * scale, 20 * scale);
+            // Wheels (use selected color, rotated positions)
+            ctx.fillStyle = color || '#111';
+            // Front left (now top left when rotated)
+            ctx.fillRect(10 * scale, -5 * scale, 20 * scale, 8 * scale);
+            // Front right (now top right when rotated)
+            ctx.fillRect(10 * scale, h - 3 * scale, 20 * scale, 8 * scale);
+            // Back left (now bottom left when rotated)
+            ctx.fillRect(h - 30 * scale, -5 * scale, 20 * scale, 8 * scale);
+            // Back right (now bottom right when rotated)
+            ctx.fillRect(h - 30 * scale, h - 3 * scale, 20 * scale, 8 * scale);
+            
+            ctx.restore();
             
             return canvas.toDataURL();
         }
@@ -1858,7 +1876,7 @@
                     ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 }
             } else if (player.design === 'red') {
-                ctx.fillStyle = selectedColor;
+                ctx.fillStyle = '#cc2222';
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Racing stripe
                 ctx.fillStyle = '#fff';
@@ -1873,8 +1891,8 @@
                     ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 }
             } else if (player.design === 'southlewis') {
-                // Background with South Lewis logo (uses selected color)
-                ctx.fillStyle = selectedColor;
+                // Red background with South Lewis logo
+                ctx.fillStyle = '#cc2222';
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Draw logo image
                 if (southLewisLogo && southLewisLogo.complete) {
@@ -1882,8 +1900,8 @@
                     ctx.drawImage(southLewisLogo, -logoSize/2, -logoSize/2, logoSize, logoSize);
                 }
             } else if (player.design === 'lowville') {
-                // Background with Lowville logo (uses selected color)
-                ctx.fillStyle = selectedColor;
+                // Red background with Lowville logo
+                ctx.fillStyle = '#cc2222';
                 ctx.fillRect(-player.width/2, -player.height/2, player.width, player.height);
                 // Draw logo image
                 if (lowvilleLogo && lowvilleLogo.complete) {
@@ -1896,8 +1914,8 @@
             ctx.fillStyle = '#66ccff';
             ctx.fillRect(-player.width/2 + 8, -player.height/2, player.width - 16, 20);
 
-            // Wheels
-            ctx.fillStyle = '#111';
+            // Wheels (use selected color)
+            ctx.fillStyle = selectedColor;
             ctx.fillRect(-player.width/2 - 5, -player.height/2 + 10, 8, 20);
             ctx.fillRect(player.width/2 - 3, -player.height/2 + 10, 8, 20);
             ctx.fillRect(-player.width/2 - 5, player.height/2 - 30, 8, 20);
