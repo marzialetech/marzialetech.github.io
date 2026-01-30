@@ -128,11 +128,13 @@
         #aboutBtn svg {
             height: clamp(2rem, 4.8vw, 2.8rem);
         }
-        .desktop-icon.pay-icon-scaled {
+        /* Pay icon only scaled to 80%; caption stays same size as other icons */
+        .desktop-icon.pay-icon-scaled img {
             transform: scale(0.8);
             transform-origin: center center;
         }
-        .desktop-icon .icon-caption {
+        .desktop-icon .icon-caption,
+        .mail-btn .mail-caption {
             font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
             font-size: clamp(0.65rem, 1.5vw, 0.8rem);
             font-weight: 400;
@@ -163,13 +165,6 @@
             width: 100%;
             height: clamp(2.5rem, 6vw, 3.5rem);
             object-fit: contain;
-        }
-        .mail-btn .mail-caption {
-            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
-            font-size: clamp(0.65rem, 1.5vw, 0.8rem);
-            font-weight: 400;
-            color: #fff;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
         /* Retro Windows 95/97 mail window */
@@ -16097,10 +16092,7 @@
             <span class="icon-caption">Pay</span>
         </button>
         <button class="desktop-icon" id="productsBtn" type="button" style="width:auto;min-width:clamp(3rem,8vw,4.5rem);">
-            <svg class="products-folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
-                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
-            </svg>
+            <img class="products-folder-icon" src="assets/brand/folder-icon.png" alt="" draggable="false">
             <span class="icon-caption" style="white-space:nowrap;">My Products</span>
         </button>
         <button class="desktop-icon" id="merchBtn" type="button">
