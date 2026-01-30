@@ -21808,7 +21808,8 @@
         if (!item) return 1;
         var q = item.quantity;
         if (q === undefined || q === null) q = (item.attrs && item.attrs.quantity);
-        return (typeof q === 'number' && q >= 0) ? q : 1;
+        // If quantity is 0 or invalid, default to 1 (you can't have 0 items in a cart)
+        return (typeof q === 'number' && q > 0) ? q : 1;
     }
     function getLineTitle(item) {
         if (!item) return 'Item';
@@ -21826,7 +21827,19 @@
         var total = (shopifyCheckout.totalPrice && shopifyCheckout.totalPrice.amount) ||
             (shopifyCheckout.cost && shopifyCheckout.cost.totalAmount && shopifyCheckout.cost.totalAmount.amount) ||
             (shopifyCheckout.attrs && shopifyCheckout.attrs.totalPrice && shopifyCheckout.attrs.totalPrice.amount);
-        return total != null ? parseFloat(total).toFixed(2) : '0.00';
+        var parsed = total != null ? parseFloat(total) : 0;
+        // If SDK returns $0 but we have line items, calculate total from displayed quantities
+        if (parsed <= 0) {
+            var lines = getCartLines();
+            var sum = 0;
+            lines.forEach(function(item) {
+                var qty = getLineQuantity(item);
+                var price = parseFloat(getLinePrice(item)) || 0;
+                sum += qty * price;
+            });
+            return sum.toFixed(2);
+        }
+        return parsed.toFixed(2);
     }
     function getCheckoutWebUrl() {
         if (!shopifyCheckout) return null;
