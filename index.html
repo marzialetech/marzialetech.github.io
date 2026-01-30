@@ -1064,9 +1064,40 @@
         .shopify-cart-info .cart-line-item .item-title {
             flex: 1;
         }
-        .shopify-cart-info .cart-line-item .item-qty {
+        .shopify-cart-info .cart-line-item .item-qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
             margin: 0 8px;
-            color: #666;
+        }
+        .shopify-cart-info .cart-line-item .qty-btn {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            background: #c0c0c0;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .shopify-cart-info .cart-line-item .qty-btn:hover {
+            background: #d4d0c8;
+        }
+        .shopify-cart-info .cart-line-item .qty-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .shopify-cart-info .cart-line-item .qty-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .shopify-cart-info .cart-line-item .item-qty {
+            min-width: 20px;
+            text-align: center;
+            color: #000;
+            font-weight: bold;
         }
         .shopify-cart-info .cart-line-item .item-price {
             color: #006400;
@@ -1124,6 +1155,8 @@
         @media (min-width: 701px) {
             .shopify-cart-info, .shopify-checkout-btn, .shopify-cart-empty { font-size: 14px; }
             .merch-item-added { font-size: 14px; }
+            .shopify-cart-info .cart-line-item .qty-btn { width: 22px; height: 22px; font-size: 14px; }
+            .shopify-cart-info .cart-line-item .item-qty { min-width: 24px; }
         }
     </style>
     <script src="https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js"></script>
@@ -21845,6 +21878,16 @@
         if (!shopifyCheckout) return null;
         return shopifyCheckout.webUrl || (shopifyCheckout.attrs && shopifyCheckout.attrs.webUrl) || null;
     }
+    function getLineId(item) {
+        if (!item) return null;
+        return item.id || (item.attrs && item.attrs.id) || null;
+    }
+    function getLineVariantId(item) {
+        if (!item) return null;
+        return (item.variant && item.variant.id) ||
+            (item.merchandise && item.merchandise.id) ||
+            (item.attrs && item.attrs.variant && item.attrs.variant.id) || null;
+    }
 
     // Update cart UI in the merch window
     function updateCartUI() {
@@ -21858,11 +21901,17 @@
         }
 
         var html = '<div class="shopify-cart-info">';
-        lines.forEach(function(item) {
+        lines.forEach(function(item, idx) {
             var qty = getLineQuantity(item);
-            html += '<div class="cart-line-item">';
+            var lineId = getLineId(item);
+            var dataAttr = lineId ? ' data-line-id="' + lineId + '"' : ' data-line-idx="' + idx + '"';
+            html += '<div class="cart-line-item"' + dataAttr + '>';
             html += '<span class="item-title">' + getLineTitle(item) + '</span>';
-            html += '<span class="item-qty">x' + qty + '</span>';
+            html += '<span class="item-qty-controls">';
+            html += '<button class="qty-btn" onclick="updateCartQuantity(' + idx + ', -1)">−</button>';
+            html += '<span class="item-qty">' + qty + '</span>';
+            html += '<button class="qty-btn" onclick="updateCartQuantity(' + idx + ', 1)">+</button>';
+            html += '</span>';
             html += '<span class="item-price">$' + getLinePrice(item) + '</span>';
             html += '</div>';
         });
@@ -21873,6 +21922,47 @@
         html += '</div>';
         html += '<button class="shopify-checkout-btn" onclick="openShopifyCheckout()">Checkout</button>';
         cartDiv.innerHTML = html;
+    }
+
+    // Update quantity for a cart line (delta: +1 or -1)
+    function updateCartQuantity(lineIdx, delta) {
+        var lines = getCartLines();
+        if (lineIdx < 0 || lineIdx >= lines.length) return;
+        var item = lines[lineIdx];
+        var lineId = getLineId(item);
+        var variantId = getLineVariantId(item);
+        var currentQty = getLineQuantity(item);
+        var newQty = Math.max(0, currentQty + delta);
+
+        if (!shopifyClient || !shopifyCheckout) return;
+
+        // Disable buttons temporarily
+        var btns = document.querySelectorAll('.cart-line-item[data-line-idx="' + lineIdx + '"] .qty-btn, .cart-line-item[data-line-id="' + lineId + '"] .qty-btn');
+        btns.forEach(function(b) { b.disabled = true; });
+
+        if (newQty === 0) {
+            // Remove line item
+            if (lineId) {
+                shopifyClient.checkout.removeLineItems(shopifyCheckout.id, [lineId]).then(function(checkout) {
+                    shopifyCheckout = checkout;
+                    updateCartUI();
+                }).catch(function(err) {
+                    console.error('Failed to remove line item:', err);
+                    btns.forEach(function(b) { b.disabled = false; });
+                });
+            }
+        } else {
+            // Update quantity
+            if (lineId && variantId) {
+                shopifyClient.checkout.updateLineItems(shopifyCheckout.id, [{ id: lineId, quantity: newQty }]).then(function(checkout) {
+                    shopifyCheckout = checkout;
+                    updateCartUI();
+                }).catch(function(err) {
+                    console.error('Failed to update line item:', err);
+                    btns.forEach(function(b) { b.disabled = false; });
+                });
+            }
+        }
     }
 
     // Open Shopify checkout in new window
