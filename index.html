@@ -21795,27 +21795,67 @@
         });
     }
 
+    // Normalize cart/checkout from SDK (supports both Checkout and Cart API shapes and GraphModel attrs)
+    function getCartLines() {
+        if (!shopifyCheckout) return [];
+        var raw = shopifyCheckout.lineItems || shopifyCheckout.lines ||
+            (shopifyCheckout.attrs && (shopifyCheckout.attrs.lineItems || shopifyCheckout.attrs.lines)) || [];
+        if (Array.isArray(raw)) return raw;
+        if (raw.edges && Array.isArray(raw.edges)) return raw.edges.map(function(e) { return e.node; });
+        return [];
+    }
+    function getLineQuantity(item) {
+        if (!item) return 1;
+        var q = item.quantity;
+        if (q === undefined || q === null) q = (item.attrs && item.attrs.quantity);
+        return (typeof q === 'number' && q >= 0) ? q : 1;
+    }
+    function getLineTitle(item) {
+        if (!item) return 'Item';
+        return item.title || (item.merchandise && item.merchandise.title) || (item.attrs && item.attrs.title) || 'Item';
+    }
+    function getLinePrice(item) {
+        if (!item) return '0.00';
+        var amt = (item.variant && item.variant.price && item.variant.price.amount) ||
+            (item.merchandise && item.merchandise.price && item.merchandise.price.amount) ||
+            (item.attrs && item.attrs.variant && item.attrs.variant.price && item.attrs.variant.price.amount);
+        return amt != null ? parseFloat(amt).toFixed(2) : '0.00';
+    }
+    function getCartTotal() {
+        if (!shopifyCheckout) return '0.00';
+        var total = (shopifyCheckout.totalPrice && shopifyCheckout.totalPrice.amount) ||
+            (shopifyCheckout.cost && shopifyCheckout.cost.totalAmount && shopifyCheckout.cost.totalAmount.amount) ||
+            (shopifyCheckout.attrs && shopifyCheckout.attrs.totalPrice && shopifyCheckout.attrs.totalPrice.amount);
+        return total != null ? parseFloat(total).toFixed(2) : '0.00';
+    }
+    function getCheckoutWebUrl() {
+        if (!shopifyCheckout) return null;
+        return shopifyCheckout.webUrl || (shopifyCheckout.attrs && shopifyCheckout.attrs.webUrl) || null;
+    }
+
     // Update cart UI in the merch window
     function updateCartUI() {
         var cartDiv = document.getElementById('shopifyCart');
         if (!cartDiv) return;
 
-        if (!shopifyCheckout || shopifyCheckout.lineItems.length === 0) {
+        var lines = getCartLines();
+        if (lines.length === 0) {
             cartDiv.innerHTML = '<div class="shopify-cart-empty">Cart is empty</div>';
             return;
         }
 
         var html = '<div class="shopify-cart-info">';
-        shopifyCheckout.lineItems.forEach(function(item) {
+        lines.forEach(function(item) {
+            var qty = getLineQuantity(item);
             html += '<div class="cart-line-item">';
-            html += '<span class="item-title">' + item.title + '</span>';
-            html += '<span class="item-qty">x' + item.quantity + '</span>';
-            html += '<span class="item-price">$' + parseFloat(item.variant.price.amount).toFixed(2) + '</span>';
+            html += '<span class="item-title">' + getLineTitle(item) + '</span>';
+            html += '<span class="item-qty">x' + qty + '</span>';
+            html += '<span class="item-price">$' + getLinePrice(item) + '</span>';
             html += '</div>';
         });
         html += '<div class="cart-total">';
         html += '<span>Total:</span>';
-        html += '<span class="total-price">$' + parseFloat(shopifyCheckout.totalPrice.amount).toFixed(2) + '</span>';
+        html += '<span class="total-price">$' + getCartTotal() + '</span>';
         html += '</div>';
         html += '</div>';
         html += '<button class="shopify-checkout-btn" onclick="openShopifyCheckout()">Checkout</button>';
@@ -21824,9 +21864,8 @@
 
     // Open Shopify checkout in new window
     function openShopifyCheckout() {
-        if (shopifyCheckout && shopifyCheckout.webUrl) {
-            window.open(shopifyCheckout.webUrl, '_blank');
-        }
+        var url = getCheckoutWebUrl();
+        if (url) window.open(url, '_blank');
     }
 
     // Handle merch item click - add to Shopify cart
