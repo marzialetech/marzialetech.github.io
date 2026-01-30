@@ -1045,7 +1045,88 @@
             .products-grid .product-link { width: 90px; }
             .products-grid .product-link .p-icon { font-size: 36px; }
         }
+
+        /* Shopify Cart UI */
+        .shopify-cart-info {
+            font-size: 11px;
+            color: #000;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #c0c0c0;
+        }
+        .shopify-cart-info .cart-line-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px dotted #c0c0c0;
+        }
+        .shopify-cart-info .cart-line-item .item-title {
+            flex: 1;
+        }
+        .shopify-cart-info .cart-line-item .item-qty {
+            margin: 0 8px;
+            color: #666;
+        }
+        .shopify-cart-info .cart-line-item .item-price {
+            color: #006400;
+            font-weight: bold;
+        }
+        .shopify-cart-info .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #808080;
+        }
+        .shopify-cart-info .cart-total .total-price {
+            color: #006400;
+        }
+        .shopify-checkout-btn {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 6px 12px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .shopify-checkout-btn:hover {
+            background: #d4d0c8;
+        }
+        .shopify-checkout-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .shopify-cart-empty {
+            color: #808080;
+            font-style: italic;
+            font-size: 11px;
+        }
+        .merch-item-added {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 128, 0, 0.15);
+            color: #006400;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @media (min-width: 701px) {
+            .shopify-cart-info, .shopify-checkout-btn, .shopify-cart-empty { font-size: 14px; }
+            .merch-item-added { font-size: 14px; }
+        }
     </style>
+    <script src="https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js"></script>
 </head>
 <body>
     <header class="header" id="figMartech">
@@ -21488,9 +21569,12 @@
     const merchWindowClose = document.getElementById('merchWindowClose');
     const merchGrid = document.getElementById('merchGrid');
 
-    // Shopify configuration (replace with your store credentials)
-    const SHOPIFY_DOMAIN = 'your-store.myshopify.com'; // e.g., 'marziale.myshopify.com'
-    const SHOPIFY_STOREFRONT_TOKEN = 'your-storefront-access-token';
+    // Shopify configuration
+    const SHOPIFY_DOMAIN = '01untr-if.myshopify.com';
+    const SHOPIFY_STOREFRONT_TOKEN = 'c74ef8907b35f5a2764569718eaed57c';
+    const SHOPIFY_PRODUCT_IDS = {
+        socks: '7681599668301'
+    };
     let shopifyClient = null;
     let shopifyCheckout = null;
 
@@ -21692,30 +21776,112 @@
         if (merchWindow) merchWindow.classList.remove('open');
     }
 
-    // Initialize Shopify Buy SDK (when configured)
+    // Initialize Shopify Buy SDK
     function initShopify() {
-        if (SHOPIFY_DOMAIN === 'your-store.myshopify.com') {
-            console.log('Shopify not configured yet. Set SHOPIFY_DOMAIN and SHOPIFY_STOREFRONT_TOKEN.');
+        if (typeof ShopifyBuy === 'undefined') {
+            console.log('Shopify Buy SDK not loaded yet.');
             return;
         }
-        // Shopify Buy SDK will be loaded dynamically when credentials are set
+        shopifyClient = ShopifyBuy.buildClient({
+            domain: SHOPIFY_DOMAIN,
+            storefrontAccessToken: SHOPIFY_STOREFRONT_TOKEN
+        });
+        // Create a new checkout
+        shopifyClient.checkout.create().then(function(checkout) {
+            shopifyCheckout = checkout;
+            updateCartUI();
+        }).catch(function(err) {
+            console.error('Failed to create Shopify checkout:', err);
+        });
     }
 
-    // Handle merch item click (placeholder until Shopify is configured)
-    function handleMerchClick(productId) {
-        if (SHOPIFY_DOMAIN !== 'your-store.myshopify.com') {
-            // Add to cart logic when Shopify is configured
+    // Update cart UI in the merch window
+    function updateCartUI() {
+        var cartDiv = document.getElementById('shopifyCart');
+        if (!cartDiv) return;
+
+        if (!shopifyCheckout || shopifyCheckout.lineItems.length === 0) {
+            cartDiv.innerHTML = '<div class="shopify-cart-empty">Cart is empty</div>';
             return;
         }
+
+        var html = '<div class="shopify-cart-info">';
+        shopifyCheckout.lineItems.forEach(function(item) {
+            html += '<div class="cart-line-item">';
+            html += '<span class="item-title">' + item.title + '</span>';
+            html += '<span class="item-qty">x' + item.quantity + '</span>';
+            html += '<span class="item-price">$' + parseFloat(item.variant.price.amount).toFixed(2) + '</span>';
+            html += '</div>';
+        });
+        html += '<div class="cart-total">';
+        html += '<span>Total:</span>';
+        html += '<span class="total-price">$' + parseFloat(shopifyCheckout.totalPrice.amount).toFixed(2) + '</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '<button class="shopify-checkout-btn" onclick="openShopifyCheckout()">Checkout</button>';
+        cartDiv.innerHTML = html;
+    }
+
+    // Open Shopify checkout in new window
+    function openShopifyCheckout() {
+        if (shopifyCheckout && shopifyCheckout.webUrl) {
+            window.open(shopifyCheckout.webUrl, '_blank');
+        }
+    }
+
+    // Handle merch item click - add to Shopify cart
+    function handleMerchClick(productId) {
+        if (!shopifyClient || !shopifyCheckout) {
+            console.log('Shopify not initialized yet');
+            // Show temporary message
+            showMerchFeedback(productId, 'Loading...', false);
+            // Try to init and retry
+            initShopify();
+            return;
+        }
+
+        var shopifyProductId = SHOPIFY_PRODUCT_IDS[productId];
+        if (!shopifyProductId) {
+            console.log('Unknown product:', productId);
+            return;
+        }
+
+        // Show loading feedback
+        showMerchFeedback(productId, 'Adding...', false);
+
+        // Fetch product to get the first variant
+        shopifyClient.product.fetch('gid://shopify/Product/' + shopifyProductId).then(function(product) {
+            if (!product || !product.variants || product.variants.length === 0) {
+                showMerchFeedback(productId, 'Error', false);
+                return;
+            }
+            var variantId = product.variants[0].id;
+            // Add to checkout
+            var lineItemsToAdd = [{ variantId: variantId, quantity: 1 }];
+            return shopifyClient.checkout.addLineItems(shopifyCheckout.id, lineItemsToAdd);
+        }).then(function(checkout) {
+            if (checkout) {
+                shopifyCheckout = checkout;
+                updateCartUI();
+                showMerchFeedback(productId, 'Added!', true);
+            }
+        }).catch(function(err) {
+            console.error('Failed to add to cart:', err);
+            showMerchFeedback(productId, 'Error', false);
+        });
+    }
+
+    // Show feedback overlay on merch item
+    function showMerchFeedback(productId, message, success) {
         var item = document.querySelector('.merch-item[data-product="' + productId + '"]');
         if (!item) return;
-        var existing = item.querySelector('.merch-coming-soon');
+        var existing = item.querySelector('.merch-item-added, .merch-coming-soon');
         if (existing) existing.remove();
         var overlay = document.createElement('span');
-        overlay.className = 'merch-coming-soon';
-        overlay.textContent = 'COMING SOON';
+        overlay.className = success ? 'merch-item-added' : 'merch-coming-soon';
+        overlay.textContent = message;
         item.appendChild(overlay);
-        setTimeout(function() { overlay.remove(); }, 2000);
+        setTimeout(function() { overlay.remove(); }, 1500);
     }
 
     // Populate products based on user
