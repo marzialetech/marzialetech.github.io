@@ -423,6 +423,338 @@
                 padding: 16px;
             }
         }
+
+        /* Pay Window (Windows 95 style) */
+        .pay-window {
+            position: fixed;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #dfdfdf #000 #000 #dfdfdf;
+            box-shadow: 2px 2px 0 #404040;
+            z-index: 200;
+            min-width: 320px;
+            max-width: 90vw;
+            font-family: inherit;
+            display: none;
+            font-size: 11px;
+        }
+        .pay-window.open {
+            display: block;
+        }
+        .pay-window-header {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: #fff;
+            padding: 3px 6px 4px 6px;
+            font-size: 11px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #000;
+        }
+        .pay-window-header:active {
+            cursor: grabbing;
+        }
+        .pay-window-title {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pay-window-title img {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+        }
+        .pay-window-btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 6px;
+            font-family: inherit;
+        }
+        .pay-window-btn:hover {
+            background: #d4d0c8;
+        }
+        .pay-window-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .pay-window-body {
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #808080;
+            margin: 2px;
+        }
+        .pay-step {
+            display: none;
+        }
+        .pay-step.active {
+            display: block;
+        }
+
+        /* Step 1: Amount input */
+        .pay-amount-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .pay-amount-row .currency {
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .pay-amount-row input {
+            padding: 2px 4px;
+            border: 2px solid;
+            border-color: #404040 #fff #fff #404040;
+            font-family: inherit;
+            font-size: 11px;
+            background: #fff;
+            text-align: right;
+        }
+        .pay-amount-row input:focus {
+            outline: 1px dotted #000;
+        }
+        .pay-amount-row .dollars {
+            width: 80px;
+        }
+        .pay-amount-row .cents {
+            width: 40px;
+            background: #d4d0c8;
+        }
+        .pay-amount-row .separator {
+            font-weight: bold;
+        }
+        .pay-confirm-btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 2px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .pay-confirm-btn:hover {
+            background: #d4d0c8;
+        }
+        .pay-confirm-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+
+        /* Step 2: Payment form */
+        .pay-amount-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .pay-amount-display .amount {
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .pay-edit-btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 1px 8px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .pay-edit-btn:hover {
+            background: #d4d0c8;
+        }
+        .pay-edit-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .pay-warning {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            color: #000;
+        }
+        .pay-warning-icon {
+            font-size: 16px;
+        }
+        .pay-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .pay-row label {
+            font-weight: bold;
+            font-size: 11px;
+            min-width: 52px;
+        }
+        .pay-row input,
+        .pay-row textarea {
+            flex: 1;
+            padding: 2px 4px;
+            border: 2px solid;
+            border-color: #404040 #fff #fff #404040;
+            font-family: inherit;
+            font-size: 11px;
+            background: #fff;
+        }
+        .pay-row input:focus,
+        .pay-row textarea:focus {
+            outline: 1px dotted #000;
+        }
+        .pay-row textarea {
+            min-height: 50px;
+            resize: vertical;
+        }
+        .pay-card-row {
+            margin-bottom: 10px;
+        }
+        .pay-card-element {
+            padding: 6px 8px;
+            border: 2px solid;
+            border-color: #404040 #fff #fff #404040;
+            background: #fff;
+            min-height: 24px;
+        }
+        .pay-submit-row {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+        }
+        .pay-submit-btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 2px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .pay-submit-btn:hover {
+            background: #d4d0c8;
+        }
+        .pay-submit-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .pay-submit-btn:disabled {
+            color: #808080;
+            cursor: not-allowed;
+        }
+        .pay-stripe-badge {
+            font-size: 10px;
+            color: #6772e5;
+            font-style: italic;
+        }
+        .pay-status {
+            margin-top: 8px;
+            font-size: 11px;
+            min-height: 1.2em;
+        }
+        .pay-status.success {
+            color: #006400;
+        }
+        .pay-status.error {
+            color: #800000;
+        }
+        .pay-status.processing {
+            color: #000080;
+        }
+
+        /* Desktop: larger pay window text (~2x) */
+        @media (min-width: 701px) {
+            .pay-window,
+            .pay-window-header,
+            .pay-window-btn,
+            .pay-amount-row,
+            .pay-amount-row .currency,
+            .pay-amount-row input,
+            .pay-confirm-btn,
+            .pay-amount-display .amount,
+            .pay-edit-btn,
+            .pay-warning,
+            .pay-row label,
+            .pay-row input,
+            .pay-row textarea,
+            .pay-submit-btn,
+            .pay-status {
+                font-size: 22px;
+            }
+            .pay-window-body {
+                padding: 20px;
+            }
+            .pay-window-title img {
+                width: 24px;
+                height: 24px;
+            }
+            .pay-amount-row {
+                gap: 8px;
+                margin-bottom: 12px;
+            }
+            .pay-amount-row .dollars {
+                width: 140px;
+            }
+            .pay-amount-row .cents {
+                width: 60px;
+            }
+            .pay-confirm-btn {
+                padding: 4px 20px;
+            }
+            .pay-amount-display {
+                margin-bottom: 12px;
+            }
+            .pay-warning {
+                margin-bottom: 14px;
+            }
+            .pay-warning-icon {
+                font-size: 24px;
+            }
+            .pay-row {
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+            .pay-row label {
+                min-width: 70px;
+            }
+            .pay-row input {
+                padding: 4px 8px;
+            }
+            .pay-row textarea {
+                min-height: 60px;
+                padding: 8px;
+            }
+            .pay-card-element {
+                padding: 10px 12px;
+                min-height: 36px;
+            }
+            .pay-submit-btn {
+                padding: 4px 20px;
+            }
+            .pay-stripe-badge {
+                font-size: 14px;
+            }
+            .pay-status {
+                margin-top: 12px;
+            }
+        }
+
+        /* Prevent iOS zoom on input focus */
+        @media (max-width: 700px) {
+            .pay-amount-row input,
+            .pay-row input,
+            .pay-row textarea {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -15470,6 +15802,10 @@
             <img src="assets/brand/login-icon.png" alt="" draggable="false">
             <span class="icon-caption">Login</span>
         </button>
+        <button class="desktop-icon" id="payBtn" type="button">
+            <img src="assets/brand/pay-icon.png" alt="" draggable="false">
+            <span class="icon-caption">Pay</span>
+        </button>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Angel silhouette (pixelated)">
 <g fill="currentColor" stroke="none">
 <rect x="570" y="50" width="5" height="5"/>
@@ -20653,6 +20989,64 @@
         </div>
     </div>
 
+    <div class="pay-window" id="payWindow">
+        <div class="pay-window-header" id="payWindowHeader">
+            <div class="pay-window-title">
+                <img src="assets/brand/pay-icon.png" alt="" draggable="false">
+                <span>Pay</span>
+            </div>
+            <button class="pay-window-btn" id="payWindowClose">&times;</button>
+        </div>
+        <div class="pay-window-body">
+            <!-- Step 1: Amount Selection -->
+            <div class="pay-step active" id="payStep1">
+                <div class="pay-amount-row">
+                    <span class="currency">$</span>
+                    <input type="number" class="dollars" id="payDollars" value="5" min="1" max="9999">
+                    <span class="separator">.</span>
+                    <input type="text" class="cents" id="payCents" value="00" readonly>
+                    <button class="pay-confirm-btn" id="payConfirmBtn">Confirm</button>
+                </div>
+                <div class="pay-stripe-badge">Powered by <strong>stripe</strong></div>
+            </div>
+
+            <!-- Step 2: Payment Form -->
+            <div class="pay-step" id="payStep2">
+                <div class="pay-amount-display">
+                    <span class="amount" id="payAmountDisplay">$5.00</span>
+                    <button class="pay-edit-btn" id="payEditBtn">Edit</button>
+                </div>
+                <div class="pay-warning">
+                    <span class="pay-warning-icon">⚠</span>
+                    <span>You will actually be charged <strong id="payWarningAmount">$5.00</strong></span>
+                </div>
+                <div class="pay-row">
+                    <label for="payName">Name</label>
+                    <input type="text" id="payName" placeholder="">
+                </div>
+                <div class="pay-row">
+                    <label for="payEmail">Email</label>
+                    <input type="email" id="payEmail" placeholder="">
+                </div>
+                <div class="pay-row">
+                    <label for="payMessage">Message</label>
+                    <textarea id="payMessage" placeholder=""></textarea>
+                </div>
+                <div class="pay-card-row">
+                    <div class="pay-card-element" id="payCardElement">
+                        <!-- Stripe Card Element will be mounted here -->
+                    </div>
+                </div>
+                <div class="pay-submit-row">
+                    <div class="pay-stripe-badge">Powered by <strong>stripe</strong></div>
+                    <button class="pay-submit-btn" id="paySubmitBtn" disabled>Submit</button>
+                </div>
+                <div class="pay-status" id="payStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
 (function () {
     const DURATION_MS = 5000;
@@ -20732,6 +21126,34 @@
     const aboutWindowClose = document.getElementById('aboutWindowClose');
     const loginBtn = document.getElementById('loginBtn');
 
+    // Pay button & window
+    const payBtn = document.getElementById('payBtn');
+    const payWindow = document.getElementById('payWindow');
+    const payWindowHeader = document.getElementById('payWindowHeader');
+    const payWindowClose = document.getElementById('payWindowClose');
+    const payStep1 = document.getElementById('payStep1');
+    const payStep2 = document.getElementById('payStep2');
+    const payDollars = document.getElementById('payDollars');
+    const payCents = document.getElementById('payCents');
+    const payConfirmBtn = document.getElementById('payConfirmBtn');
+    const payAmountDisplay = document.getElementById('payAmountDisplay');
+    const payWarningAmount = document.getElementById('payWarningAmount');
+    const payEditBtn = document.getElementById('payEditBtn');
+    const payName = document.getElementById('payName');
+    const payEmail = document.getElementById('payEmail');
+    const payMessage = document.getElementById('payMessage');
+    const payCardElement = document.getElementById('payCardElement');
+    const paySubmitBtn = document.getElementById('paySubmitBtn');
+    const payStatus = document.getElementById('payStatus');
+
+    // Stripe setup
+    // IMPORTANT: Replace with your actual Stripe publishable key
+    // For testing, use: pk_test_... (get from https://dashboard.stripe.com/test/apikeys)
+    const STRIPE_PUBLISHABLE_KEY = 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
+    let stripe = null;
+    let cardElement = null;
+    let stripeInitialized = false;
+
     // Position the mail button near the man on boat's hand
     // Man on boat SVG viewBox is 0 0 1200 800
     function positionMailBtn() {
@@ -20786,6 +21208,229 @@
         const btnY = (window.innerHeight * 0.75) - (loginBtn.offsetHeight / 2) - figRect.top;
         loginBtn.style.left = btnX + 'px';
         loginBtn.style.top = btnY + 'px';
+    }
+
+    // Position the Pay button 5% to the left of the Login icon
+    function positionPayBtn() {
+        const figRect = figAngel.getBoundingClientRect();
+        const loginCenterX = (window.innerWidth * 0.75) - (loginBtn.offsetWidth / 2);
+        const payCenterX = loginCenterX - (window.innerWidth * 0.05);
+        const btnX = payCenterX - (payBtn.offsetWidth / 2) - figRect.left;
+        const btnY = (window.innerHeight * 0.75) - (payBtn.offsetHeight / 2) - figRect.top;
+        payBtn.style.left = btnX + 'px';
+        payBtn.style.top = btnY + 'px';
+    }
+
+    // Initialize Stripe
+    function initStripe() {
+        if (stripeInitialized) return;
+        
+        try {
+            if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY') {
+                // Demo mode - show placeholder
+                payCardElement.innerHTML = '<span style="color:#808080;display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">💳</span> Card number &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MM / YY &nbsp; CVC</span>';
+                paySubmitBtn.disabled = false;
+                stripeInitialized = true;
+                return;
+            }
+            
+            stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+            const elements = stripe.elements();
+            
+            cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        fontFamily: '"W95FA", "MS Sans Serif", Geneva, sans-serif',
+                        fontSize: window.innerWidth > 700 ? '18px' : '14px',
+                        color: '#000',
+                        '::placeholder': {
+                            color: '#808080'
+                        }
+                    },
+                    invalid: {
+                        color: '#800000'
+                    }
+                }
+            });
+            
+            cardElement.mount('#payCardElement');
+            
+            cardElement.on('change', function(event) {
+                if (event.error) {
+                    payStatus.textContent = event.error.message;
+                    payStatus.className = 'pay-status error';
+                    paySubmitBtn.disabled = true;
+                } else if (event.complete) {
+                    payStatus.textContent = '';
+                    payStatus.className = 'pay-status';
+                    paySubmitBtn.disabled = false;
+                } else {
+                    payStatus.textContent = '';
+                    payStatus.className = 'pay-status';
+                    paySubmitBtn.disabled = true;
+                }
+            });
+            
+            stripeInitialized = true;
+        } catch (error) {
+            console.error('Stripe initialization error:', error);
+            payCardElement.innerHTML = '<span style="color:#800000;">Failed to load payment form</span>';
+        }
+    }
+
+    // Open pay window (above the Pay icon)
+    function openPayWindow() {
+        const btnRect = payBtn.getBoundingClientRect();
+        const gap = 10;
+        payWindow.style.left = Math.max(10, btnRect.left - 100) + 'px';
+        payWindow.style.top = Math.max(10, btnRect.top - 420 - gap) + 'px'; // estimate so it opens above
+        payWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            payWindow.style.top = Math.max(10, btnRect.top - payWindow.offsetHeight - gap) + 'px';
+        });
+
+        // Initialize Stripe when window opens
+        initStripe();
+    }
+
+    // Close pay window
+    function closePayWindow() {
+        payWindow.classList.remove('open');
+    }
+
+    // Get current amount in cents
+    function getPayAmountCents() {
+        const dollars = parseInt(payDollars.value) || 0;
+        return dollars * 100;
+    }
+
+    // Format amount for display
+    function formatAmount(cents) {
+        return '$' + (cents / 100).toFixed(2);
+    }
+
+    // Go to step 2
+    function goToPayStep2() {
+        const amount = getPayAmountCents();
+        if (amount < 100) {
+            payStatus.textContent = 'Minimum amount is $1.00';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        
+        const formattedAmount = formatAmount(amount);
+        payAmountDisplay.textContent = formattedAmount;
+        payWarningAmount.textContent = formattedAmount;
+        
+        payStep1.classList.remove('active');
+        payStep2.classList.add('active');
+        payStatus.textContent = '';
+        payStatus.className = 'pay-status';
+    }
+
+    // Go back to step 1
+    function goToPayStep1() {
+        payStep2.classList.remove('active');
+        payStep1.classList.add('active');
+        payStatus.textContent = '';
+        payStatus.className = 'pay-status';
+    }
+
+    // Handle payment submission
+    async function handlePaySubmit() {
+        const amount = getPayAmountCents();
+        const name = payName.value.trim();
+        const email = payEmail.value.trim();
+        const message = payMessage.value.trim();
+        
+        // Validate
+        if (!name) {
+            payStatus.textContent = 'Name is required';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            payStatus.textContent = 'Valid email is required';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        
+        paySubmitBtn.disabled = true;
+        paySubmitBtn.textContent = 'Processing...';
+        payStatus.textContent = 'Processing payment...';
+        payStatus.className = 'pay-status processing';
+        
+        // Demo mode
+        if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY') {
+            // Simulate payment processing
+            setTimeout(function() {
+                payStatus.textContent = 'Demo mode: Configure Stripe key to enable payments';
+                payStatus.className = 'pay-status error';
+                paySubmitBtn.disabled = false;
+                paySubmitBtn.textContent = 'Submit';
+            }, 1500);
+            return;
+        }
+        
+        try {
+            // Step 1: Create PaymentIntent on your server
+            // You need to create a serverless function or backend endpoint
+            // that creates a PaymentIntent and returns the client_secret
+            const response = await fetch('/api/create-payment-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    name: name,
+                    email: email,
+                    message: message
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to create payment');
+            }
+            
+            const { clientSecret } = await response.json();
+            
+            // Step 2: Confirm the payment with Stripe
+            const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                    card: cardElement,
+                    billing_details: {
+                        name: name,
+                        email: email
+                    }
+                }
+            });
+            
+            if (error) {
+                payStatus.textContent = error.message;
+                payStatus.className = 'pay-status error';
+            } else if (paymentIntent.status === 'succeeded') {
+                payStatus.textContent = 'Payment successful! Thank you!';
+                payStatus.className = 'pay-status success';
+                // Clear form
+                payName.value = '';
+                payEmail.value = '';
+                payMessage.value = '';
+                payDollars.value = '5';
+                // Reset to step 1 after delay
+                setTimeout(function() {
+                    goToPayStep1();
+                    closePayWindow();
+                }, 3000);
+            }
+        } catch (error) {
+            payStatus.textContent = 'Payment failed. Please try again.';
+            payStatus.className = 'pay-status error';
+            console.error('Payment error:', error);
+        }
+        
+        paySubmitBtn.disabled = false;
+        paySubmitBtn.textContent = 'Submit';
     }
 
     // Make an element draggable (with movement threshold so taps work on mobile)
@@ -20980,6 +21625,29 @@
             window.location.href = 'https://marziale.tech';
         });
 
+        // Pay button & window
+        positionPayBtn();
+        makeDraggable(payBtn, null, openPayWindow);
+        makeDraggable(payWindow, payWindowHeader);
+
+        payBtn.addEventListener('click', function(e) {
+            if (Date.now() - lastOpenedFromTap < 400) return;
+            if (Date.now() - lastDragEndedAt < 100) return;
+            openPayWindow();
+        });
+
+        payWindowClose.addEventListener('click', closePayWindow);
+        payConfirmBtn.addEventListener('click', goToPayStep2);
+        payEditBtn.addEventListener('click', goToPayStep1);
+        paySubmitBtn.addEventListener('click', handlePaySubmit);
+
+        // Allow Enter key to confirm amount
+        payDollars.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                goToPayStep2();
+            }
+        });
+
         // Real-time validation
         function validateForm() {
             const errors = [];
@@ -21017,6 +21685,7 @@
             positionMailBtn();
             positionAboutBtn();
             positionLoginBtn();
+            positionPayBtn();
         });
     }
 
