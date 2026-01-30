@@ -15984,9 +15984,9 @@
             <img src="assets/brand/pay-icon.png" alt="" draggable="false">
             <span class="icon-caption">Pay</span>
         </button>
-        <button class="desktop-icon" id="productsBtn" type="button">
+        <button class="desktop-icon" id="productsBtn" type="button" style="width:auto;min-width:clamp(3rem,8vw,4.5rem);">
             <span style="font-size:clamp(2rem,5vw,3rem);">📁</span>
-            <span class="icon-caption">My Products</span>
+            <span class="icon-caption" style="white-space:nowrap;">My Products</span>
         </button>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Angel silhouette (pixelated)">
 <g fill="currentColor" stroke="none">
@@ -21465,14 +21465,23 @@
         payBtn.style.top = btnY + 'px';
     }
 
-    // Position the Products button 5% right and 5% down from Login
+    // Position the Products button halfway between Pay and Contact (Euclidean midpoint)
     function positionProductsBtn() {
-        if (!productsBtn) return;
+        if (!productsBtn || !payBtn || !mailBtn) return;
+        const payRect = payBtn.getBoundingClientRect();
+        const mailRect = mailBtn.getBoundingClientRect();
         const figRect = figAngel.getBoundingClientRect();
-        const loginCenterX = (window.innerWidth * 0.75) - (loginBtn.offsetWidth / 2);
-        const productsCenterX = loginCenterX + (window.innerWidth * 0.05);
-        const btnX = productsCenterX - (productsBtn.offsetWidth / 2) - figRect.left;
-        const btnY = (window.innerHeight * 0.80) - (productsBtn.offsetHeight / 2) - figRect.top;
+        // Center points of Pay and Contact
+        const payCenterX = payRect.left + payRect.width / 2;
+        const payCenterY = payRect.top + payRect.height / 2;
+        const mailCenterX = mailRect.left + mailRect.width / 2;
+        const mailCenterY = mailRect.top + mailRect.height / 2;
+        // Midpoint
+        const midX = (payCenterX + mailCenterX) / 2;
+        const midY = (payCenterY + mailCenterY) / 2;
+        // Position relative to figAngel
+        const btnX = midX - figRect.left - (productsBtn.offsetWidth / 2);
+        const btnY = midY - figRect.top - (productsBtn.offsetHeight / 2);
         productsBtn.style.left = btnX + 'px';
         productsBtn.style.top = btnY + 'px';
     }
