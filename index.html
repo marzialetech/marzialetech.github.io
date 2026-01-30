@@ -846,6 +846,93 @@
                 padding: 20px;
             }
         }
+
+        /* My Products icon (hidden by default, shown when logged in) */
+        #productsBtn {
+            display: none;
+        }
+        body.logged-in #productsBtn {
+            display: flex;
+        }
+
+        /* My Products Window */
+        .products-window {
+            position: fixed;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #dfdfdf #000 #000 #dfdfdf;
+            box-shadow: 2px 2px 0 #404040;
+            z-index: 200;
+            min-width: 320px;
+            max-width: 90vw;
+            font-family: inherit;
+            display: none;
+            font-size: 11px;
+        }
+        .products-window.open { display: block; }
+        .products-window-header {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: #fff;
+            padding: 3px 6px 4px 6px;
+            font-size: 11px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #000;
+        }
+        .products-window-header:active { cursor: grabbing; }
+        .products-window-close {
+            background: #c0c0c0;
+            color: #000;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 6px;
+            font-family: inherit;
+        }
+        .products-window-close:hover { background: #d4d0c8; }
+        .products-window-close:active { border-color: #404040 #fff #fff #404040; }
+        .products-window-body {
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #808080;
+            margin: 2px;
+            min-height: 80px;
+        }
+        .products-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .products-grid .product-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #000;
+            padding: 6px;
+            border: 1px solid transparent;
+            width: 70px;
+        }
+        .products-grid .product-link:hover {
+            background: #cce8ff;
+            border: 1px dotted #000080;
+        }
+        .products-grid .product-link .p-icon { font-size: 28px; }
+        .products-grid .product-link .p-label { font-size: 10px; text-align: center; }
+        .products-empty { color: #808080; font-style: italic; font-size: 11px; }
+        @media (min-width: 701px) {
+            .products-window, .products-window-header, .products-window-close,
+            .products-grid .product-link .p-label, .products-empty { font-size: 16px; }
+            .products-window-body { padding: 20px; }
+            .products-grid .product-link { width: 90px; }
+            .products-grid .product-link .p-icon { font-size: 36px; }
+        }
     </style>
 </head>
 <body>
@@ -15897,6 +15984,10 @@
             <img src="assets/brand/pay-icon.png" alt="" draggable="false">
             <span class="icon-caption">Pay</span>
         </button>
+        <button class="desktop-icon" id="productsBtn" type="button">
+            <span style="font-size:clamp(2rem,5vw,3rem);">📁</span>
+            <span class="icon-caption">My Products</span>
+        </button>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Angel silhouette (pixelated)">
 <g fill="currentColor" stroke="none">
 <rect x="570" y="50" width="5" height="5"/>
@@ -21155,6 +21246,17 @@
         </div>
     </div>
 
+    <div class="products-window" id="productsWindow">
+        <div class="products-window-header" id="productsWindowHeader">
+            <span>My Products</span>
+            <button class="products-window-close" id="productsWindowClose">&times;</button>
+        </div>
+        <div class="products-window-body">
+            <div class="products-grid" id="productsGrid"></div>
+            <div class="products-empty" id="productsEmpty" style="display:none;">No products available yet.</div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://js.stripe.com/v3/"></script>
     <script>
@@ -21237,6 +21339,22 @@
     const loginBtn = document.getElementById('loginBtn');
     const loginBtnIcon = document.getElementById('loginBtnIcon');
     const loginBtnCaption = document.getElementById('loginBtnCaption');
+
+    // My Products button & window
+    const productsBtn = document.getElementById('productsBtn');
+    const productsWindow = document.getElementById('productsWindow');
+    const productsWindowHeader = document.getElementById('productsWindowHeader');
+    const productsWindowClose = document.getElementById('productsWindowClose');
+    const productsGrid = document.getElementById('productsGrid');
+    const productsEmpty = document.getElementById('productsEmpty');
+    const ADMIN_EMAIL = 'jm@marziale.tech';
+    const ADMIN_PRODUCTS = [
+        { name: 'Bible', href: '/projects/bible/', icon: '📖' },
+        { name: 'Fitness', href: '/projects/fitness/', icon: '💪' },
+        { name: 'Home', href: '/projects/home/', icon: '🏠' },
+        { name: 'LACS', href: '/projects/lacs/', icon: '📄' },
+        { name: 'Milk Chase', href: '/projects/milk-chase/', icon: '🐄' }
+    ];
 
     // Login window (unified Supabase auth - Project 2)
     const LOGIN_SUPABASE_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co';
@@ -21347,6 +21465,58 @@
         payBtn.style.top = btnY + 'px';
     }
 
+    // Position the Products button 5% right and 5% down from Login
+    function positionProductsBtn() {
+        if (!productsBtn) return;
+        const figRect = figAngel.getBoundingClientRect();
+        const loginCenterX = (window.innerWidth * 0.75) - (loginBtn.offsetWidth / 2);
+        const productsCenterX = loginCenterX + (window.innerWidth * 0.05);
+        const btnX = productsCenterX - (productsBtn.offsetWidth / 2) - figRect.left;
+        const btnY = (window.innerHeight * 0.80) - (productsBtn.offsetHeight / 2) - figRect.top;
+        productsBtn.style.left = btnX + 'px';
+        productsBtn.style.top = btnY + 'px';
+    }
+
+    // Open products window
+    function openProductsWindow() {
+        if (!productsWindow) return;
+        productsWindow.style.left = Math.max(10, (window.innerWidth - 360) / 2) + 'px';
+        productsWindow.style.top = Math.max(10, (window.innerHeight - 300) / 2) + 'px';
+        productsWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            productsWindow.style.left = Math.max(10, (window.innerWidth - productsWindow.offsetWidth) / 2) + 'px';
+        });
+        populateProducts();
+    }
+
+    // Close products window
+    function closeProductsWindow() {
+        if (productsWindow) productsWindow.classList.remove('open');
+    }
+
+    // Populate products based on user
+    function populateProducts() {
+        if (!productsGrid || !productsEmpty) return;
+        productsGrid.innerHTML = '';
+        var user = window.currentLoginUser;
+        var products = [];
+        if (user && user.email === ADMIN_EMAIL) {
+            products = ADMIN_PRODUCTS;
+        }
+        if (products.length === 0) {
+            productsEmpty.style.display = 'block';
+        } else {
+            productsEmpty.style.display = 'none';
+            products.forEach(function(p) {
+                var a = document.createElement('a');
+                a.href = p.href;
+                a.className = 'product-link';
+                a.innerHTML = '<span class="p-icon">' + p.icon + '</span><span class="p-label">' + p.name + '</span>';
+                productsGrid.appendChild(a);
+            });
+        }
+    }
+
     // Initialize Stripe
     function initStripe() {
         if (stripeInitialized) return;
@@ -21439,6 +21609,7 @@
 
     function updateLoginUI(user) {
         if (!loginAuthForm || !loginLoggedInView) return;
+        window.currentLoginUser = user || null;
         if (user) {
             loginAuthForm.style.display = 'none';
             loginLoggedInView.style.display = 'block';
@@ -21449,6 +21620,8 @@
             var displayName = user.user_metadata?.user_name || user.email?.split('@')[0] || 'User';
             if (loginBtnCaption) loginBtnCaption.innerHTML = displayName + '<br><span style="font-size:0.85em;">Log out</span>';
             if (loginBtnIcon) loginBtnIcon.style.filter = 'hue-rotate(-30deg) saturate(1.5)';
+            // Position products button when logged in
+            positionProductsBtn();
         } else {
             loginAuthForm.style.display = 'block';
             loginLoggedInView.style.display = 'none';
@@ -21457,6 +21630,8 @@
             // Reset icon caption and color
             if (loginBtnCaption) loginBtnCaption.textContent = 'Login';
             if (loginBtnIcon) loginBtnIcon.style.filter = '';
+            // Close products window when logged out
+            closeProductsWindow();
         }
     }
 
@@ -21881,6 +22056,23 @@
             }
         });
 
+        // Products button & window
+        if (productsBtn) {
+            positionProductsBtn();
+            makeDraggable(productsBtn, null, openProductsWindow);
+            productsBtn.addEventListener('click', function(e) {
+                if (Date.now() - lastOpenedFromTap < 400) return;
+                if (Date.now() - lastDragEndedAt < 100) return;
+                openProductsWindow();
+            });
+        }
+        if (productsWindow && productsWindowHeader) {
+            makeDraggable(productsWindow, productsWindowHeader);
+        }
+        if (productsWindowClose) {
+            productsWindowClose.addEventListener('click', closeProductsWindow);
+        }
+
         // Real-time validation
         function validateForm() {
             const errors = [];
@@ -21919,6 +22111,7 @@
             positionAboutBtn();
             positionLoginBtn();
             positionPayBtn();
+            positionProductsBtn();
         });
     }
 
