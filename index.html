@@ -21971,6 +21971,10 @@
         if (url) window.open(url, '_blank');
     }
 
+    // Expose cart functions globally for onclick handlers
+    window.openShopifyCheckout = openShopifyCheckout;
+    window.updateCartQuantity = updateCartQuantity;
+
     // Handle merch item click - add to Shopify cart
     function handleMerchClick(productId) {
         if (!shopifyClient || !shopifyCheckout) {
