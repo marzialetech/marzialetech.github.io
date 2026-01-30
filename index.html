@@ -128,6 +128,10 @@
         #aboutBtn svg {
             height: clamp(2rem, 4.8vw, 2.8rem);
         }
+        .desktop-icon.pay-icon-scaled {
+            transform: scale(0.8);
+            transform-origin: center center;
+        }
         .desktop-icon .icon-caption {
             font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
             font-size: clamp(0.65rem, 1.5vw, 0.8rem);
@@ -16088,7 +16092,7 @@
             <img id="loginBtnIcon" src="assets/brand/login-icon.png" alt="" draggable="false">
             <span class="icon-caption" id="loginBtnCaption">Login</span>
         </button>
-        <button class="desktop-icon" id="payBtn" type="button">
+        <button class="desktop-icon pay-icon-scaled" id="payBtn" type="button">
             <img src="assets/brand/pay-icon.png" alt="" draggable="false">
             <span class="icon-caption">Pay</span>
         </button>
