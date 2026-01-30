@@ -21953,14 +21953,21 @@
             }
         } else {
             // Update quantity
-            if (lineId && variantId) {
-                shopifyClient.checkout.updateLineItems(shopifyCheckout.id, [{ id: lineId, quantity: newQty }]).then(function(checkout) {
+            if (lineId) {
+                var updatePayload = { id: lineId, quantity: newQty };
+                if (variantId) updatePayload.variantId = variantId;
+                console.log('Updating line item:', updatePayload);
+                shopifyClient.checkout.updateLineItems(shopifyCheckout.id, [updatePayload]).then(function(checkout) {
+                    console.log('Update successful:', checkout);
                     shopifyCheckout = checkout;
                     updateCartUI();
                 }).catch(function(err) {
                     console.error('Failed to update line item:', err);
                     btns.forEach(function(b) { b.disabled = false; });
                 });
+            } else {
+                console.error('No lineId found for item at index', lineIdx, item);
+                btns.forEach(function(b) { b.disabled = false; });
             }
         }
     }
