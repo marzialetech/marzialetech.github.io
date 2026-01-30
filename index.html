@@ -914,6 +914,7 @@
             gap: 16px;
         }
         .merch-grid .merch-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -926,6 +927,23 @@
             cursor: pointer;
             background: none;
             font-family: inherit;
+        }
+        .merch-grid .merch-item .merch-coming-soon {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.85);
+            color: #c00;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1;
+        }
+        @media (min-width: 701px) {
+            .merch-grid .merch-item .merch-coming-soon { font-size: 14px; }
         }
         .merch-grid .merch-item:hover {
             background: #cce8ff;
@@ -21674,11 +21692,19 @@
 
     // Handle merch item click (placeholder until Shopify is configured)
     function handleMerchClick(productId) {
-        if (SHOPIFY_DOMAIN === 'your-store.myshopify.com') {
-            alert('Shopify integration not configured yet.\n\nTo enable:\n1. Create a Shopify store\n2. Set SHOPIFY_DOMAIN and SHOPIFY_STOREFRONT_TOKEN in index.html');
+        if (SHOPIFY_DOMAIN !== 'your-store.myshopify.com') {
+            // Add to cart logic when Shopify is configured
             return;
         }
-        // Add to cart logic will go here
+        var item = document.querySelector('.merch-item[data-product="' + productId + '"]');
+        if (!item) return;
+        var existing = item.querySelector('.merch-coming-soon');
+        if (existing) existing.remove();
+        var overlay = document.createElement('span');
+        overlay.className = 'merch-coming-soon';
+        overlay.textContent = 'COMING SOON';
+        item.appendChild(overlay);
+        setTimeout(function() { overlay.remove(); }, 2000);
     }
 
     // Populate products based on user
