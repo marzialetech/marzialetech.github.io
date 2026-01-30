@@ -21604,13 +21604,23 @@
         loginBtn.style.top = btnY + 'px';
     }
 
-    // Position the Pay button 5% to the left of the Login icon
+    // Position the Pay button halfway (Euclidean) between My Products and Login initial positions.
+    // Products initial = midpoint(Pay, Contact) then 10% up; so we solve for Pay from Login + Contact.
     function positionPayBtn() {
+        if (!loginBtn || !mailBtn) return;
         const figRect = figAngel.getBoundingClientRect();
-        const loginCenterX = (window.innerWidth * 0.75) - (loginBtn.offsetWidth / 2);
-        const payCenterX = loginCenterX - (window.innerWidth * 0.05);
-        const btnX = payCenterX - (payBtn.offsetWidth / 2) - figRect.left;
-        const btnY = (window.innerHeight * 0.70) - (payBtn.offsetHeight / 2) - figRect.top; // 5% up from login
+        const loginRect = loginBtn.getBoundingClientRect();
+        const mailRect = mailBtn.getBoundingClientRect();
+        const loginCenterX = loginRect.left + loginRect.width / 2;
+        const loginCenterY = loginRect.top + loginRect.height / 2;
+        const mailCenterX = mailRect.left + mailRect.width / 2;
+        const mailCenterY = mailRect.top + mailRect.height / 2;
+        const H = window.innerHeight;
+        // payCenter = midpoint(productsCenter, loginCenter); productsCenter = midpoint(payCenter, mailCenter) with Y -= 0.1*H
+        const payCenterX = (mailCenterX + 2 * loginCenterX) / 3;
+        const payCenterY = (mailCenterY - 0.2 * H + 2 * loginCenterY) / 3;
+        const btnX = payCenterX - figRect.left - (payBtn.offsetWidth / 2);
+        const btnY = payCenterY - figRect.top - (payBtn.offsetHeight / 2);
         payBtn.style.left = btnX + 'px';
         payBtn.style.top = btnY + 'px';
     }
