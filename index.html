@@ -21404,14 +21404,15 @@
         }
     }
 
-    // Open pay window (above the Pay icon)
+    // Open pay window (above the Pay icon, centered horizontally)
     function openPayWindow() {
         const btnRect = payBtn.getBoundingClientRect();
         const gap = 10;
-        payWindow.style.left = Math.max(10, btnRect.left - 100) + 'px';
+        payWindow.style.left = Math.max(10, (window.innerWidth - 400) / 2) + 'px'; // center horizontally (estimate)
         payWindow.style.top = Math.max(10, btnRect.top - 420 - gap) + 'px'; // estimate so it opens above
         payWindow.classList.add('open');
         requestAnimationFrame(function() {
+            payWindow.style.left = Math.max(10, (window.innerWidth - payWindow.offsetWidth) / 2) + 'px';
             payWindow.style.top = Math.max(10, btnRect.top - payWindow.offsetHeight - gap) + 'px';
         });
 
@@ -21463,10 +21464,11 @@
         initLoginSupabase();
         const btnRect = loginBtn.getBoundingClientRect();
         const gap = 10;
-        loginWindow.style.left = Math.max(10, btnRect.left - 80) + 'px';
+        loginWindow.style.left = Math.max(10, (window.innerWidth - 320) / 2) + 'px'; // center horizontally (estimate)
         loginWindow.style.top = Math.max(10, btnRect.top - 320 - gap) + 'px';
         loginWindow.classList.add('open');
         requestAnimationFrame(function() {
+            loginWindow.style.left = Math.max(10, (window.innerWidth - loginWindow.offsetWidth) / 2) + 'px';
             loginWindow.style.top = Math.max(10, btnRect.top - loginWindow.offsetHeight - gap) + 'px';
         });
         if (loginSupabase) {
