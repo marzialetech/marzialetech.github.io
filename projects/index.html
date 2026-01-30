@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - marziale.tech</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+    <link href="https://fonts.cdnfonts.com/css/w95fa" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #2563eb;
+            color: #fff;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            margin: 0 0 0.5rem 0;
+            letter-spacing: 0.05em;
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            opacity: 0.8;
+        }
+
+        .desktop {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 120px));
+            gap: 1.5rem;
+            justify-content: center;
+            max-width: 800px;
+            padding: 2rem;
+        }
+
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            border: none;
+            padding: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.1s;
+        }
+
+        .desktop-icon:hover {
+            transform: scale(1.05);
+        }
+
+        .desktop-icon:active {
+            transform: scale(0.98);
+        }
+
+        .desktop-icon img {
+            width: clamp(3rem, 8vw, 4rem);
+            height: clamp(3rem, 8vw, 4rem);
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .desktop-icon .caption {
+            font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .back-link {
+            margin-top: 2rem;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 8px 24px;
+            font-family: inherit;
+            font-size: clamp(0.8rem, 2vw, 1rem);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            background: #d4d0c8;
+        }
+
+        .back-link:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+
+        /* Window for folder icon */
+        .folder-icon {
+            width: clamp(3rem, 8vw, 4rem) !important;
+            height: clamp(3rem, 8vw, 4rem) !important;
+        }
+    </style>
+</head>
+<body>
+    <script src="auth-guard.js"></script>
+
+    <div class="header">
+        <h1>📁 Projects</h1>
+        <p class="subtitle">Personal sandbox & experiments</p>
+    </div>
+
+    <div class="desktop">
+        <a href="fitness/" class="desktop-icon">
+            <svg class="folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
+                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
+            </svg>
+            <span class="caption">Fitness</span>
+        </a>
+
+        <a href="bible/" class="desktop-icon">
+            <svg class="folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
+                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
+            </svg>
+            <span class="caption">Bible</span>
+        </a>
+
+        <a href="milk-chase/" class="desktop-icon">
+            <svg class="folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
+                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
+            </svg>
+            <span class="caption">Milk Chase</span>
+        </a>
+
+        <a href="lacs/" class="desktop-icon">
+            <svg class="folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
+                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
+            </svg>
+            <span class="caption">LACS</span>
+        </a>
+
+        <a href="home/" class="desktop-icon">
+            <svg class="folder-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 8h12l2 -4h14v22H2z" fill="#f4c542" stroke="#b8860b" stroke-width="1"/>
+                <path d="M2 8h28v18H2z" fill="#ffd700" stroke="#b8860b" stroke-width="1"/>
+            </svg>
+            <span class="caption">Home (old)</span>
+        </a>
+    </div>
+
+    <a href="/" class="back-link">← Back to marziale.tech</a>
+</body>
+</html>

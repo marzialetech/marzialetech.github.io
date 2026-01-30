@@ -1,0 +1,234 @@
+# Marziale Design System
+
+When building pages that should look like the marziale.tech homepage, follow this style guide.
+
+## Core Visual Identity
+
+### Colors
+- **Primary Background**: `#2563eb` (vibrant blue)
+- **Text Color**: `#fff` (white)
+- **Window Background**: `#c0c0c0` (Windows 95 gray)
+- **Window Header Gradient**: `linear-gradient(90deg, #000080 0%, #1084d0 100%)` (navy to blue)
+- **Window Body**: `#fff` (white)
+- **3D Border Light**: `#dfdfdf`, `#fff`
+- **3D Border Dark**: `#000`, `#404040`
+- **Success Text**: `#000080` (navy)
+- **Error Text**: `#800000` (dark red)
+
+### Typography
+- **Primary Font**: `"W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif`
+- **Font CDN**: `https://fonts.cdnfonts.com/css/w95fa`
+- **Base Size**: 11px for retro windows, responsive elsewhere
+- **Desktop Scale**: ~2x for readability (22px)
+- **Use `clamp()` for responsive sizing**: e.g., `clamp(0.65rem, 1.5vw, 0.8rem)`
+
+### Aesthetic
+- **Theme**: Retro Windows 95/97 meets modern minimalism
+- **Pixelated SVG art** for branding and figures
+- **Draggable desktop icons** with text captions below
+- **Modal windows** with 3D beveled borders and gradient title bars
+
+## CSS Patterns
+
+### Box Model Reset
+```css
+* { box-sizing: border-box; }
+```
+
+### Body Base
+```css
+body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: #2563eb;
+    color: #fff;
+    font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+```
+
+### Retro Window (modal/dialog)
+```css
+.window {
+    position: fixed;
+    background: #c0c0c0;
+    color: #000;
+    border: 2px solid;
+    border-color: #dfdfdf #000 #000 #dfdfdf;
+    box-shadow: 2px 2px 0 #404040;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+.window-header {
+    background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+    color: #fff;
+    padding: 3px 6px 4px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #000;
+    cursor: grab;
+}
+
+.window-close {
+    background: #c0c0c0;
+    color: #000;
+    border: 1px solid;
+    border-color: #fff #404040 #404040 #fff;
+    cursor: pointer;
+    padding: 0 6px;
+    font-family: inherit;
+}
+
+.window-body {
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #808080;
+    margin: 2px;
+}
+```
+
+### Desktop Icon
+```css
+.desktop-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.desktop-icon img {
+    width: clamp(2.5rem, 6vw, 3.5rem);
+    height: clamp(2.5rem, 6vw, 3.5rem);
+    object-fit: contain;
+}
+
+.desktop-icon .caption {
+    font-size: clamp(0.65rem, 1.5vw, 0.8rem);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+```
+
+### Retro Button
+```css
+.btn {
+    background: #c0c0c0;
+    color: #000;
+    border: 2px solid;
+    border-color: #fff #404040 #404040 #fff;
+    padding: 4px 16px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #d4d0c8;
+}
+
+.btn:active {
+    border-color: #404040 #fff #fff #404040;
+}
+```
+
+### Retro Input
+```css
+input, textarea {
+    padding: 4px;
+    border: 2px solid;
+    border-color: #404040 #fff #fff #404040;
+    font-family: inherit;
+    background: #fff;
+}
+
+input:focus, textarea:focus {
+    outline: 1px dotted #000;
+}
+```
+
+## Responsive Breakpoints
+
+- **Mobile**: `max-width: 700px`
+- **Desktop**: `min-width: 701px`
+- Use `clamp()` for fluid sizing between breakpoints
+
+## File Structure
+
+```
+project/
+├── index.html
+├── style.css (or inline <style>)
+├── app.js (if needed)
+└── assets/
+    └── (icons, images)
+```
+
+## Required Resources
+
+1. **Font**: Add to `<head>`:
+   ```html
+   <link href="https://fonts.cdnfonts.com/css/w95fa" rel="stylesheet">
+   ```
+
+2. **Favicon** (optional): 
+   ```html
+   <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+   ```
+
+## Example: Minimal Page Template
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Title</title>
+    <link href="https://fonts.cdnfonts.com/css/w95fa" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #2563eb;
+            color: #fff;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin-bottom: 1rem;
+        }
+        .btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 8px 24px;
+            font-family: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn:hover { background: #d4d0c8; }
+        .btn:active { border-color: #404040 #fff #fff #404040; }
+    </style>
+</head>
+<body>
+    <h1>Page Title</h1>
+    <a href="/" class="btn">Back to Home</a>
+</body>
+</html>
+```
