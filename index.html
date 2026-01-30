@@ -15890,8 +15890,8 @@
             <span class="icon-caption">About</span>
         </button>
         <button class="desktop-icon" id="loginBtn" type="button">
-            <img src="assets/brand/login-icon.png" alt="" draggable="false">
-            <span class="icon-caption">Login</span>
+            <img id="loginBtnIcon" src="assets/brand/login-icon.png" alt="" draggable="false">
+            <span class="icon-caption" id="loginBtnCaption">Login</span>
         </button>
         <button class="desktop-icon" id="payBtn" type="button">
             <img src="assets/brand/pay-icon.png" alt="" draggable="false">
@@ -21235,6 +21235,8 @@
     const aboutWindowHeader = document.getElementById('aboutWindowHeader');
     const aboutWindowClose = document.getElementById('aboutWindowClose');
     const loginBtn = document.getElementById('loginBtn');
+    const loginBtnIcon = document.getElementById('loginBtnIcon');
+    const loginBtnCaption = document.getElementById('loginBtnCaption');
 
     // Login window (unified Supabase auth - Project 2)
     const LOGIN_SUPABASE_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co';
@@ -21442,11 +21444,18 @@
             if (loginUserEmail) loginUserEmail.textContent = user.email || '';
             if (loginError) { loginError.style.display = 'none'; loginError.textContent = ''; }
             document.body.classList.add('logged-in');
+            // Update icon caption and color
+            var displayName = user.user_metadata?.user_name || user.email?.split('@')[0] || 'User';
+            if (loginBtnCaption) loginBtnCaption.innerHTML = displayName + '<br><span style="font-size:0.85em;">Log out</span>';
+            if (loginBtnIcon) loginBtnIcon.style.filter = 'hue-rotate(-30deg) saturate(1.5)';
         } else {
             loginAuthForm.style.display = 'block';
             loginLoggedInView.style.display = 'none';
             if (loginError) { loginError.style.display = 'none'; loginError.textContent = ''; }
             document.body.classList.remove('logged-in');
+            // Reset icon caption and color
+            if (loginBtnCaption) loginBtnCaption.textContent = 'Login';
+            if (loginBtnIcon) loginBtnIcon.style.filter = '';
         }
     }
 
@@ -21793,12 +21802,25 @@
 
         // Login button & window
         positionLoginBtn();
-        makeDraggable(loginBtn, null, openLoginWindow);
+        makeDraggable(loginBtn, null, function() {
+            if (document.body.classList.contains('logged-in') && loginSupabase) {
+                loginSupabase.auth.signOut();
+                updateLoginUI(null);
+            } else {
+                openLoginWindow();
+            }
+        });
         makeDraggable(loginWindow, loginWindowHeader);
         loginBtn.addEventListener('click', function(e) {
             if (Date.now() - lastOpenedFromTap < 400) return;
             if (Date.now() - lastDragEndedAt < 100) return;
-            openLoginWindow();
+            // If logged in, log out; otherwise open login window
+            if (document.body.classList.contains('logged-in') && loginSupabase) {
+                loginSupabase.auth.signOut();
+                updateLoginUI(null);
+            } else {
+                openLoginWindow();
+            }
         });
         loginWindowClose.addEventListener('click', closeLoginWindow);
         loginGithubBtn.addEventListener('click', function() {
