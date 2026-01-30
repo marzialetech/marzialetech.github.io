@@ -932,6 +932,7 @@
             border: 1px dotted #000080;
         }
         .merch-grid .merch-item .merch-icon { font-size: 36px; }
+        .merch-grid .merch-item img.merch-icon { width: 36px; height: 36px; object-fit: contain; font-size: 0; }
         .merch-grid .merch-item .merch-label { font-size: 11px; text-align: center; }
         .merch-grid .merch-item .merch-price { font-size: 10px; color: #006400; font-weight: bold; }
         @media (min-width: 701px) {
@@ -940,6 +941,7 @@
             .merch-window-body { padding: 20px; }
             .merch-grid .merch-item { width: 120px; }
             .merch-grid .merch-item .merch-icon { font-size: 48px; }
+            .merch-grid .merch-item img.merch-icon { width: 48px; height: 48px; }
             .merch-grid .merch-item .merch-price { font-size: 14px; }
         }
 
@@ -21360,8 +21362,8 @@
         <div class="merch-window-body">
             <div class="merch-grid" id="merchGrid">
                 <button class="merch-item" id="merchSocks" data-product="socks">
-                    <span class="merch-icon">🧦</span>
-                    <span class="merch-label">Marziale Socks</span>
+                    <img class="merch-icon" src="assets/brand/socks-icon.png" alt="">
+                    <span class="merch-label">socks</span>
                     <span class="merch-price">$12.00</span>
                 </button>
             </div>
