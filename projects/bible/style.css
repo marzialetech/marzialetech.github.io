@@ -1,0 +1,268 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 18px;
+    line-height: 1.8;
+    background: #000;
+    color: #fff;
+    min-height: 100vh;
+}
+
+main {
+    max-width: 650px;
+    margin: 0 auto;
+    padding: 40px 20px 100px 20px;
+}
+
+h1 {
+    font-size: 32px;
+    font-weight: normal;
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-size: 22px;
+    font-weight: normal;
+    margin: 0 0 10px 0;
+    padding: 0;
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.toc {
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.toc a {
+    color: #fff;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.toc a:hover {
+    text-decoration: underline;
+}
+
+.floating-controls {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #111;
+    border: 1px solid #333;
+    padding: 15px;
+    z-index: 1000;
+    width: 200px;
+}
+
+.floating-controls hr {
+    border: none;
+    border-top: 1px solid #333;
+    margin: 12px 0;
+}
+
+.floating-controls .current-ref {
+    font-size: 14px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+    color: #cc6666;
+}
+
+.floating-controls select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.floating-controls button {
+    background: #222;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    width: 100%;
+    text-align: center;
+}
+
+.floating-controls button:hover {
+    background: #333;
+}
+
+.floating-controls button.active {
+    background: #663333;
+    border-color: #884444;
+}
+
+.floating-controls .btn-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.floating-controls .btn-row button {
+    flex: 1;
+    margin-bottom: 0;
+    padding: 6px 4px;
+}
+
+.load-btn {
+    background: #2a4a2a !important;
+}
+
+.load-btn:hover {
+    background: #3a5a3a !important;
+}
+
+.chapter-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+}
+
+#section-1 {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.chapter-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chapter-header h2 {
+    margin: 0;
+    padding-top: 0;
+    border-top: none;
+}
+
+.nav {
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.nav a {
+    color: #fff;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+.nav a:hover {
+    text-decoration: underline;
+}
+
+p {
+    margin-bottom: 12px;
+    text-align: justify;
+}
+
+.verse-num {
+    font-size: 12px;
+    vertical-align: super;
+    color: #888;
+    margin-right: 2px;
+}
+
+.verse {
+    cursor: pointer;
+}
+
+.verse:hover {
+    background: #1a1a1a;
+}
+
+.verse.reading {
+    color: #cc6666;
+    text-decoration: underline;
+    text-decoration-color: #663333;
+    text-underline-offset: 3px;
+}
+
+.verse.reading .verse-num {
+    color: #cc6666;
+}
+
+.loading {
+    color: #666;
+    font-style: italic;
+}
+
+.error {
+    color: #cc4444;
+    padding: 20px;
+    background: #1a0000;
+    border: 1px solid #442222;
+    margin: 20px 0;
+}
+
+@media (max-width: 900px) {
+    .floating-controls {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: auto;
+        bottom: 0;
+        transform: none;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 10px;
+        border: none;
+        border-top: 1px solid #333;
+    }
+    
+    .floating-controls .current-ref {
+        width: 100%;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+    }
+    
+    .floating-controls select {
+        flex: 1;
+        min-width: 100px;
+        margin-bottom: 0;
+    }
+    
+    .floating-controls hr {
+        display: none;
+    }
+    
+    .floating-controls .btn-row {
+        margin-bottom: 0;
+    }
+    
+    .floating-controls > button {
+        margin-bottom: 0;
+    }
+    
+    .load-btn {
+        flex: 0 0 80px !important;
+        width: auto !important;
+    }
+    
+    main {
+        padding-bottom: 220px;
+    }
+}

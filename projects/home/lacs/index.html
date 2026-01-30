@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>LACS - Lewis County</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: flex-end;
+      padding: 2rem;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+      z-index: 5;
+    }
+
+    .character {
+      width: 16vw;
+      min-width: 100px;
+      max-width: 180px;
+      flex-shrink: 0;
+      transform: translate3d(0, 100vh, 0);
+      -webkit-transform: translate3d(0, 100vh, 0);
+      transition: transform 0.8s linear;
+      -webkit-transition: -webkit-transform 0.8s linear;
+      will-change: transform;
+      position: relative;
+      z-index: 6;
+    }
+
+    .character.entered {
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    .character img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .dialogue-area {
+      display: flex;
+      align-items: flex-end;
+      padding-left: 1.5rem;
+      padding-bottom: 0.5rem;
+      min-height: 80px;
+    }
+
+    .dialogue-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      position: relative;
+      z-index: 6;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+    }
+
+    .dialogue-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .speaker-name {
+      font-weight: bold;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      margin-bottom: 0.25rem;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    .dialogue-text {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      line-height: 1.5;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      max-width: 500px;
+    }
+
+    .prompt-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      flex-shrink: 0;
+      image-rendering: pixelated;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .prompt-icon.visible {
+      opacity: 0.8;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Slide 1 images */
+    .slide-images {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide-images.visible {
+      opacity: 1;
+    }
+
+    .slide-images-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .subfigures-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .subfigure {
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .subfigure:nth-child(1) {
+      animation-delay: 0s;
+      margin-left: 0;
+    }
+
+    .subfigure:nth-child(2) {
+      animation-delay: 0.5s;
+      margin-left: 2rem;
+    }
+
+    .subfigure img {
+      max-width: 250px;
+      max-height: 300px;
+      width: auto;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .subfigure img.los-alamos-logo {
+      max-width: 500px;
+      max-height: 600px;
+      filter: brightness(0) invert(1);
+    }
+
+    .subfigure-caption {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
+      width: 100%;
+      text-align: center;
+    }
+
+    .marziale-logo-container {
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+
+    .marziale-logo-container img {
+      max-width: 600px;
+      max-height: 600px;
+      width: auto;
+      height: auto;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4));
+    }
+
+    .los-alamos-glow {
+      filter: drop-shadow(0 0 15px rgba(0, 150, 255, 0.8))
+              drop-shadow(0 0 30px rgba(0, 150, 255, 0.6))
+              drop-shadow(0 0 45px rgba(0, 150, 255, 0.4));
+    }
+
+    /* Animation canvases - behind character and dialogue */
+    .slide-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .slide-animation.active {
+      opacity: 1;
+    }
+
+    /* Fireworks canvases for final slide */
+    .fireworks-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .fireworks-bg {
+      z-index: 8;
+    }
+
+    .fireworks-fg {
+      z-index: 12;
+    }
+
+    /* Final slide - logo and button */
+    .final-slide {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+      z-index: 10;
+    }
+
+    .final-slide.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .final-logo {
+      width: 70vw;
+      max-width: 600px;
+      height: auto;
+      filter: invert(1)
+              drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4))
+              drop-shadow(0 0 80px rgba(255, 0, 255, 0.3));
+      animation: float 3s ease-in-out infinite;
+      position: relative;
+      z-index: 11;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-15px); }
+    }
+
+    .play-button {
+      padding: 15px 40px;
+      font-size: 20px;
+      background: #000;
+      border: 2px solid #00ff88;
+      border-radius: 8px;
+      color: #00ff88;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      font-family: 'Courier New', monospace;
+    }
+
+    .play-button:hover {
+      background: rgba(0, 255, 136, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 100, 0.3);
+      transform: scale(1.05);
+    }
+
+    .website-info {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      position: relative;
+      z-index: 11;
+    }
+
+    .website-text {
+      font-size: 16px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+      font-family: 'Courier New', monospace;
+    }
+
+    .qr-code-container {
+      width: 120px;
+      height: 120px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .qr-code-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+        padding-bottom: 2rem;
+        flex-wrap: wrap;
+        align-content: flex-end;
+      }
+      
+      .character {
+        width: 25vw;
+        min-width: 80px;
+      }
+      
+      .dialogue-area {
+        padding-left: 1rem;
+      }
+
+      .dialogue-box {
+        position: absolute;
+        bottom: 2rem;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+      }
+
+      .character {
+        margin-bottom: 3rem;
+      }
+
+      .dialogue-text {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .final-logo {
+        width: 90vw;
+      }
+
+      .play-button {
+        font-size: 18px;
+        padding: 12px 30px;
+      }
+
+      .website-info {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .website-text {
+        font-size: 14px;
+      }
+
+      .qr-code-container {
+        width: 100px;
+        height: 100px;
+      }
+
+      .slide-images-container {
+        flex-direction: column;
+        gap: 2rem;
+      }
+
+      .subfigure img {
+        max-width: 150px;
+        max-height: 200px;
+      }
+
+      .subfigure img.los-alamos-logo {
+        max-width: 300px;
+        max-height: 400px;
+      }
+
+      .subfigure:nth-child(2) {
+        margin-left: 1rem;
+      }
+
+      .marziale-logo-container img {
+        max-width: 450px;
+        max-height: 450px;
+      }
+
+      .subfigure-caption {
+        font-size: 12px;
+        bottom: -25px;
+      }
+
+      .marziale-logo-container img {
+        max-width: 300px;
+        max-height: 300px;
+      }
+
+      /* Code animation mobile adjustments */
+      .slide-animation#codeAnimation {
+        font-size: 12px;
+      }
+
+      /* Physics definitions mobile adjustments */
+      .slide-animation#physicsAnimation {
+        font-size: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <div class="character" id="character">
+      <img id="characterImg" src="../images/img2_wave.png" alt="character">
+    </div>
+
+    <div class="dialogue-area">
+      <div class="dialogue-box" id="dialogueBox">
+        <div class="dialogue-content">
+          <p class="speaker-name">Joseph</p>
+          <p class="dialogue-text" id="dialogueText"></p>
+        </div>
+        <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 1 images -->
+  <div class="slide-images" id="slide1Images">
+    <div class="slide-images-container">
+      <div class="subfigures-container">
+        <div class="subfigure">
+          <img src="../images/oppenheimer.png" alt="Oppenheimer" class="los-alamos-glow">
+        </div>
+        <div class="subfigure">
+          <img src="../images/los_alamos_logo.png" alt="Los Alamos Logo" class="los-alamos-glow los-alamos-logo">
+        </div>
+        <div class="subfigure-caption">Los Alamos National Laboratory</div>
+      </div>
+      <div class="marziale-logo-container">
+        <img src="../images/logo.png" alt="Marziale Technologies">
+      </div>
+    </div>
+  </div>
+
+  <!-- Animation canvases for different slides -->
+  <canvas class="slide-animation" id="rocketAnimation"></canvas>
+  <canvas class="slide-animation" id="codeAnimation"></canvas>
+  <canvas class="slide-animation" id="physicsAnimation"></canvas>
+
+  <!-- Final slide with logo and button -->
+  <div class="final-slide" id="finalSlide">
+    <canvas class="fireworks-canvas fireworks-bg" id="fireworksBg"></canvas>
+    <img class="final-logo" src="../milk-chase/logo.png" alt="Lewis County Milk Chase">
+    <a href="/milk-chase" class="play-button">Play the Game!</a>
+      <div class="website-info">
+        <p class="website-text">Visit the website marziale.tech/milk-chase</p>
+        <div class="qr-code-container">
+          <img src="../images/qr-code.png" alt="QR Code for marziale.tech/milk-chase">
+        </div>
+      </div>
+    <canvas class="fireworks-canvas fireworks-fg" id="fireworksFg"></canvas>
+  </div>
+
+  <script>
+    // Audio context for Animal Crossing style chatter
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playChatter() {
+      if (!audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      const baseFreq = 280 + Math.random() * 180;
+      oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, audioCtx.currentTime + 0.06);
+      oscillator.type = 'square';
+      
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.06);
+    }
+
+    // Dialogue sequence - 5 slides for middle school audience
+    const sequence = [
+      { img: 2, dialogue: "Hi! I'm Joseph, and I'm a scientist!" },
+      { img: 3, dialogue: "I studied math in school and got my PhD, which basically lets you do research as a career. My research was all about understanding the physics of a rocket motor!", animation: 'rockets' },
+      { img: 1, dialogue: "I used computers to simulate everything that goes on inside of a rocket once it turns on.", animation: 'codeAndRockets' },
+      { 
+        img: 6, 
+        dialogueParts: [
+          "To make those simulations work, I had to think really carefully about two big ideas: momentum and energy.",
+          "These ideas help us understand how things move and crash into each other, whether it's a rocket or a car!"
+        ],
+        animation: 'physics' 
+      },
+      { img: 8, dialogue: "...And speaking of cars, I want to show you something!" },
+    ];
+
+    const imageMap = {
+      1: '../images/img1_passion1.png',
+      2: '../images/img2_wave.png',
+      3: '../images/img3_talk1.png',
+      4: '../images/img4_passion2.png',
+      5: '../images/img5_embarassed.png',
+      6: '../images/img6_talk2.png',
+      7: '../images/img7_mischief.png',
+      8: '../images/img8_thumbsup.png',
+      9: '../images/img9_celebrate.png',
+    };
+
+    let currentFrame = -1;
+    let currentDialoguePart = 0;
+    let introComplete = false;
+    let waitingForStart = false;
+    let started = false;
+    let isTyping = false;
+    let isDelaying = false;
+    let isFinished = false;
+    let typewriterTimeout = null;
+    let fullText = '';
+    let charIndex = 0;
+
+    const mainContainer = document.getElementById('mainContainer');
+    const dialogueBox = document.getElementById('dialogueBox');
+    const dialogueText = document.getElementById('dialogueText');
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    const promptIcon = document.getElementById('promptIcon');
+    const finalSlide = document.getElementById('finalSlide');
+    const slide1Images = document.getElementById('slide1Images');
+    
+    // Fireworks for final slide
+    const bgCanvas = document.getElementById('fireworksBg');
+    const fgCanvas = document.getElementById('fireworksFg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const fgCtx = fgCanvas.getContext('2d');
+    
+    let fireworksActive = false;
+    let fireworksRockets = [];
+    let fireworksExplosions = [];
+    let fireworksDebris = [];
+    
+    const fireworksColors = ['#ff0040', '#00ff80', '#0080ff', '#ff8000', '#ff00ff', '#ffff00', '#00ffff', '#ff4080'];
+    
+    function resizeFireworksCanvases() {
+      bgCanvas.width = fgCanvas.width = window.innerWidth;
+      bgCanvas.height = fgCanvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resizeFireworksCanvases);
+    resizeFireworksCanvases();
+    
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    function createFireworksRocket() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const logoWidth = window.innerWidth * 0.35;
+      
+      fireworksRockets.push({
+        x: centerX + random(-logoWidth, logoWidth),
+        y: centerY + random(-30, 30),
+        vx: random(-1, 1),
+        vy: random(-5, -3),
+        color: fireworksColors[Math.floor(Math.random() * fireworksColors.length)],
+        trail: []
+      });
+    }
+    
+    function createFireworksExplosion(x, y, color) {
+      const particleCount = 60 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
+        const speed = random(1, 4);
+        
+        fireworksExplosions.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: color,
+          life: 1,
+          decay: random(0.005, 0.012),
+          size: random(2, 4)
+        });
+      }
+      
+      setTimeout(() => {
+        for (let i = 0; i < 15; i++) {
+          fireworksDebris.push({
+            x: x + random(-100, 100),
+            y: random(-150, -50),
+            vx: random(-0.5, 0.5),
+            vy: random(0.3, 1),
+            color: color,
+            life: 1,
+            decay: random(0.002, 0.005),
+            size: random(4, 8)
+          });
+        }
+      }, 400);
+    }
+    
+    function updateFireworks() {
+      for (let i = fireworksRockets.length - 1; i >= 0; i--) {
+        const r = fireworksRockets[i];
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 15) r.trail.shift();
+        
+        r.x += r.vx;
+        r.y += r.vy;
+        r.vy += 0.05;
+        
+        if (r.vy > -0.5 || r.y < window.innerHeight * 0.25) {
+          createFireworksExplosion(r.x, r.y, r.color);
+          fireworksRockets.splice(i, 1);
+        }
+      }
+      
+      for (let i = fireworksExplosions.length - 1; i >= 0; i--) {
+        const p = fireworksExplosions[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03;
+        p.vx *= 0.99;
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+          fireworksExplosions.splice(i, 1);
+        }
+      }
+      
+      for (let i = fireworksDebris.length - 1; i >= 0; i--) {
+        const d = fireworksDebris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.008;
+        d.vx += random(-0.05, 0.05);
+        d.life -= d.decay;
+        
+        if (d.life <= 0 || d.y > window.innerHeight + 20) {
+          fireworksDebris.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawFireworks() {
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      
+      fireworksRockets.forEach(r => {
+        r.trail.forEach((t, i) => {
+          const alpha = i / r.trail.length * 0.5;
+          bgCtx.fillStyle = r.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+          bgCtx.beginPath();
+          bgCtx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+          bgCtx.fill();
+        });
+        
+        bgCtx.fillStyle = r.color;
+        bgCtx.beginPath();
+        bgCtx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      
+      fireworksExplosions.forEach(p => {
+        bgCtx.globalAlpha = p.life;
+        bgCtx.fillStyle = p.color;
+        bgCtx.beginPath();
+        bgCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      bgCtx.globalAlpha = 1;
+      
+      fireworksDebris.forEach(d => {
+        fgCtx.globalAlpha = d.life;
+        fgCtx.fillStyle = d.color;
+        fgCtx.shadowColor = d.color;
+        fgCtx.shadowBlur = 10;
+        fgCtx.beginPath();
+        fgCtx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        fgCtx.fill();
+      });
+      fgCtx.globalAlpha = 1;
+      fgCtx.shadowBlur = 0;
+    }
+    
+    function fireworksLoop() {
+      if (!fireworksActive) return;
+      
+      updateFireworks();
+      drawFireworks();
+      
+      if (Math.random() < 0.0087) {
+        createFireworksRocket();
+      }
+      
+      requestAnimationFrame(fireworksLoop);
+    }
+    
+    function startFireworks() {
+      if (fireworksActive) return;
+      fireworksActive = true;
+      fireworksLoop();
+    }
+    
+    function stopFireworks() {
+      fireworksActive = false;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      fireworksRockets = [];
+      fireworksExplosions = [];
+      fireworksDebris = [];
+    }
+    
+    // Animation canvases
+    const rocketCanvas = document.getElementById('rocketAnimation');
+    const codeCanvas = document.getElementById('codeAnimation');
+    const physicsCanvas = document.getElementById('physicsAnimation');
+    const rocketCtx = rocketCanvas.getContext('2d');
+    const codeCtx = codeCanvas.getContext('2d');
+    const physicsCtx = physicsCanvas.getContext('2d');
+    
+    function resizeCanvases() {
+      rocketCanvas.width = codeCanvas.width = physicsCanvas.width = window.innerWidth;
+      rocketCanvas.height = codeCanvas.height = physicsCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+
+    // Preload images
+    Object.values(imageMap).forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    function typeWriter() {
+      if (charIndex < fullText.length) {
+        const currentChar = fullText.charAt(charIndex);
+        dialogueText.textContent += currentChar;
+        
+        if (currentChar !== ' ') {
+          playChatter();
+        }
+        
+        charIndex++;
+        
+        const delay = currentChar === ' ' ? 30 : 35 + Math.random() * 20;
+        typewriterTimeout = setTimeout(typeWriter, delay);
+      } else {
+        isTyping = false;
+        
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+      }
+    }
+
+    function startTyping() {
+      if (fullText.startsWith('...')) {
+        isDelaying = true;
+        typewriterTimeout = setTimeout(() => {
+          isDelaying = false;
+          isTyping = true;
+          typeWriter();
+        }, 500);
+      } else {
+        isTyping = true;
+        typeWriter();
+      }
+    }
+
+    function endSequence() {
+      isFinished = true;
+      stopAllAnimations();
+      promptIcon.classList.remove('visible');
+      dialogueBox.classList.remove('visible');
+      character.classList.remove('entered');
+      
+      setTimeout(() => {
+        mainContainer.classList.add('hidden');
+        finalSlide.classList.add('visible');
+        startFireworks();
+      }, 800);
+    }
+
+    function playIntro() {
+      characterImg.src = imageMap[2];
+      character.classList.add('entered');
+      
+      setTimeout(() => {
+        introComplete = true;
+        waitingForStart = true;
+      }, 850);
+    }
+
+    function startDialogue() {
+      if (!waitingForStart) return;
+      
+      waitingForStart = false;
+      started = true;
+      currentFrame = 0;
+      showFrame(currentFrame);
+    }
+
+    // Animation systems
+    let rocketAnimationActive = false;
+    let codeAnimationActive = false;
+    let physicsAnimationActive = false;
+    let rockets = [];
+    let codeLines = [];
+    let physicsParticles = [];
+    let backgroundRockets = []; // For slide 3 background rockets
+    
+    // Rocket animation (slide 2)
+    function initRocketAnimation() {
+      rockets = [];
+      rocketAnimationActive = true;
+      rocketCanvas.classList.add('active');
+      animateRockets();
+    }
+    
+    function animateRockets() {
+      if (!rocketAnimationActive) return;
+      
+      // Clear with slight fade for trail effect
+      rocketCtx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      rocketCtx.fillRect(0, 0, rocketCanvas.width, rocketCanvas.height);
+      
+      // Spawn new rockets occasionally
+      if (Math.random() < 0.02) {
+        rockets.push({
+          x: Math.random() * rocketCanvas.width,
+          y: rocketCanvas.height + 20,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: -2 - Math.random() * 1.5,
+          size: 8 + Math.random() * 6,
+          trail: []
+        });
+      }
+      
+      // Update and draw rockets
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        
+        // Add to trail
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 8) r.trail.shift();
+        
+        // Update position
+        r.x += r.vx;
+        r.y += r.vy;
+        
+        // Draw trail (bright and visible)
+        r.trail.forEach((t, idx) => {
+          const alpha = idx / r.trail.length;
+          const brightness = 200 + idx * 10;
+          rocketCtx.fillStyle = `rgba(255, ${brightness}, 0, ${alpha * 0.9})`;
+          rocketCtx.beginPath();
+          rocketCtx.arc(t.x, t.y, r.size * alpha * 0.5, 0, Math.PI * 2);
+          rocketCtx.fill();
+        });
+        
+        // Draw actual rocket shape (pointed top, cylindrical body)
+        rocketCtx.save();
+        rocketCtx.translate(r.x, r.y);
+        
+        // Rocket body (white cylinder)
+        rocketCtx.fillStyle = '#ffffff';
+        rocketCtx.beginPath();
+        rocketCtx.rect(-r.size * 0.3, -r.size * 0.8, r.size * 0.6, r.size * 1.6);
+        rocketCtx.fill();
+        
+        // Rocket nose cone (pointed triangle)
+        rocketCtx.fillStyle = '#ffaa00';
+        rocketCtx.beginPath();
+        rocketCtx.moveTo(0, -r.size * 0.8);
+        rocketCtx.lineTo(-r.size * 0.3, -r.size * 0.2);
+        rocketCtx.lineTo(r.size * 0.3, -r.size * 0.2);
+        rocketCtx.closePath();
+        rocketCtx.fill();
+        
+        // Rocket fins (bottom)
+        rocketCtx.fillStyle = '#cccccc';
+        rocketCtx.beginPath();
+        // Left fin
+        rocketCtx.moveTo(-r.size * 0.3, r.size * 0.8);
+        rocketCtx.lineTo(-r.size * 0.6, r.size * 1.2);
+        rocketCtx.lineTo(-r.size * 0.3, r.size * 1.0);
+        rocketCtx.closePath();
+        rocketCtx.fill();
+        // Right fin
+        rocketCtx.beginPath();
+        rocketCtx.moveTo(r.size * 0.3, r.size * 0.8);
+        rocketCtx.lineTo(r.size * 0.6, r.size * 1.2);
+        rocketCtx.lineTo(r.size * 0.3, r.size * 1.0);
+        rocketCtx.closePath();
+        rocketCtx.fill();
+        
+        // Bright flame (very visible)
+        rocketCtx.fillStyle = '#ffff00';
+        rocketCtx.beginPath();
+        rocketCtx.arc(0, r.size * 0.8, r.size * 0.8, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        // Inner flame
+        rocketCtx.fillStyle = '#ff6600';
+        rocketCtx.beginPath();
+        rocketCtx.arc(0, r.size * 0.8, r.size * 0.5, 0, Math.PI * 2);
+        rocketCtx.fill();
+        
+        rocketCtx.restore();
+        
+        // Remove if off screen
+        if (r.y < -50) {
+          rockets.splice(i, 1);
+        }
+      }
+      
+      requestAnimationFrame(animateRockets);
+    }
+    
+    // Code animation (slide 3) - with background rockets
+    const codeSnippets = [
+      'function simulateRocket() {',
+      '  let velocity = 0;',
+      '  let position = 0;',
+      '  for (let t = 0; t < 100; t++) {',
+      '    velocity += acceleration * dt;',
+      '    position += velocity * dt;',
+      '  }',
+      '  return position;',
+      '}'
+    ];
+    
+    function initCodeAnimation() {
+      codeLines = [];
+      backgroundRockets = [];
+      codeAnimationActive = true;
+      codeCanvas.classList.add('active');
+      let lineIndex = 0;
+      let charIndex = 0;
+      
+      function addNextChar() {
+        if (!codeAnimationActive) return;
+        
+        if (lineIndex < codeSnippets.length) {
+          const line = codeSnippets[lineIndex];
+          if (charIndex < line.length) {
+            // Update or add line
+            if (codeLines.length > lineIndex) {
+              codeLines[lineIndex].text = line.substring(0, charIndex + 1);
+            } else {
+              codeLines.push({
+                text: line.substring(0, charIndex + 1),
+                complete: false
+              });
+            }
+            charIndex++;
+            setTimeout(addNextChar, 50 + Math.random() * 30);
+          } else {
+            codeLines[lineIndex].complete = true;
+            lineIndex++;
+            charIndex = 0;
+            if (lineIndex < codeSnippets.length) {
+              setTimeout(addNextChar, 200);
+            }
+          }
+        }
+        
+        animateCode();
+      }
+      
+      addNextChar();
+    }
+    
+    function drawRocket(ctx, x, y, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      
+      // Rocket body (white cylinder)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.rect(-size * 0.3, -size * 0.8, size * 0.6, size * 1.6);
+      ctx.fill();
+      
+      // Rocket nose cone (pointed triangle)
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.8);
+      ctx.lineTo(-size * 0.3, -size * 0.2);
+      ctx.lineTo(size * 0.3, -size * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Rocket fins (bottom)
+      ctx.fillStyle = '#cccccc';
+      ctx.beginPath();
+      // Left fin
+      ctx.moveTo(-size * 0.3, size * 0.8);
+      ctx.lineTo(-size * 0.6, size * 1.2);
+      ctx.lineTo(-size * 0.3, size * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      // Right fin
+      ctx.beginPath();
+      ctx.moveTo(size * 0.3, size * 0.8);
+      ctx.lineTo(size * 0.6, size * 1.2);
+      ctx.lineTo(size * 0.3, size * 1.0);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Bright flame
+      ctx.fillStyle = '#ffff00';
+      ctx.beginPath();
+      ctx.arc(0, size * 0.8, size * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Inner flame
+      ctx.fillStyle = '#ff6600';
+      ctx.beginPath();
+      ctx.arc(0, size * 0.8, size * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
+    
+    function animateCode() {
+      if (!codeAnimationActive) return;
+      
+      // Clear with fade for background rockets
+      codeCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      codeCtx.fillRect(0, 0, codeCanvas.width, codeCanvas.height);
+      
+      // Spawn background rockets occasionally
+      if (Math.random() < 0.01) {
+        backgroundRockets.push({
+          x: Math.random() * codeCanvas.width,
+          y: codeCanvas.height + 20,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: -1.5 - Math.random() * 1,
+          size: 6 + Math.random() * 4
+        });
+      }
+      
+      // Update and draw background rockets
+      for (let i = backgroundRockets.length - 1; i >= 0; i--) {
+        const r = backgroundRockets[i];
+        r.x += r.vx;
+        r.y += r.vy;
+        
+        // Draw rocket (semi-transparent for background effect)
+        codeCtx.globalAlpha = 0.4;
+        drawRocket(codeCtx, r.x, r.y, r.size);
+        codeCtx.globalAlpha = 1;
+        
+        if (r.y < -50) {
+          backgroundRockets.splice(i, 1);
+        }
+      }
+      
+      // Mobile detection
+      const isMobile = window.innerWidth <= 600;
+      
+      // Draw larger terminal window (centered, not full screen)
+      const termWidth = isMobile ? Math.min(320, codeCanvas.width * 0.9) : Math.min(700, codeCanvas.width * 0.75);
+      const termHeight = isMobile ? 200 : 350;
+      const termX = (codeCanvas.width - termWidth) / 2;
+      const termY = isMobile ? codeCanvas.height * 0.2 : codeCanvas.height * 0.25; // Position in upper portion
+      
+      // Draw terminal background
+      codeCtx.fillStyle = '#0a0a0a';
+      codeCtx.fillRect(termX, termY, termWidth, termHeight);
+      
+      // Draw terminal border
+      codeCtx.strokeStyle = '#00ff00';
+      codeCtx.lineWidth = isMobile ? 1.5 : 2;
+      codeCtx.strokeRect(termX, termY, termWidth, termHeight);
+      
+      // Draw code lines
+      const fontSize = isMobile ? 12 : 18;
+      const lineSpacing = isMobile ? 20 : 30;
+      const padding = isMobile ? 15 : 25;
+      codeCtx.font = `${fontSize}px "Courier New", monospace`;
+      codeCtx.fillStyle = '#00ff00';
+      
+      codeLines.forEach((line, idx) => {
+        const lineY = termY + (isMobile ? 25 : 35) + idx * lineSpacing;
+        codeCtx.fillText(line.text, termX + padding, lineY);
+        
+        // Blinking cursor
+        if (!line.complete && idx === codeLines.length - 1) {
+          const metrics = codeCtx.measureText(line.text);
+          const cursorX = termX + padding + metrics.width;
+          if (Math.floor(Date.now() / 500) % 2) {
+            codeCtx.fillRect(cursorX, lineY - (isMobile ? 10 : 15), isMobile ? 5 : 8, isMobile ? 14 : 20);
+          }
+        }
+      });
+      
+      if (codeAnimationActive) {
+        requestAnimationFrame(animateCode);
+      }
+    }
+    
+    // Physics animation (slide 4) - particles representing momentum and energy
+    function initPhysicsAnimation() {
+      physicsParticles = [];
+      physicsAnimationActive = true;
+      physicsCanvas.classList.add('active');
+      
+      // Create particles representing momentum (blue) and energy (yellow)
+      for (let i = 0; i < 30; i++) {
+        physicsParticles.push({
+          x: Math.random() * physicsCanvas.width,
+          y: Math.random() * physicsCanvas.height,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          type: Math.random() > 0.5 ? 'momentum' : 'energy',
+          size: 3 + Math.random() * 4,
+          angle: Math.random() * Math.PI * 2
+        });
+      }
+      
+      animatePhysics();
+    }
+    
+    function animatePhysics() {
+      if (!physicsAnimationActive) return;
+      
+      physicsCtx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      physicsCtx.fillRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+      
+      physicsParticles.forEach(p => {
+        // Update position
+        p.x += p.vx;
+        p.y += p.vy;
+        p.angle += 0.05;
+        
+        // Bounce off edges
+        if (p.x < 0 || p.x > physicsCanvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > physicsCanvas.height) p.vy *= -1;
+        
+        // Draw particle
+        if (p.type === 'momentum') {
+          physicsCtx.fillStyle = '#0080ff';
+        } else {
+          physicsCtx.fillStyle = '#ffcc00';
+        }
+        
+        physicsCtx.save();
+        physicsCtx.translate(p.x, p.y);
+        physicsCtx.rotate(p.angle);
+        physicsCtx.beginPath();
+        physicsCtx.arc(0, 0, p.size, 0, Math.PI * 2);
+        physicsCtx.fill();
+        
+        // Draw arrow for momentum
+        if (p.type === 'momentum') {
+          physicsCtx.strokeStyle = '#0080ff';
+          physicsCtx.lineWidth = 2;
+          physicsCtx.beginPath();
+          physicsCtx.moveTo(p.size, 0);
+          physicsCtx.lineTo(p.size * 0.6, -p.size * 0.3);
+          physicsCtx.lineTo(p.size * 0.6, p.size * 0.3);
+          physicsCtx.closePath();
+          physicsCtx.fill();
+        }
+        
+        physicsCtx.restore();
+      });
+      
+      // Mobile detection
+      const isMobile = window.innerWidth <= 600;
+      
+      // Draw definitions in top right corner (larger)
+      const defWidth = isMobile ? physicsCanvas.width * 0.85 : 470;
+      const defX = isMobile ? physicsCanvas.width * 0.075 : physicsCanvas.width - 480;
+      const defY = isMobile ? 20 : 30;
+      const padding = isMobile ? 10 : 15;
+      const titleFont = isMobile ? 'bold 16px' : 'bold 22px';
+      const formulaFont = isMobile ? '14px' : '18px';
+      const subtitleFont = isMobile ? '11px' : '15px';
+      const bodyFont = isMobile ? '10px' : '14px';
+      const lineHeight = isMobile ? 14 : 20;
+      const maxWidth = isMobile ? defWidth - padding * 2 : 440;
+      
+      // Momentum definition box
+      physicsCtx.fillStyle = 'rgba(0, 50, 100, 0.85)';
+      const momentumBoxHeight = isMobile ? 120 : 160;
+      physicsCtx.fillRect(defX - padding, defY - padding, defWidth, momentumBoxHeight);
+      physicsCtx.strokeStyle = '#0080ff';
+      physicsCtx.lineWidth = isMobile ? 2 : 3;
+      physicsCtx.strokeRect(defX - padding, defY - padding, defWidth, momentumBoxHeight);
+      
+      physicsCtx.font = `${titleFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#0080ff';
+      physicsCtx.fillText('Momentum', defX, defY + (isMobile ? 20 : 30));
+      
+      physicsCtx.font = `${formulaFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('p = m × v', defX, defY + (isMobile ? 40 : 60));
+      
+      physicsCtx.font = `${subtitleFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(mass × velocity)', defX, defY + (isMobile ? 55 : 85));
+      
+      physicsCtx.font = `${bodyFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#ffffff';
+      const momentumDef = 'Momentum is the quantity of motion an object has, calculated by multiplying its mass by its velocity.';
+      const momentumWords = momentumDef.split(' ');
+      let momentumY = defY + (isMobile ? 75 : 115);
+      let currentLine = '';
+      momentumWords.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = physicsCtx.measureText(testLine);
+        if (metrics.width > maxWidth && currentLine) {
+          physicsCtx.fillText(currentLine, defX, momentumY);
+          momentumY += lineHeight;
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) {
+        physicsCtx.fillText(currentLine, defX, momentumY);
+      }
+      
+      // Energy definition box
+      physicsCtx.fillStyle = 'rgba(100, 80, 0, 0.85)';
+      const energyBoxHeight = isMobile ? 140 : 180;
+      const energyBoxY = defY + momentumBoxHeight + (isMobile ? 5 : 10);
+      physicsCtx.fillRect(defX - padding, energyBoxY, defWidth, energyBoxHeight);
+      physicsCtx.strokeStyle = '#ffcc00';
+      physicsCtx.lineWidth = isMobile ? 2 : 3;
+      physicsCtx.strokeRect(defX - padding, energyBoxY, defWidth, energyBoxHeight);
+      
+      physicsCtx.font = `${titleFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#ffcc00';
+      physicsCtx.fillText('Energy', defX, energyBoxY + (isMobile ? 20 : 30));
+      
+      physicsCtx.font = `${formulaFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#ffffff';
+      physicsCtx.fillText('KE = ½ × m × v²', defX, energyBoxY + (isMobile ? 40 : 60));
+      
+      physicsCtx.font = `${subtitleFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#cccccc';
+      physicsCtx.fillText('(kinetic energy)', defX, energyBoxY + (isMobile ? 55 : 65));
+      
+      physicsCtx.font = `${bodyFont} "Courier New", monospace`;
+      physicsCtx.fillStyle = '#ffffff';
+      const energyDef = 'Energy is the ability to do work, and kinetic energy is the energy an object has because of its motion.';
+      const energyWords = energyDef.split(' ');
+      let energyY = energyBoxY + (isMobile ? 75 : 90);
+      currentLine = '';
+      energyWords.forEach(word => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = physicsCtx.measureText(testLine);
+        if (metrics.width > maxWidth && currentLine) {
+          physicsCtx.fillText(currentLine, defX, energyY);
+          energyY += lineHeight;
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      });
+      if (currentLine) {
+        physicsCtx.fillText(currentLine, defX, energyY);
+      }
+      
+      requestAnimationFrame(animatePhysics);
+    }
+    
+    function stopAllAnimations() {
+      rocketAnimationActive = false;
+      codeAnimationActive = false;
+      physicsAnimationActive = false;
+      rocketCanvas.classList.remove('active');
+      codeCanvas.classList.remove('active');
+      physicsCanvas.classList.remove('active');
+      rocketCtx.clearRect(0, 0, rocketCanvas.width, rocketCanvas.height);
+      codeCtx.clearRect(0, 0, codeCanvas.width, codeCanvas.height);
+      physicsCtx.clearRect(0, 0, physicsCanvas.width, physicsCanvas.height);
+      backgroundRockets = [];
+    }
+
+    function showFrame(index) {
+      if (index >= sequence.length) {
+        endSequence();
+        return;
+      }
+
+      const frame = sequence[index];
+      characterImg.src = imageMap[frame.img];
+      
+      // Show/hide slide 1 images
+      if (index === 0) {
+        slide1Images.classList.add('visible');
+      } else {
+        slide1Images.classList.remove('visible');
+      }
+      
+      // Reset dialogue part index for new frame
+      currentDialoguePart = 0;
+      
+      // Stop all animations first (unless we're continuing a multi-part dialogue)
+      if (currentDialoguePart === 0) {
+        stopAllAnimations();
+      }
+      
+      // Start appropriate animation (only on first part)
+      if (currentDialoguePart === 0) {
+        if (frame.animation === 'rockets') {
+          setTimeout(() => initRocketAnimation(), 300);
+        } else if (frame.animation === 'codeAndRockets') {
+          setTimeout(() => initCodeAnimation(), 300);
+        } else if (frame.animation === 'code') {
+          setTimeout(() => initCodeAnimation(), 300);
+        } else if (frame.animation === 'physics') {
+          setTimeout(() => initPhysicsAnimation(), 300);
+        }
+      }
+
+      dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      setTimeout(() => {
+        dialogueText.textContent = '';
+        // Use dialogueParts if available, otherwise use dialogue
+        if (frame.dialogueParts && frame.dialogueParts.length > 0) {
+          fullText = frame.dialogueParts[currentDialoguePart];
+        } else {
+          fullText = frame.dialogue;
+        }
+        charIndex = 0;
+        isDelaying = false;
+        dialogueBox.classList.add('visible');
+        startTyping();
+      }, 150);
+    }
+    
+    function showNextDialoguePart() {
+      const frame = sequence[currentFrame];
+      if (!frame.dialogueParts || currentDialoguePart >= frame.dialogueParts.length - 1) {
+        // No more parts, move to next slide
+        currentFrame++;
+        showFrame(currentFrame);
+        return;
+      }
+      
+      // Move to next dialogue part
+      currentDialoguePart++;
+      
+      dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      setTimeout(() => {
+        dialogueText.textContent = '';
+        fullText = frame.dialogueParts[currentDialoguePart];
+        charIndex = 0;
+        isDelaying = false;
+        dialogueBox.classList.add('visible');
+        startTyping();
+      }, 150);
+    }
+
+    function advance() {
+      if (isDelaying) return;
+      if (isFinished) return;
+
+      initAudio();
+
+      if (waitingForStart) {
+        startDialogue();
+        return;
+      }
+
+      if (!started) return;
+
+      if (isTyping) {
+        if (typewriterTimeout) {
+          clearTimeout(typewriterTimeout);
+        }
+        dialogueText.textContent = fullText;
+        isTyping = false;
+        
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+        return;
+      }
+
+      // Check if current frame has multiple dialogue parts
+      const frame = sequence[currentFrame];
+      if (frame.dialogueParts && frame.dialogueParts.length > 0) {
+        // Move to next dialogue part (animation stays active)
+        showNextDialoguePart();
+      } else {
+        // Move to next slide
+        currentFrame++;
+        showFrame(currentFrame);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (e.repeat) return;
+        initAudio();
+        advance();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      initAudio();
+      advance();
+    });
+
+    document.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      initAudio();
+      advance();
+    });
+
+    window.addEventListener('load', () => {
+      setTimeout(playIntro, 500);
+    });
+  </script>
+</body>
+</html>

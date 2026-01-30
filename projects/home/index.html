@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>marziale.tech</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .version-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 9999;
+      display: none;
+      border: 1px solid #333;
+    }
+
+    .version-display.visible {
+      display: block;
+    }
+
+    .version-number {
+      color: #0f0;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .version-desc {
+      color: #888;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: flex-end;
+      padding: 2rem;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .container.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .character {
+      width: 16vw;
+      min-width: 100px;
+      max-width: 180px;
+      flex-shrink: 0;
+      transform: translate3d(0, 100vh, 0);
+      -webkit-transform: translate3d(0, 100vh, 0);
+      transition: transform 0.8s linear;
+      -webkit-transition: -webkit-transform 0.8s linear;
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    .character.entered {
+      transform: translate3d(0, 0, 0);
+      -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    .character img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .dialogue-area {
+      display: flex;
+      align-items: flex-end;
+      padding-left: 1.5rem;
+      padding-bottom: 0.5rem;
+      min-height: 80px;
+    }
+
+    .dialogue-box {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .dialogue-box.visible {
+      opacity: 1;
+    }
+
+    .dialogue-content {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .speaker-name {
+      font-weight: bold;
+      font-size: clamp(0.85rem, 2vw, 1rem);
+      margin-bottom: 0.25rem;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    }
+
+    .dialogue-text {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      line-height: 1.5;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      max-width: 500px;
+    }
+
+    .prompt-icon {
+      width: 24px;
+      height: 24px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      flex-shrink: 0;
+      image-rendering: pixelated;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .prompt-icon.visible {
+      opacity: 0.8;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Fireworks canvases */
+    .fireworks-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .fireworks-bg {
+      z-index: 0;
+    }
+
+    .fireworks-fg {
+      z-index: 3;
+    }
+
+    /* Logo overlay - appears between firework layers */
+    .logo-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+
+    .logo-overlay.visible {
+      opacity: 1;
+    }
+
+    .logo-image {
+      width: 70vw;
+      max-width: 800px;
+      height: auto;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.8))
+              drop-shadow(0 0 40px rgba(0, 255, 255, 0.6))
+              drop-shadow(0 0 60px rgba(0, 255, 255, 0.4))
+              drop-shadow(0 0 80px rgba(255, 0, 255, 0.3));
+      will-change: transform;
+      -webkit-transform: translate3d(0, 0, 0);
+      transform: translate3d(0, 0, 0);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(0, -15px, 0); }
+    }
+
+    /* Simplified effect for mobile performance */
+    @media (max-width: 600px) {
+      .logo-image {
+        filter: drop-shadow(0 0 15px rgba(0, 255, 255, 0.7))
+                drop-shadow(0 0 30px rgba(255, 0, 255, 0.4));
+        animation: float 3s ease-in-out infinite;
+      }
+    }
+
+    /* Intro prompt - spacebar + cursor */
+    .intro-prompt {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .intro-prompt.visible {
+      opacity: 1;
+    }
+
+    .spacebar-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      color: #000;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 0.4rem 1rem;
+      border-radius: 4px;
+      box-shadow: 0 2px 0 #888;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .cursor-icon {
+      width: 20px;
+      height: 24px;
+      position: relative;
+    }
+
+    .cursor-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: #fff;
+      transition: fill 0.3s ease;
+    }
+
+    /* Logged-in state: muted red cursor icon */
+    body.logged-in .cursor-icon svg {
+      fill: #cc4444;
+    }
+
+    /* Logged-in state: red mouse cursor */
+    body.logged-in,
+    body.logged-in * {
+      cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 20 24"><path fill="%23cc4444" stroke="%23000" stroke-width="1" d="M2 1 L2 17 L5.5 13.5 L9 21 L12 19.5 L8.5 12 L14 12 Z"/></svg>') 0 0, auto;
+    }
+
+    /* Username highlight in dialogue */
+    .username-highlight {
+      color: #cc4444;
+    }
+
+    /* Mouse follower for logged-in users */
+    .mouse-follower {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: #888;
+      white-space: nowrap;
+      z-index: 10000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .mouse-follower .follower-username {
+      color: #cc4444;
+    }
+
+    body.logged-in .mouse-follower {
+      opacity: 1;
+    }
+
+    /* Login button for logged-out users */
+    .login-prompt-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 10px 20px;
+      background: transparent;
+      border: 1px solid #0f0;
+      color: #0f0;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .login-prompt-btn:hover {
+      background: #0f0;
+      color: #000;
+    }
+
+    body.logged-in .login-prompt-btn {
+      cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 20 24"><path fill="%23cc4444" stroke="%23000" stroke-width="1" d="M2 1 L2 17 L5.5 13.5 L9 21 L12 19.5 L8.5 12 L14 12 Z"/></svg>') 0 0, pointer;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+        padding-bottom: 2rem;
+        flex-wrap: wrap;
+        align-content: flex-end;
+      }
+      
+      .character {
+        width: 25vw;
+        min-width: 80px;
+      }
+      
+      .dialogue-area {
+        padding-left: 1rem;
+      }
+
+      /* Intro prompt stays next to character */
+      .intro-prompt {
+        /* no changes */
+      }
+
+      /* Dialogue box goes full width below */
+      .dialogue-box {
+        position: absolute;
+        bottom: 2rem;
+        left: 1rem;
+        right: 1rem;
+        width: auto;
+      }
+
+      /* Lift character up slightly to avoid overlap with text */
+      .character {
+        margin-bottom: 3rem;
+      }
+
+      .dialogue-text {
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .spacebar-icon {
+        font-size: 0.65rem;
+        padding: 0.3rem 0.7rem;
+      }
+    }
+
+    /* Extra safety for mobile browsers with bottom bars */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .container {
+        padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+      }
+      
+      @media (max-width: 600px) {
+        .container {
+          padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+        }
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mouse follower for logged-in users -->
+  <div class="mouse-follower" id="mouseFollower">logged in as <span class="follower-username" id="followerUsername"></span></div>
+
+  <!-- Version display (toggle with 'v' key) -->
+  <div class="version-display" id="versionDisplay">
+    <span class="version-number">v1.8</span>
+    <span class="version-desc">Mouse follower username</span>
+  </div>
+  <!-- Fireworks canvas (background) -->
+  <canvas id="fireworksBg" class="fireworks-canvas fireworks-bg"></canvas>
+  
+  <!-- Logo overlay -->
+  <div class="logo-overlay" id="logoOverlay">
+    <img class="logo-image" id="logoImage" src="images/logo.png" alt="MARZIALE TECHNOLOGIES">
+  </div>
+  
+  <!-- Fireworks canvas (foreground debris) -->
+  <canvas id="fireworksFg" class="fireworks-canvas fireworks-fg"></canvas>
+
+  <div class="container" id="mainContainer">
+    <div class="character" id="character">
+      <img id="characterImg" src="images/img2_wave.png" alt="character">
+    </div>
+
+    <div class="dialogue-area">
+      <!-- Intro prompt shown before dialogue starts -->
+      <div class="intro-prompt" id="introPrompt">
+        <div class="spacebar-icon">SPACE</div>
+        <div class="cursor-icon">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 0 L4 20 L8 16 L12 24 L16 22 L12 14 L18 14 Z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Dialogue box shown during conversation -->
+      <div class="dialogue-box" id="dialogueBox">
+        <div class="dialogue-content">
+          <p class="speaker-name">Joseph</p>
+          <p class="dialogue-text" id="dialogueText"></p>
+          <a href="/login" class="login-prompt-btn" id="loginBtn" style="display: none;">Login</a>
+        </div>
+        <img class="prompt-icon" id="promptIcon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABDElEQVR4nO2UvQ6CQBCEP0NsbCy08B009hZW+go+gI/hO1hYWFtYGBsLLdTGxoJI4mRzCQcHHD+JiZNsctmb2dnZvQP+rQJQAS5nnasGMz2Btjpg8Q1AHXgGLoArfy0DGGvQRoCkDkwAqQNQVbkKcAccgLqe1wAdTTqLvwHEPXAL9IED0AOeNekMICgDOJKFRzLpLaCdBuTUgR5gr9erKqcOxIDiC0APuK/n2wJtBeio0gGAzs8VJFUBGuoUsNOAFaClSueArp4v/H0FqGjSnq/Xqy5dAqzV6SWglQEcqQIHYAwcKUBblS4B2ur0HNDWpFNAWwXq+Ho1BrRV6RLQ1qQLBegA+9+58J/qBe60drgPpANkAAAAAElFTkSuQmCC" alt="press space">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global auth state (set by auth module)
+    window.currentUser = null;
+
+    // Audio context for Animal Crossing style chatter
+    let audioCtx = null;
+    let musicPlaying = false;
+    let musicGain = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // MIDI playback variables
+    let midiData = null;
+    let musicStartTime = 0;
+    let scheduledNotes = [];
+
+    // Load and parse MIDI file
+    async function loadMidi() {
+      try {
+        const response = await fetch('music/jesu.mid');
+        const arrayBuffer = await response.arrayBuffer();
+        midiData = parseMidi(new Uint8Array(arrayBuffer));
+      } catch (e) {
+        console.log('MIDI load error:', e);
+      }
+    }
+
+    // Simple MIDI parser
+    function parseMidi(data) {
+      const notes = [];
+      let pos = 14; // Skip header
+      
+      while (pos < data.length) {
+        // Find track chunks
+        if (data[pos] === 0x4D && data[pos+1] === 0x54 && data[pos+2] === 0x72 && data[pos+3] === 0x6B) {
+          const trackLen = (data[pos+4] << 24) | (data[pos+5] << 16) | (data[pos+6] << 8) | data[pos+7];
+          let trackPos = pos + 8;
+          const trackEnd = trackPos + trackLen;
+          let absTime = 0;
+          let runningStatus = 0;
+          
+          while (trackPos < trackEnd) {
+            // Read delta time
+            let delta = 0;
+            let byte;
+            do {
+              byte = data[trackPos++];
+              delta = (delta << 7) | (byte & 0x7F);
+            } while (byte & 0x80);
+            absTime += delta;
+            
+            // Read event
+            let status = data[trackPos];
+            if (status < 0x80) {
+              status = runningStatus;
+            } else {
+              trackPos++;
+              runningStatus = status;
+            }
+            
+            const type = status & 0xF0;
+            if (type === 0x90) { // Note on
+              const note = data[trackPos++];
+              const vel = data[trackPos++];
+              if (vel > 0 && note >= 48) { // Only notes C3 and above
+                notes.push({ time: absTime, note: note, vel: vel });
+              }
+            } else if (type === 0x80) { // Note off
+              trackPos += 2;
+            } else if (type === 0xB0 || type === 0xE0) {
+              trackPos += 2;
+            } else if (type === 0xC0 || type === 0xD0) {
+              trackPos += 1;
+            } else if (status === 0xFF) { // Meta event
+              const metaType = data[trackPos++];
+              let len = 0;
+              do {
+                byte = data[trackPos++];
+                len = (len << 7) | (byte & 0x7F);
+              } while (byte & 0x80);
+              trackPos += len;
+            } else if (status === 0xF0 || status === 0xF7) { // SysEx
+              let len = 0;
+              do {
+                byte = data[trackPos++];
+                len = (len << 7) | (byte & 0x7F);
+              } while (byte & 0x80);
+              trackPos += len;
+            }
+          }
+          pos = trackEnd;
+        } else {
+          pos++;
+        }
+      }
+      return notes.sort((a, b) => a.time - b.time);
+    }
+
+    function midiToFreq(note) {
+      return 440 * Math.pow(2, (note - 69) / 12);
+    }
+
+    function playMidiNote(freq, startTime, duration, oscType) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = oscType;
+      osc.frequency.setValueAtTime(freq, startTime);
+      
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.12, startTime + 0.01);
+      gain.gain.setValueAtTime(0.12, startTime + Math.max(0, duration - 0.05));
+      gain.gain.linearRampToValueAtTime(0, startTime + duration);
+      
+      osc.connect(gain);
+      gain.connect(musicGain);
+      
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+      
+      return osc;
+    }
+
+    function startMusic() {
+      if (musicPlaying || !audioCtx || !midiData) return;
+      musicPlaying = true;
+      
+      musicGain = audioCtx.createGain();
+      musicGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      musicGain.connect(audioCtx.destination);
+      
+      const ticksPerBeat = 384;
+      const bpm = 122.5; // 70 * 1.75x speed
+      const secondsPerTick = 60 / (bpm * ticksPerBeat);
+      const skipSeconds = 1.0; // Skip first 1 second of silence
+      const skipTicks = skipSeconds / secondsPerTick;
+      
+      musicStartTime = audioCtx.currentTime + 0.1;
+      
+      // Schedule all notes (offset by skip amount)
+      midiData.forEach((noteData, i) => {
+        const adjustedTime = noteData.time - skipTicks;
+        if (adjustedTime < 0) return; // Skip notes before our start point
+        const startTime = musicStartTime + adjustedTime * secondsPerTick;
+        const duration = 0.3; // Fixed duration for 8-bit feel
+        const freq = midiToFreq(noteData.note);
+        
+        // Alternate between square and triangle for 8-bit sound
+        const oscType = noteData.note >= 67 ? 'square' : 'triangle';
+        
+        playMidiNote(freq, startTime, duration, oscType);
+      });
+      
+    }
+
+    function stopMusic() {
+      musicPlaying = false;
+      if (musicGain) {
+        musicGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+      }
+    }
+
+    // Load MIDI on page load
+    loadMidi();
+
+    // Fireworks system
+    const bgCanvas = document.getElementById('fireworksBg');
+    const fgCanvas = document.getElementById('fireworksFg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const fgCtx = fgCanvas.getContext('2d');
+    
+    let fireworksActive = false;
+    let rockets = [];
+    let explosions = [];
+    let debris = [];
+    
+    const colors = ['#ff0040', '#00ff80', '#0080ff', '#ff8000', '#ff00ff', '#ffff00', '#00ffff', '#ff4080'];
+    
+    function resizeCanvases() {
+      bgCanvas.width = fgCanvas.width = window.innerWidth;
+      bgCanvas.height = fgCanvas.height = window.innerHeight;
+    }
+    
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+    
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    function createRocket() {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const logoWidth = window.innerWidth * 0.35; // Approximate logo width
+      
+      rockets.push({
+        x: centerX + random(-logoWidth, logoWidth), // Span entire logo width
+        y: centerY + random(-30, 30),
+        vx: random(-1, 1),
+        vy: random(-5, -3),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        trail: []
+      });
+    }
+    
+    function createExplosion(x, y, color) {
+      const particleCount = 60 + Math.floor(Math.random() * 40);
+      for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 * i) / particleCount + random(-0.2, 0.2);
+        const speed = random(1, 4);
+        
+        explosions.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: color, // Single uniform color for entire explosion
+          life: 1,
+          decay: random(0.005, 0.012),
+          size: random(2, 4)
+        });
+      }
+      
+      // Create foreground debris after a delay, starting above viewport
+      setTimeout(() => {
+        for (let i = 0; i < 15; i++) {
+          debris.push({
+            x: x + random(-100, 100),
+            y: random(-150, -50), // Start above the viewport
+            vx: random(-0.5, 0.5),
+            vy: random(0.3, 1),
+            color: color,
+            life: 1,
+            decay: random(0.002, 0.005),
+            size: random(4, 8)
+          });
+        }
+      }, 400); // 400ms delay after explosion
+    }
+    
+    function updateFireworks() {
+      // Update rockets
+      for (let i = rockets.length - 1; i >= 0; i--) {
+        const r = rockets[i];
+        r.trail.push({ x: r.x, y: r.y });
+        if (r.trail.length > 15) r.trail.shift();
+        
+        r.x += r.vx;
+        r.y += r.vy;
+        r.vy += 0.05; // Slower gravity for rockets
+        
+        // Explode when slowing down or reaching top
+        if (r.vy > -0.5 || r.y < window.innerHeight * 0.25) {
+          createExplosion(r.x, r.y, r.color);
+          rockets.splice(i, 1);
+        }
+      }
+      
+      // Update explosion particles
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        const p = explosions[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.03; // Slower gravity for particles
+        p.vx *= 0.99; // Less drag
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+          explosions.splice(i, 1);
+        }
+      }
+      
+      // Update debris (foreground)
+      for (let i = debris.length - 1; i >= 0; i--) {
+        const d = debris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.008; // Very slow gravity for gentle floating
+        d.vx += random(-0.05, 0.05); // Gentle drift
+        d.life -= d.decay;
+        
+        if (d.life <= 0 || d.y > window.innerHeight + 20) {
+          debris.splice(i, 1);
+        }
+      }
+    }
+    
+    function drawFireworks() {
+      // Clear canvases
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      
+      // Draw rockets and explosions on background canvas
+      rockets.forEach(r => {
+        // Draw trail
+        r.trail.forEach((t, i) => {
+          const alpha = i / r.trail.length * 0.5;
+          bgCtx.fillStyle = r.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+          bgCtx.beginPath();
+          bgCtx.arc(t.x, t.y, 2, 0, Math.PI * 2);
+          bgCtx.fill();
+        });
+        
+        // Draw rocket
+        bgCtx.fillStyle = r.color;
+        bgCtx.beginPath();
+        bgCtx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      
+      // Draw explosion particles
+      explosions.forEach(p => {
+        bgCtx.globalAlpha = p.life;
+        bgCtx.fillStyle = p.color;
+        bgCtx.beginPath();
+        bgCtx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      bgCtx.globalAlpha = 1;
+      
+      // Draw debris on foreground canvas (larger for depth)
+      debris.forEach(d => {
+        fgCtx.globalAlpha = d.life;
+        fgCtx.fillStyle = d.color;
+        fgCtx.shadowColor = d.color;
+        fgCtx.shadowBlur = 10;
+        fgCtx.beginPath();
+        fgCtx.arc(d.x, d.y, d.size, 0, Math.PI * 2);
+        fgCtx.fill();
+      });
+      fgCtx.globalAlpha = 1;
+      fgCtx.shadowBlur = 0;
+    }
+    
+    function fireworksLoop() {
+      if (!fireworksActive) return;
+      
+      updateFireworks();
+      drawFireworks();
+      
+      // Randomly launch new rockets (reduced frequency)
+      if (Math.random() < 0.0087) {
+        createRocket();
+      }
+      
+      requestAnimationFrame(fireworksLoop);
+    }
+    
+    function startFireworks() {
+      if (fireworksActive) return;
+      fireworksActive = true;
+      fireworksLoop();
+    }
+    
+    function stopFireworks() {
+      fireworksActive = false;
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+      rockets = [];
+      explosions = [];
+      debris = [];
+    }
+
+    function playChatter() {
+      if (!audioCtx) return;
+      
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      const baseFreq = 280 + Math.random() * 180;
+      oscillator.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(baseFreq * 0.8, audioCtx.currentTime + 0.06);
+      oscillator.type = 'square';
+      
+      gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.06);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.06);
+    }
+
+    // Animation sequence for logged-in users
+    const sequenceLoggedIn = [
+      { img: 2, dialogue: "Hey there!" },  // Will be personalized with username
+      { img: 3, dialogue: "So let me tell you about this thing I've been working on..." },
+      { img: 6, dialogue: "It's honestly the coolest thing ever!" },
+      { img: 3, dialogue: "Like, you have NO idea how long this took..." },
+      { img: 9, dialogue: "BUT WE DID IT! IT ACTUALLY WORKED!" },
+      { img: 1, dialogue: "This is EVERYTHING I've been dreaming about!" },
+      { img: 4, dialogue: "Years of effort! YEARS!" },
+      { img: 1, dialogue: "I could cry right now, this is—" },
+      { img: 1, dialogue: "..." },
+      { img: 5, dialogue: "...sorry. I got a bit carried away there." },
+      { img: 6, dialogue: "Anyway, what I meant to say is..." },
+      { img: 7, dialogue: "...there might be more surprises where that came from." },
+      { img: 2, dialogue: "But I'll tell you about that next time!" },
+      { img: 8, dialogue: "See you around!" },
+    ];
+
+    // Animation sequence for logged-out users
+    const sequenceLoggedOut = [
+      { img: 2, dialogue: "Oh hey! I don't think we've met yet..." },
+      { img: 7, dialogue: "You'll need to log in first before I can show you the good stuff!", showLogin: true },
+    ];
+
+    // Active sequence (set when dialogue starts)
+    let sequence = sequenceLoggedIn;
+
+    const imageMap = {
+      1: 'images/img1_passion1.png',
+      2: 'images/img2_wave.png',
+      3: 'images/img3_talk1.png',
+      4: 'images/img4_passion2.png',
+      5: 'images/img5_embarassed.png',
+      6: 'images/img6_talk2.png',
+      7: 'images/img7_mischief.png',
+      8: 'images/img8_thumbsup.png',
+      9: 'images/img9_celebrate.png',
+    };
+
+    let currentFrame = -1;
+    let introComplete = false;
+    let waitingForStart = false;
+    let started = false;
+    let isTyping = false;
+    let isDelaying = false;
+    let isFinished = false;
+    let typewriterTimeout = null;
+    let fullText = '';
+    let charIndex = 0;
+
+    const mainContainer = document.getElementById('mainContainer');
+    const dialogueBox = document.getElementById('dialogueBox');
+    const dialogueText = document.getElementById('dialogueText');
+    const character = document.getElementById('character');
+    const characterImg = document.getElementById('characterImg');
+    const promptIcon = document.getElementById('promptIcon');
+    const introPrompt = document.getElementById('introPrompt');
+    const logoOverlay = document.getElementById('logoOverlay');
+    const loginBtn = document.getElementById('loginBtn');
+
+    const LOGO_FRAME = 4; // "BUT WE DID IT!" frame index
+
+    // Preload images
+    Object.values(imageMap).forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    function typeWriter() {
+      if (charIndex < fullText.length) {
+        const currentChar = fullText.charAt(charIndex);
+        dialogueText.textContent += currentChar;
+        
+        if (currentChar !== ' ') {
+          playChatter();
+        }
+        
+        charIndex++;
+        
+        const delay = currentChar === ' ' ? 30 : 35 + Math.random() * 20;
+        typewriterTimeout = setTimeout(typeWriter, delay);
+      } else {
+        // Done typing
+        isTyping = false;
+        
+        // Apply red color to username in greeting
+        if (window.greetingUsername) {
+          const text = dialogueText.textContent;
+          dialogueText.innerHTML = text.replace(
+            window.greetingUsername,
+            `<span class="username-highlight">${window.greetingUsername}</span>`
+          );
+        }
+        
+        // Show login button if this frame requests it
+        if (window.showLoginAfterTyping) {
+          loginBtn.style.display = 'inline-block';
+        }
+        
+        // Show logo, start music, and fireworks when frame 4 finishes typing (logged-in only)
+        if (currentFrame === LOGO_FRAME && sequence === sequenceLoggedIn) {
+          logoOverlay.classList.add('visible');
+          startMusic();
+          startFireworks();
+        }
+        
+        // If text ends with ellipsis, delay before showing prompt
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+      }
+    }
+
+    function startTyping() {
+      // If text starts with ellipsis, delay before typing
+      if (fullText.startsWith('...')) {
+        isDelaying = true;
+        typewriterTimeout = setTimeout(() => {
+          isDelaying = false;
+          isTyping = true;
+          typeWriter();
+        }, 500);
+      } else {
+        isTyping = true;
+        typeWriter();
+      }
+    }
+
+    function endSequence() {
+      isFinished = true;
+      stopMusic();
+      stopFireworks();
+      promptIcon.classList.remove('visible');
+      logoOverlay.classList.remove('visible');
+      
+      // For logged-out users, keep the character and login button visible
+      if (!window.currentUser) {
+        // Keep dialogue box and character visible with login button
+        loginBtn.style.display = 'inline-block';
+        return;
+      }
+      
+      // For logged-in users, fade everything out
+      dialogueBox.classList.remove('visible');
+      character.classList.remove('entered');
+      
+      setTimeout(() => {
+        mainContainer.classList.add('hidden');
+      }, 800);
+    }
+
+    function restartSequence() {
+      isFinished = false;
+      introComplete = false;
+      waitingForStart = false;
+      started = false;
+      currentFrame = -1;
+      mainContainer.classList.remove('hidden');
+      character.classList.remove('entered');
+      characterImg.src = imageMap[2];
+      introPrompt.classList.remove('visible');
+      dialogueBox.classList.remove('visible');
+      
+      setTimeout(playIntro, 300);
+    }
+
+    function playIntro() {
+      characterImg.src = imageMap[2];
+      character.classList.add('entered');
+      
+      setTimeout(() => {
+        introComplete = true;
+        waitingForStart = true;
+        introPrompt.classList.add('visible');
+      }, 850);
+    }
+
+    function startDialogue() {
+      if (!waitingForStart) return;
+      
+      waitingForStart = false;
+      introPrompt.classList.remove('visible');
+      started = true;
+      currentFrame = 0;
+      
+      // Choose sequence based on auth state
+      sequence = window.currentUser ? sequenceLoggedIn : sequenceLoggedOut;
+      
+      showFrame(currentFrame);
+    }
+
+    function showFrame(index) {
+      if (index >= sequence.length) {
+        endSequence();
+        return;
+      }
+
+      const frame = sequence[index];
+      characterImg.src = imageMap[frame.img];
+
+      dialogueBox.classList.remove('visible');
+      promptIcon.classList.remove('visible');
+      loginBtn.style.display = 'none';
+      
+      if (typewriterTimeout) {
+        clearTimeout(typewriterTimeout);
+      }
+      
+      setTimeout(() => {
+        dialogueText.textContent = '';
+        
+        // Personalize greeting for logged-in users (frame 0 of logged-in sequence)
+        if (index === 0 && window.currentUser && sequence === sequenceLoggedIn) {
+          const username = window.currentUser.email.split('@')[0];
+          fullText = `Hey there, ${username}!`;
+          // Store username for coloring after typewriter finishes
+          window.greetingUsername = username;
+        } else {
+          fullText = frame.dialogue;
+          window.greetingUsername = null;
+        }
+        
+        // Store whether to show login button after typing
+        window.showLoginAfterTyping = frame.showLogin || false;
+        
+        charIndex = 0;
+        isDelaying = false;
+        dialogueBox.classList.add('visible');
+        startTyping();
+      }, 150);
+    }
+
+    function advance() {
+      if (isDelaying) return; // Can't skip during delay
+      if (isFinished) return;
+
+      initAudio();
+
+      if (waitingForStart) {
+        startDialogue();
+        return;
+      }
+
+      if (!started) return;
+
+      if (isTyping) {
+        if (typewriterTimeout) {
+          clearTimeout(typewriterTimeout);
+        }
+        dialogueText.textContent = fullText;
+        isTyping = false;
+        
+        // Apply red color to username in greeting when skipping
+        if (window.greetingUsername) {
+          dialogueText.innerHTML = fullText.replace(
+            window.greetingUsername,
+            `<span class="username-highlight">${window.greetingUsername}</span>`
+          );
+        }
+        
+        // Show login button if this frame requests it
+        if (window.showLoginAfterTyping) {
+          loginBtn.style.display = 'inline-block';
+        }
+        
+        // Show logo, start music, and fireworks when skipping frame 4's text
+        if (currentFrame === LOGO_FRAME && sequence === sequenceLoggedIn) {
+          logoOverlay.classList.add('visible');
+          startMusic();
+          startFireworks();
+        }
+        
+        // If text ends with ellipsis, still do the delay
+        if (fullText.endsWith('...')) {
+          isDelaying = true;
+          typewriterTimeout = setTimeout(() => {
+            isDelaying = false;
+            promptIcon.classList.add('visible');
+          }, 500);
+        } else {
+          promptIcon.classList.add('visible');
+        }
+        return;
+      }
+
+      currentFrame++;
+      showFrame(currentFrame);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        // Ignore held-down key repeats
+        if (e.repeat) return;
+        initAudio();
+        advance();
+      }
+      
+      if (e.key === 'j' || e.key === 'J') {
+        if (e.repeat) return;
+        if (isFinished) {
+          restartSequence();
+        }
+      }
+      
+      // Toggle version display with 'v'
+      if (e.key === 'v' || e.key === 'V') {
+        if (e.repeat) return;
+        document.getElementById('versionDisplay').classList.toggle('visible');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      // Don't advance if clicking login button
+      if (e.target === loginBtn || e.target.closest('.login-prompt-btn')) return;
+      initAudio();
+      advance();
+    });
+    document.addEventListener('touchend', (e) => {
+      // Don't advance if touching login button
+      if (e.target === loginBtn || e.target.closest('.login-prompt-btn')) return;
+      e.preventDefault();
+      initAudio();
+      advance();
+    });
+
+    window.addEventListener('load', () => {
+      // Delay slightly to let auth module check session
+      setTimeout(playIntro, 500);
+    });
+
+    // Mouse follower for logged-in users
+    const mouseFollower = document.getElementById('mouseFollower');
+    const followerUsername = document.getElementById('followerUsername');
+    
+    document.addEventListener('mousemove', (e) => {
+      // Position slightly to the top-right of cursor
+      mouseFollower.style.left = (e.clientX + 15) + 'px';
+      mouseFollower.style.top = (e.clientY - 20) + 'px';
+    });
+
+    // Update follower username when auth state changes
+    window.updateMouseFollower = function(user) {
+      if (user) {
+        followerUsername.textContent = user.email.split('@')[0];
+      }
+    };
+  </script>
+
+  <!-- Supabase Auth (loaded as module, doesn't block animation) -->
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      // Check for existing session
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.user) {
+        window.currentUser = data.session.user;
+        document.body.classList.add('logged-in');
+        if (window.updateMouseFollower) window.updateMouseFollower(data.session.user);
+        console.log('Logged in as:', data.session.user.email);
+      }
+
+      // Listen for auth changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          window.currentUser = session.user;
+          document.body.classList.add('logged-in');
+          if (window.updateMouseFollower) window.updateMouseFollower(session.user);
+        } else {
+          window.currentUser = null;
+          document.body.classList.remove('logged-in');
+        }
+      });
+    } catch (err) {
+      console.log('Auth check skipped:', err.message);
+    }
+  </script>
+</body>
+</html>

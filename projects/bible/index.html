@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Reader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body id="top">
+    <div class="floating-controls" id="floating-controls">
+        <div class="current-ref" id="current-ref">Select a book</div>
+        
+        <select id="book-select">
+            <option value="">-- Select Book --</option>
+        </select>
+        
+        <button onclick="loadBook()" class="load-btn">Load Book</button>
+        
+        <hr>
+        
+        <select id="voice-select" onchange="setVoice(this.value)">
+            <option value="">Loading voices...</option>
+        </select>
+        
+        <div class="btn-row">
+            <button data-speed="1" onclick="setSpeed(1)" class="active">1x</button>
+            <button data-speed="1.25" onclick="setSpeed(1.25)">1.25x</button>
+            <button data-speed="1.5" onclick="setSpeed(1.5)">1.5x</button>
+        </div>
+        
+        <div class="btn-row">
+            <button onclick="playFromCurrent()">Play</button>
+            <button onclick="pausePlayback()">Pause</button>
+        </div>
+        
+        <div class="btn-row">
+            <button onclick="prevVerse()">← Prev verse</button>
+            <button onclick="nextVerse()">Next verse →</button>
+        </div>
+        
+        <div class="btn-row">
+            <button onclick="prevChapter()">← Prev ch.</button>
+            <button onclick="nextChapter()">Next ch. →</button>
+        </div>
+        
+        <button onclick="restartCurrentChapter()">Restart chapter</button>
+    </div>
+
+    <main id="content">
+        <h1 id="book-title">Bible Reader</h1>
+        <p class="subtitle" id="subtitle">Select a book to begin reading</p>
+        
+        <div class="toc" id="toc"></div>
+        
+        <div id="chapters"></div>
+        
+        <div class="nav" id="bottom-nav" style="display:none; margin-top: 40px; padding-top: 20px; border-top: 1px solid #333;">
+            <a href="#top">Top</a>
+        </div>
+        <div id="bottom"></div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

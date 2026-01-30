@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - marziale.tech</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      width: 90%;
+      max-width: 400px;
+      padding: 2rem;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 2rem;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: #fff;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #0f0;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 2rem;
+    }
+
+    .auth-form {
+      background: #111;
+      border: 1px solid #333;
+      padding: 2rem;
+      border-radius: 8px;
+    }
+
+    .form-title {
+      font-size: 1.2rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .auth-error {
+      color: #ff4040;
+      font-size: 12px;
+      margin-bottom: 1rem;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    .auth-error.success {
+      color: #0f0;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 1rem;
+      background: #000;
+      border: 1px solid #333;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #0f0;
+    }
+
+    input::placeholder {
+      color: #666;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #0f0;
+      border: none;
+      color: #000;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .submit-btn:hover {
+      background: #0c0;
+    }
+
+    .submit-btn:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .auth-toggle a {
+      color: #0f0;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .auth-toggle a:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0;
+      color: #666;
+      font-size: 12px;
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #333;
+    }
+
+    .divider::before {
+      margin-right: 1rem;
+    }
+
+    .divider::after {
+      margin-left: 1rem;
+    }
+
+    .github-btn {
+      width: 100%;
+      padding: 12px;
+      background: #24292e;
+      border: 1px solid #444;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .github-btn:hover {
+      background: #2f363d;
+      border-color: #666;
+    }
+
+    .github-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #fff;
+    }
+
+    .logged-in-view {
+      text-align: center;
+    }
+
+    .logged-in-view h2 {
+      color: #0f0;
+      margin-bottom: 1rem;
+    }
+
+    .user-email {
+      color: #fff;
+      margin-bottom: 2rem;
+      word-break: break-all;
+    }
+
+    .logout-btn {
+      padding: 12px 24px;
+      background: transparent;
+      border: 1px solid #666;
+      color: #666;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .logout-btn:hover {
+      border-color: #ff4040;
+      color: #ff4040;
+    }
+
+    .home-btn {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 12px 24px;
+      background: #0f0;
+      color: #000;
+      text-decoration: none;
+      font-size: 14px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .home-btn:hover {
+      background: #0c0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .status.connected {
+      color: #0f0;
+    }
+
+    .status.error {
+      color: #ff4040;
+    }
+
+    .version-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 9999;
+      display: none;
+      border: 1px solid #333;
+    }
+
+    .version-display.visible {
+      display: block;
+    }
+
+    .version-number {
+      color: #0f0;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .version-desc {
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <a href="/" class="back-link">&larr; Back to home</a>
+    
+    <h1>marziale.tech</h1>
+    <p class="subtitle">Account Login</p>
+
+    <!-- Login Form (shown when logged out) -->
+    <div id="authForm" class="auth-form">
+      <h2 class="form-title">Sign In</h2>
+      <div id="authError" class="auth-error"></div>
+      
+      <!-- GitHub OAuth Button -->
+      <button id="githubBtn" class="github-btn">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        Sign in with GitHub
+      </button>
+    </div>
+
+    <!-- Logged In View (shown when logged in) -->
+    <div id="loggedInView" class="auth-form logged-in-view hidden">
+      <h2>Welcome!</h2>
+      <p class="user-email" id="userEmail"></p>
+      <button id="logoutBtn" class="logout-btn">Logout</button>
+      <br>
+      <a href="/" class="home-btn">Go to Homepage</a>
+    </div>
+  </div>
+
+  <div id="status" class="status">Connecting...</div>
+
+  <!-- Version display (toggle with 'v' key) -->
+  <div class="version-display" id="versionDisplay">
+    <span class="version-number">v0.6</span>
+    <span class="version-desc">GitHub only</span>
+  </div>
+
+  <script type="module">
+    // Import Supabase from ESM CDN
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    // Supabase Configuration
+    const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+
+    // Elements
+    const authForm = document.getElementById('authForm');
+    const loggedInView = document.getElementById('loggedInView');
+    const authError = document.getElementById('authError');
+    const userEmail = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const statusEl = document.getElementById('status');
+    const githubBtn = document.getElementById('githubBtn');
+
+    let supabase = null;
+
+    // Initialize Supabase
+    try {
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      statusEl.textContent = 'Connected';
+      statusEl.className = 'status connected';
+      console.log('Supabase initialized successfully');
+    } catch (err) {
+      statusEl.textContent = 'Error: ' + err.message;
+      statusEl.className = 'status error';
+      console.error('Supabase init error:', err);
+    }
+
+    // Update UI based on auth state
+    function showLoggedIn(user) {
+      authForm.classList.add('hidden');
+      loggedInView.classList.remove('hidden');
+      userEmail.textContent = user.email;
+    }
+
+    function showLoggedOut() {
+      authForm.classList.remove('hidden');
+      loggedInView.classList.add('hidden');
+      authError.textContent = '';
+      authError.className = 'auth-error';
+    }
+
+    // Handle GitHub OAuth sign-in
+    githubBtn.addEventListener('click', async () => {
+      if (!supabase) {
+        authError.textContent = 'Supabase not connected - refresh page';
+        authError.className = 'auth-error';
+        return;
+      }
+
+      authError.textContent = '';
+      
+      try {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: window.location.origin + '/login'
+          }
+        });
+
+        if (error) {
+          authError.textContent = error.message;
+          authError.className = 'auth-error';
+        }
+        // If successful, user will be redirected to GitHub
+      } catch (err) {
+        authError.textContent = 'Error: ' + err.message;
+        authError.className = 'auth-error';
+        console.error('GitHub auth error:', err);
+      }
+    });
+
+    // Handle logout
+    logoutBtn.addEventListener('click', async () => {
+      if (supabase) {
+        await supabase.auth.signOut();
+        showLoggedOut();
+      }
+    });
+
+    // Check for existing session
+    async function checkSession() {
+      if (!supabase) return;
+
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data?.session?.user) {
+          showLoggedIn(data.session.user);
+        }
+
+        // Listen for auth changes
+        supabase.auth.onAuthStateChange((event, session) => {
+          if (session?.user) {
+            showLoggedIn(session.user);
+          } else {
+            showLoggedOut();
+          }
+        });
+      } catch (err) {
+        console.error('Session check failed:', err);
+      }
+    }
+
+    checkSession();
+  </script>
+
+  <!-- Version toggle (separate script since module has its own scope) -->
+  <script>
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'v' || e.key === 'V') && !e.repeat) {
+        document.getElementById('versionDisplay').classList.toggle('visible');
+      }
+    });
+  </script>
+</body>
+</html>

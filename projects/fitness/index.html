@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <a href="#" class="logo-link" onclick="switchTab('dashboard'); return false;">
+                    <img src="logo.svg" alt="Marziale Technologies" class="header-logo">
+                </a>
+                <h1>Macro Tracker</h1>
+            </div>
+            <div class="header-right">
+                <div class="date-nav">
+                    <button id="prevDay" class="btn-icon">&larr;</button>
+                    <span id="currentDate">Today</span>
+                    <button id="nextDay" class="btn-icon">&rarr;</button>
+                </div>
+                <div id="authArea" class="auth-area">
+                    <span id="userInfo" class="user-info hidden"></span>
+                    <button id="signInBtn" class="btn small">Sign in with GitHub</button>
+                    <button id="signOutBtn" class="btn small hidden">Sign out</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sign-in notice (shown when connected but not signed in) -->
+        <div id="signInNotice" class="card sign-in-notice hidden">
+            <h2>Sign in to save to your account</h2>
+            <p>Your foods, recipes, weight, and settings will sync to your GitHub account and be available on any device.</p>
+            <button id="signInNoticeBtn" class="btn primary">Sign in with GitHub</button>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="tabs">
+            <button class="tab active" data-tab="dashboard">Dashboard</button>
+            <button class="tab" data-tab="log">Log Food</button>
+            <button class="tab" data-tab="foods">My Foods</button>
+            <button class="tab" data-tab="weight">Weight</button>
+            <button class="tab" data-tab="settings">Settings</button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <section id="dashboard" class="tab-content active">
+            <!-- Macro Progress -->
+            <div class="card">
+                <h2>Today's Macros</h2>
+                <div class="macro-grid">
+                    <div class="macro-item">
+                        <div class="macro-header">
+                            <span class="macro-label">Calories</span>
+                            <span class="macro-value" id="cal-value">0 / 0</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress" id="cal-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-header">
+                            <span class="macro-label">Protein</span>
+                            <span class="macro-value" id="protein-value">0g / 0g</span>
+                        </div>
+                        <div class="progress-bar protein">
+                            <div class="progress" id="protein-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-header">
+                            <span class="macro-label">Carbs</span>
+                            <span class="macro-value" id="carbs-value">0g / 0g</span>
+                        </div>
+                        <div class="progress-bar carbs">
+                            <div class="progress" id="carbs-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="macro-item">
+                        <div class="macro-header">
+                            <span class="macro-label">Fat</span>
+                            <span class="macro-value" id="fat-value">0g / 0g</span>
+                        </div>
+                        <div class="progress-bar fat">
+                            <div class="progress" id="fat-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Food Log -->
+            <div class="card">
+                <h2>Today's Log</h2>
+                <div id="todayLog" class="food-log">
+                    <p class="empty-state">No foods logged yet. <a href="#" onclick="switchTab('log')">Add something!</a></p>
+                </div>
+            </div>
+
+            <!-- Suggestions -->
+            <div class="card">
+                <h2>Suggestions</h2>
+                <p class="suggestions-intro" id="suggestionsIntro">Based on your remaining macros:</p>
+                <div id="suggestions" class="suggestions-list">
+                    <p class="empty-state">Add foods to your repository to get suggestions.</p>
+                </div>
+            </div>
+
+            <!-- Run Calculator -->
+            <div class="card">
+                <h2>Evening Run Calculator</h2>
+                <div class="run-calc-status" id="runCalcStatus">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="run-calc-settings">
+                    <div class="form-row">
+                        <label>Your running pace</label>
+                        <select id="runPace">
+                            <option value="5">12 min/mile (slow jog)</option>
+                            <option value="5.5">11 min/mile (easy)</option>
+                            <option value="6" selected>10 min/mile (moderate)</option>
+                            <option value="6.5">9:15 min/mile (steady)</option>
+                            <option value="7">8:30 min/mile (tempo)</option>
+                            <option value="8">7:30 min/mile (fast)</option>
+                            <option value="9">6:40 min/mile (race pace)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="run-result" id="runResult">
+                    <div class="run-result-main">
+                        <span class="run-time" id="runTime">0</span>
+                        <span class="run-unit">minutes</span>
+                    </div>
+                    <div class="run-result-detail" id="runDetail">
+                        ~0 miles | Burns 0 calories
+                    </div>
+                    <div class="run-result-note" id="runNote"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Log Food Tab -->
+        <section id="log" class="tab-content">
+            <div class="card">
+                <h2>Quick Log</h2>
+                <div class="input-group">
+                    <input type="text" id="foodInput" placeholder="Type food (e.g., '2 eggs, chicken breast 6oz')">
+                    <button id="logFoodBtn" class="btn primary">Log</button>
+                </div>
+                <button class="size-guide-btn" onclick="openPortionGuide()" style="margin-top: 12px;">
+                    <span>📏</span> Portion size guide - visualize cups, ounces, servings
+                </button>
+                <div id="parseResults" class="parse-results"></div>
+            </div>
+
+            <!-- Favorite Foods Quick Add -->
+            <div class="card">
+                <h2>Favorites</h2>
+                <div id="favorites" class="favorites-grid">
+                    <p class="empty-state">Star foods to add them here for quick logging.</p>
+                </div>
+            </div>
+
+            <!-- Recipes Quick Add -->
+            <div class="card">
+                <h2>My Recipes</h2>
+                <div id="recipesQuickList" class="recipes-grid">
+                    <p class="empty-state">No recipes yet. Create some in the "My Foods" tab!</p>
+                </div>
+            </div>
+
+            <!-- Recent Foods -->
+            <div class="card">
+                <h2>All My Foods</h2>
+                <input type="text" id="foodSearch" placeholder="Search your foods..." class="search-input">
+                <div id="allFoodsList" class="foods-list">
+                    <p class="empty-state">No foods yet. Add some in the "My Foods" tab!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Foods Tab (Repository) -->
+        <section id="foods" class="tab-content">
+            <div class="card">
+                <h2>Add New Food</h2>
+                <div class="input-group">
+                    <input type="text" id="newFoodName" placeholder="Food name (e.g., 'Chicken Breast')">
+                    <button id="lookupFoodBtn" class="btn primary">Lookup</button>
+                </div>
+                <div id="lookupResults" class="lookup-results"></div>
+            </div>
+
+            <!-- Manual Add Form (hidden by default) -->
+            <div id="manualAddForm" class="card hidden">
+                <h2>Food Details</h2>
+                <form id="addFoodForm">
+                    <div class="form-row">
+                        <label>Name</label>
+                        <input type="text" id="formFoodName" required>
+                    </div>
+                    <div class="form-row two-col">
+                        <div>
+                            <label>Serving Size</label>
+                            <input type="number" id="formServingSize" step="0.1" value="1" required>
+                        </div>
+                        <div>
+                            <label>Unit</label>
+                            <input type="text" id="formServingUnit" value="serving" required>
+                        </div>
+                    </div>
+                    <div class="form-row four-col">
+                        <div>
+                            <label>Calories</label>
+                            <input type="number" id="formCalories" step="1" value="0" required>
+                        </div>
+                        <div>
+                            <label>Protein (g)</label>
+                            <input type="number" id="formProtein" step="0.1" value="0" required>
+                        </div>
+                        <div>
+                            <label>Carbs (g)</label>
+                            <input type="number" id="formCarbs" step="0.1" value="0" required>
+                        </div>
+                        <div>
+                            <label>Fat (g)</label>
+                            <input type="number" id="formFat" step="0.1" value="0" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancelAddFood" class="btn">Cancel</button>
+                        <button type="submit" class="btn primary">Save Food</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Food Repository List -->
+            <div class="card">
+                <h2>My Food Repository</h2>
+                <div id="foodRepository" class="foods-list">
+                    <p class="empty-state">No foods in your repository yet.</p>
+                </div>
+            </div>
+
+            <!-- Recipes Section -->
+            <div class="card">
+                <div class="card-header-row">
+                    <h2>My Recipes</h2>
+                    <button class="btn small primary" onclick="openRecipeModal()">+ New Recipe</button>
+                </div>
+                <p class="help-text">Save combinations of foods as recipes for quick logging.</p>
+                <div id="recipesList" class="recipes-list">
+                    <p class="empty-state">No recipes yet. Create one to log multiple foods at once!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Weight Tab -->
+        <section id="weight" class="tab-content">
+            <div class="card">
+                <h2>Log Weight</h2>
+                <div class="input-group">
+                    <input type="number" id="weightInput" placeholder="Weight in lbs" step="0.1">
+                    <button id="logWeightBtn" class="btn primary">Log</button>
+                </div>
+            </div>
+
+            <!-- Weight Loss Goal -->
+            <div class="card">
+                <h2>Weight Loss Goal</h2>
+                
+                <div class="goal-summary" id="goalSummary">
+                    <!-- Filled by JS -->
+                </div>
+
+                <div class="goal-mode-tabs">
+                    <button class="goal-mode-tab active" data-mode="rate" onclick="setGoalMode('rate')">Set by Rate</button>
+                    <button class="goal-mode-tab" data-mode="date" onclick="setGoalMode('date')">Set by Date</button>
+                </div>
+
+                <!-- Mode: Set by Rate -->
+                <div id="goalModeRate" class="goal-mode-content active">
+                    <div class="slider-container">
+                        <label>Lose <span id="lossRateValue">1.0</span> lbs/week</label>
+                        <input type="range" id="lossRateSlider" min="0.5" max="2" step="0.25" value="1">
+                    </div>
+                    <div class="goal-calc-result">
+                        <span class="goal-calc-label">You'll reach your target weight on:</span>
+                        <span class="goal-calc-value" id="reachDateByRate">--</span>
+                    </div>
+                </div>
+
+                <!-- Mode: Set by Date -->
+                <div id="goalModeDate" class="goal-mode-content">
+                    <div class="form-row">
+                        <label>I want to reach my target weight by:</label>
+                        <input type="date" id="targetDate" onchange="updateGoalFromDate()">
+                    </div>
+                    <div class="goal-calc-result">
+                        <span class="goal-calc-label">Required loss rate:</span>
+                        <span class="goal-calc-value" id="rateByDate">--</span>
+                    </div>
+                    <p class="goal-warning" id="goalWarning"></p>
+                </div>
+
+                <div class="goal-stats">
+                    <div class="stat">
+                        <span class="stat-label">Daily Deficit</span>
+                        <span class="stat-value" id="dailyDeficit">500 cal</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Projected Loss by Year End</span>
+                        <span class="stat-value" id="projectedLoss">0 lbs</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weight Chart -->
+            <div class="card">
+                <h2>Weight Progress</h2>
+                <div class="chart-container">
+                    <canvas id="weightChart"></canvas>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item projected">Projected</span>
+                    <span class="legend-item actual">Actual</span>
+                </div>
+            </div>
+
+            <!-- Weight History -->
+            <div class="card">
+                <h2>Weight History</h2>
+                <div id="weightHistory" class="weight-list">
+                    <p class="empty-state">No weight entries yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Tab -->
+        <section id="settings" class="tab-content">
+            <div class="card">
+                <h2>Your Stats</h2>
+                <form id="settingsForm">
+                    <div class="form-row two-col">
+                        <div>
+                            <label>Current Weight (lbs)</label>
+                            <input type="number" id="settingWeight" step="0.1">
+                            <p class="input-hint" id="weightSyncHint"></p>
+                        </div>
+                        <div>
+                            <label>Target Weight (lbs)</label>
+                            <input type="number" id="settingTargetWeight" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div>
+                            <label>Height (inches)</label>
+                            <input type="number" id="settingHeight" step="0.1">
+                        </div>
+                        <div>
+                            <label>Age</label>
+                            <input type="number" id="settingAge">
+                        </div>
+                    </div>
+                    <div class="form-row two-col">
+                        <div>
+                            <label>Sex</label>
+                            <select id="settingSex">
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Activity Level</label>
+                            <select id="settingActivity">
+                                <option value="sedentary">Sedentary (little/no exercise)</option>
+                                <option value="light">Light (1-3 days/week)</option>
+                                <option value="moderate" selected>Moderate (3-5 days/week)</option>
+                                <option value="active">Active (6-7 days/week)</option>
+                                <option value="very_active">Very Active (physical job)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn primary full-width">Save Settings</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Calculated Targets</h2>
+                <div class="targets-display">
+                    <div class="target-item">
+                        <span class="target-label">BMR</span>
+                        <span class="target-value" id="displayBMR">--</span>
+                    </div>
+                    <div class="target-item">
+                        <span class="target-label">TDEE</span>
+                        <span class="target-value" id="displayTDEE">--</span>
+                    </div>
+                    <div class="target-item">
+                        <span class="target-label">Daily Calories</span>
+                        <span class="target-value" id="displayCalories">--</span>
+                    </div>
+                    <div class="target-item">
+                        <span class="target-label">Protein Target</span>
+                        <span class="target-value" id="displayProtein">--</span>
+                    </div>
+                    <div class="target-item">
+                        <span class="target-label">Carbs Target</span>
+                        <span class="target-value" id="displayCarbs">--</span>
+                    </div>
+                    <div class="target-item">
+                        <span class="target-label">Fat Target</span>
+                        <span class="target-value" id="displayFat">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Cloud Sync</h2>
+                <p class="help-text">Your data syncs automatically to the cloud. Sign in with GitHub to access your data on any device.</p>
+                <p id="connectionStatus" class="connection-status success">Connected to Supabase</p>
+            </div>
+            
+            <!-- Hidden elements for backwards compatibility -->
+            <input type="hidden" id="supabaseUrl">
+            <input type="hidden" id="supabaseKey">
+            <button id="saveSupabase" class="hidden"></button>
+            <button id="clearSupabase" class="hidden"></button>
+        </section>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Modal for food selection -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Select Food</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Recipe Modal -->
+    <div id="recipeModal" class="modal">
+        <div class="modal-content recipe-modal">
+            <div class="modal-header">
+                <h3 id="recipeModalTitle">Create Recipe</h3>
+                <button class="modal-close" onclick="closeRecipeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <label>Recipe Name</label>
+                    <input type="text" id="recipeName" placeholder="e.g., Breakfast Bowl, Post-Workout Shake">
+                </div>
+                
+                <div class="recipe-items-section">
+                    <label>Ingredients</label>
+                    <div id="recipeItems" class="recipe-items-list">
+                        <!-- Items added here -->
+                    </div>
+                    <div class="add-ingredient-row">
+                        <select id="ingredientSelect" class="ingredient-select">
+                            <option value="">Select a food...</option>
+                        </select>
+                        <input type="number" id="ingredientServings" placeholder="Qty" value="1" min="0.25" step="0.25" class="ingredient-qty">
+                        <button class="btn small" onclick="addIngredient()">Add</button>
+                    </div>
+                </div>
+                
+                <div class="recipe-totals" id="recipeTotals">
+                    <div class="recipe-total-item">
+                        <span>Calories</span>
+                        <strong id="recipeTotalCal">0</strong>
+                    </div>
+                    <div class="recipe-total-item">
+                        <span>Protein</span>
+                        <strong id="recipeTotalProtein">0g</strong>
+                    </div>
+                    <div class="recipe-total-item">
+                        <span>Carbs</span>
+                        <strong id="recipeTotalCarbs">0g</strong>
+                    </div>
+                    <div class="recipe-total-item">
+                        <span>Fat</span>
+                        <strong id="recipeTotalFat">0g</strong>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn" onclick="closeRecipeModal()">Cancel</button>
+                    <button class="btn primary" onclick="saveRecipe()">Save Recipe</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Portion Size Guide Modal -->
+    <div id="portionGuide" class="modal">
+        <div class="modal-content portion-guide-modal">
+            <div class="modal-header">
+                <h3>Portion Size Guide</h3>
+                <button class="modal-close" onclick="closePortionGuide()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="portion-carousel">
+                    <button class="carousel-nav prev" onclick="prevPortion()">&#8249;</button>
+                    <div class="portion-slide" id="portionSlide">
+                        <!-- Slides inserted by JS -->
+                    </div>
+                    <button class="carousel-nav next" onclick="nextPortion()">&#8250;</button>
+                </div>
+                <div class="portion-dots" id="portionDots"></div>
+                <div class="portion-categories">
+                    <button class="portion-cat active" data-cat="volume" onclick="showPortionCategory('volume')">Cups & Spoons</button>
+                    <button class="portion-cat" data-cat="weight" onclick="showPortionCategory('weight')">Ounces & Grams</button>
+                    <button class="portion-cat" data-cat="protein" onclick="showPortionCategory('protein')">Protein</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="lib/supabase.js"></script>
+    <script src="lib/macros.js"></script>
+    <script src="lib/usda.js"></script>
+    <script src="lib/parser.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
