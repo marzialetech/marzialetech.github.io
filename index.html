@@ -133,6 +133,11 @@
             transform: scale(0.8);
             transform-origin: center center;
         }
+        /* Login icon only scaled to 85%; caption stays same size as other icons */
+        #loginBtn img {
+            transform: scale(0.85);
+            transform-origin: center center;
+        }
         .desktop-icon .icon-caption,
         .mail-btn .mail-caption {
             font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
@@ -16083,7 +16088,7 @@
             <img src="assets/brand/about-icon.png" alt="" draggable="false">
             <span class="icon-caption">About</span>
         </button>
-        <button class="desktop-icon" id="loginBtn" type="button">
+        <button class="desktop-icon login-icon-scaled" id="loginBtn" type="button">
             <img id="loginBtnIcon" src="assets/brand/login-icon.png" alt="" draggable="false">
             <span class="icon-caption" id="loginBtnCaption">Login</span>
         </button>
