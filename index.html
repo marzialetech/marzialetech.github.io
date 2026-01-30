@@ -755,6 +755,97 @@
                 font-size: 16px;
             }
         }
+
+        /* Login Window (Windows 95 style) */
+        .login-window {
+            position: fixed;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #dfdfdf #000 #000 #dfdfdf;
+            box-shadow: 2px 2px 0 #404040;
+            z-index: 200;
+            min-width: 280px;
+            max-width: 90vw;
+            font-family: inherit;
+            display: none;
+            font-size: 11px;
+        }
+        .login-window.open {
+            display: block;
+        }
+        .login-window-header {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: #fff;
+            padding: 3px 6px 4px 6px;
+            font-size: 11px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #000;
+        }
+        .login-window-header:active {
+            cursor: grabbing;
+        }
+        .login-window-close {
+            background: #c0c0c0;
+            color: #000;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 6px;
+            font-family: inherit;
+        }
+        .login-window-close:hover {
+            background: #d4d0c8;
+        }
+        .login-window-close:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .login-window-body {
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #808080;
+            margin: 2px;
+        }
+        .login-window-body .login-error {
+            color: #800000;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+        .login-window-body .login-logged-in {
+            margin-bottom: 8px;
+        }
+        .login-window-body .login-btn {
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            padding: 4px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .login-window-body .login-btn:hover {
+            background: #d4d0c8;
+        }
+        .login-window-body .login-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        @media (min-width: 701px) {
+            .login-window,
+            .login-window-header,
+            .login-window-close,
+            .login-window-body .login-btn {
+                font-size: 18px;
+            }
+            .login-window-body {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -21046,6 +21137,25 @@
         </div>
     </div>
 
+    <div class="login-window" id="loginWindow">
+        <div class="login-window-header" id="loginWindowHeader">
+            <span>Login</span>
+            <button class="login-window-close" id="loginWindowClose">&times;</button>
+        </div>
+        <div class="login-window-body">
+            <div id="loginAuthForm">
+                <p style="margin:0 0 8px 0;">Sign in with GitHub to access projects.</p>
+                <div id="loginError" class="login-error" style="display:none;"></div>
+                <button type="button" class="login-btn" id="loginGithubBtn">Sign in with GitHub</button>
+            </div>
+            <div id="loginLoggedInView" style="display:none;">
+                <p class="login-logged-in">Signed in as <strong id="loginUserEmail"></strong></p>
+                <button type="button" class="login-btn" id="loginLogoutBtn">Sign out</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://js.stripe.com/v3/"></script>
     <script>
 (function () {
@@ -21125,6 +21235,20 @@
     const aboutWindowHeader = document.getElementById('aboutWindowHeader');
     const aboutWindowClose = document.getElementById('aboutWindowClose');
     const loginBtn = document.getElementById('loginBtn');
+
+    // Login window (unified Supabase auth - Project 2)
+    const LOGIN_SUPABASE_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co';
+    const LOGIN_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cnJsZnpvZ3R1YWhtdnNidm11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MjY2OTQsImV4cCI6MjA4NTIwMjY5NH0.JmbIVK2JpeuPfkimIm00J63cAoIH7steTBpvgHnzDuU';
+    const loginWindow = document.getElementById('loginWindow');
+    const loginWindowHeader = document.getElementById('loginWindowHeader');
+    const loginWindowClose = document.getElementById('loginWindowClose');
+    const loginAuthForm = document.getElementById('loginAuthForm');
+    const loginLoggedInView = document.getElementById('loginLoggedInView');
+    const loginError = document.getElementById('loginError');
+    const loginUserEmail = document.getElementById('loginUserEmail');
+    const loginLogoutBtn = document.getElementById('loginLogoutBtn');
+    const loginGithubBtn = document.getElementById('loginGithubBtn');
+    let loginSupabase = null;
 
     // Pay button & window
     const payBtn = document.getElementById('payBtn');
@@ -21296,6 +21420,59 @@
     // Close pay window
     function closePayWindow() {
         payWindow.classList.remove('open');
+    }
+
+    // Login window: init Supabase and auth UI
+    function initLoginSupabase() {
+        if (loginSupabase) return;
+        try {
+            if (window.supabase && typeof window.supabase.createClient === 'function') {
+                loginSupabase = window.supabase.createClient(LOGIN_SUPABASE_URL, LOGIN_SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.warn('Login Supabase init failed:', e);
+        }
+    }
+
+    function updateLoginUI(user) {
+        if (!loginAuthForm || !loginLoggedInView) return;
+        if (user) {
+            loginAuthForm.style.display = 'none';
+            loginLoggedInView.style.display = 'block';
+            if (loginUserEmail) loginUserEmail.textContent = user.email || '';
+            if (loginError) { loginError.style.display = 'none'; loginError.textContent = ''; }
+            document.body.classList.add('logged-in');
+        } else {
+            loginAuthForm.style.display = 'block';
+            loginLoggedInView.style.display = 'none';
+            if (loginError) { loginError.style.display = 'none'; loginError.textContent = ''; }
+            document.body.classList.remove('logged-in');
+        }
+    }
+
+    function openLoginWindow() {
+        initLoginSupabase();
+        const btnRect = loginBtn.getBoundingClientRect();
+        const gap = 10;
+        loginWindow.style.left = Math.max(10, btnRect.left - 80) + 'px';
+        loginWindow.style.top = Math.max(10, btnRect.top - 320 - gap) + 'px';
+        loginWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            loginWindow.style.top = Math.max(10, btnRect.top - loginWindow.offsetHeight - gap) + 'px';
+        });
+        if (loginSupabase) {
+            loginSupabase.auth.getSession().then(function(_ref) {
+                var data = _ref.data;
+                if (data.session && data.session.user) updateLoginUI(data.session.user);
+                else updateLoginUI(null);
+            });
+        } else {
+            updateLoginUI(null);
+        }
+    }
+
+    function closeLoginWindow() {
+        loginWindow.classList.remove('open');
     }
 
     // Get current amount in cents
@@ -21614,16 +21791,48 @@
 
         aboutWindowClose.addEventListener('click', closeAboutWindow);
 
-        // Login button
+        // Login button & window
         positionLoginBtn();
-        makeDraggable(loginBtn, null, function() {
-            window.location.href = 'https://marziale.tech';
-        });
+        makeDraggable(loginBtn, null, openLoginWindow);
+        makeDraggable(loginWindow, loginWindowHeader);
         loginBtn.addEventListener('click', function(e) {
             if (Date.now() - lastOpenedFromTap < 400) return;
             if (Date.now() - lastDragEndedAt < 100) return;
-            window.location.href = 'https://marziale.tech';
+            openLoginWindow();
         });
+        loginWindowClose.addEventListener('click', closeLoginWindow);
+        loginGithubBtn.addEventListener('click', function() {
+            if (!loginSupabase) {
+                if (loginError) { loginError.textContent = 'Not connected. Refresh and try again.'; loginError.style.display = 'block'; }
+                return;
+            }
+            if (loginError) { loginError.textContent = ''; loginError.style.display = 'none'; }
+            loginSupabase.auth.signInWithOAuth({
+                provider: 'github',
+                options: { redirectTo: window.location.origin + (window.location.pathname || '/') }
+            }).then(function(_ref) {
+                var error = _ref.error;
+                if (error && loginError) { loginError.textContent = error.message; loginError.style.display = 'block'; }
+            }).catch(function(err) {
+                if (loginError) { loginError.textContent = 'Error: ' + (err.message || err); loginError.style.display = 'block'; }
+            });
+        });
+        loginLogoutBtn.addEventListener('click', function() {
+            if (loginSupabase) {
+                loginSupabase.auth.signOut();
+                updateLoginUI(null);
+            }
+        });
+        initLoginSupabase();
+        if (loginSupabase) {
+            loginSupabase.auth.getSession().then(function(_ref) {
+                var data = _ref.data;
+                if (data.session && data.session.user) updateLoginUI(data.session.user);
+            });
+            loginSupabase.auth.onAuthStateChange(function(event, session) {
+                updateLoginUI(session ? session.user : null);
+            });
+        }
 
         // Pay button & window
         positionPayBtn();

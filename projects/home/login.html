@@ -331,8 +331,8 @@
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
     // Supabase Configuration
-    const SUPABASE_URL = 'https://nkhsbiqvnhvbfsxktzkc.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5raHNiaXF2bmh2YmZzeGt0emtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDk0OTgsImV4cCI6MjA4NDY4NTQ5OH0.gni7QrH1JErkHxtz0iaJiESPO1MhAtKa8okV2UUqQaI';
+    const SUPABASE_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cnJsZnpvZ3R1YWhtdnNidm11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2MjY2OTQsImV4cCI6MjA4NTIwMjY5NH0.JmbIVK2JpeuPfkimIm00J63cAoIH7steTBpvgHnzDuU';
 
     // Elements
     const authForm = document.getElementById('authForm');
@@ -385,7 +385,7 @@
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
-            redirectTo: window.location.origin + '/login'
+            redirectTo: 'https://marziale.tech'
           }
         });
 
