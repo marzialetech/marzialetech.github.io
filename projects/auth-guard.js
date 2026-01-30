@@ -86,14 +86,25 @@ function createLoginOverlay() {
     const supabaseLib = await waitForSupabase();
     const client = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Check current session
-    const { data: { user } } = await client.auth.getUser();
+    // Check current session from localStorage first
+    const { data: sessionData, error: sessionError } = await client.auth.getSession();
+    console.log('Auth guard: getSession result', sessionData, sessionError);
+    let user = sessionData?.session?.user || null;
+    
+    // If we got a session from localStorage, also validate it's still valid
+    if (user) {
+        const { data: userData, error: userError } = await client.auth.getUser();
+        console.log('Auth guard: getUser result', userData, userError);
+        user = userData?.user || null;
+    }
 
     if (user && user.email === ADMIN_EMAIL) {
         // Admin is logged in - allow access
-        console.log('Auth guard: Admin access granted');
+        console.log('Auth guard: Admin access granted for', user.email);
         return;
     }
+    
+    console.log('Auth guard: No valid admin session, user:', user?.email || 'none');
 
     // Not admin - show login overlay
     document.body.style.overflow = 'hidden';
