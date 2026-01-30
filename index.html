@@ -21070,14 +21070,7 @@
             <span>About</span>
             <button class="about-window-close" id="aboutWindowClose">&times;</button>
         </div>
-        <div class="about-window-body" id="aboutWindowBody"> ▄▀▀▄ ▄▀▄  ▄▀▀█▄   ▄▀▀▄▀▀▀▄  ▄▀▀▀▀▄   ▄▀▀█▀▄    ▄▀▀█▄   ▄▀▀▀▀▄     ▄▀▀█▄▄▄▄
-█  █ ▀  █ ▐ ▄▀ ▀▄ █   █   █ █     ▄▀ █   █  █  ▐ ▄▀ ▀▄ █    █     ▐  ▄▀   ▐
-▐  █    █   █▄▄▄█ ▐  █▀▀█▀  ▐ ▄▄▀▀   ▐   █  ▐    █▄▄▄█ ▐    █       █▄▄▄▄▄
-  █    █   ▄▀   █  ▄▀    █    █          █      ▄▀   █     █        █    ▌
-▄▀   ▄▀   █   ▄▀  █     █      ▀▄▄▄▄▀ ▄▀▀▀▀▀▄  █   ▄▀    ▄▀▄▄▄▄▄▄▀ ▄▀▄▄▄▄
-█    █    ▐   ▐   ▐     ▐          ▐ █       █ ▐   ▐     █         █    ▐
-▐    ▐                               ▐       ▐           ▐         ▐
-        </div>
+        <div class="about-window-body" id="aboutWindowBody"><span class="about-loading">Loading...</span></div>
     </div>
 
     <div class="pay-window" id="payWindow">
@@ -21234,6 +21227,7 @@
     const aboutWindow = document.getElementById('aboutWindow');
     const aboutWindowHeader = document.getElementById('aboutWindowHeader');
     const aboutWindowClose = document.getElementById('aboutWindowClose');
+    const aboutWindowBody = document.getElementById('aboutWindowBody');
     const loginBtn = document.getElementById('loginBtn');
     const loginBtnIcon = document.getElementById('loginBtnIcon');
     const loginBtnCaption = document.getElementById('loginBtnCaption');
@@ -21801,6 +21795,19 @@
         });
 
         aboutWindowClose.addEventListener('click', closeAboutWindow);
+
+        // Load About window text from external file
+        (function loadAboutText() {
+            if (!aboutWindowBody) return;
+            fetch('/about-window-text.txt')
+                .then(function(r) { return r.ok ? r.text() : Promise.reject(new Error(r.status)); })
+                .then(function(text) {
+                    aboutWindowBody.textContent = text;
+                })
+                .catch(function() {
+                    aboutWindowBody.textContent = 'About text could not be loaded.';
+                });
+        })();
 
         // Login button & window
         positionLoginBtn();
