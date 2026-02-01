@@ -1101,6 +1101,7 @@
             border: 1px dotted #000080;
         }
         .products-grid .product-link .p-icon { font-size: 28px; }
+        .products-grid .product-link .p-icon img { width: 28px; height: 28px; object-fit: contain; image-rendering: pixelated; display: block; }
         .products-grid .product-link .p-label { font-size: 10px; text-align: center; }
         .products-empty { color: #808080; font-style: italic; font-size: 11px; }
         @media (min-width: 701px) {
@@ -1109,6 +1110,7 @@
             .products-window-body { padding: 20px; }
             .products-grid .product-link { width: 90px; }
             .products-grid .product-link .p-icon { font-size: 36px; }
+            .products-grid .product-link .p-icon img { width: 36px; height: 36px; }
         }
 
         /* Shopify Cart UI */
@@ -21701,7 +21703,7 @@
 
     const ADMIN_EMAIL = 'jm@marziale.tech';
     const ADMIN_PRODUCTS = [
-        { name: 'Bible', href: '/projects/bible/', icon: '📖' },
+        { name: 'Bible', href: '/projects/bible/', icon: '<img src="/assets/brand/bible-icon.png" alt="">' },
         { name: 'Fitness', href: '/projects/fitness/', icon: '💪' },
         { name: 'Home', href: '/projects/home/', icon: '🏠' },
         { name: 'LACS', href: '/projects/lacs/', icon: '📄' },

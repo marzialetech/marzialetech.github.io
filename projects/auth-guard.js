@@ -98,15 +98,18 @@ function createLoginOverlay() {
         user = userData?.user || null;
     }
 
-    if (user && user.email === ADMIN_EMAIL) {
-        // Admin is logged in - allow access
-        console.log('Auth guard: Admin access granted for', user.email);
+    const path = window.location.pathname || '';
+    const isBibleProject = path.indexOf('/projects/bible') !== -1;
+
+    if (user && (user.email === ADMIN_EMAIL || isBibleProject)) {
+        // Admin or any logged-in user on bible - allow access
+        console.log('Auth guard: Access granted for', user.email, isBibleProject ? '(bible)' : '(admin)');
         return;
     }
-    
-    console.log('Auth guard: No valid admin session, user:', user?.email || 'none');
 
-    // Not admin - show login overlay
+    console.log('Auth guard: No valid session, user:', user?.email || 'none');
+
+    // Not allowed - show login overlay
     document.body.style.overflow = 'hidden';
     const overlay = createLoginOverlay();
     const errorEl = document.getElementById('auth-error');
@@ -128,12 +131,14 @@ function createLoginOverlay() {
     });
 
     // Listen for auth state changes (after OAuth redirect)
+    const path = window.location.pathname || '';
+    const isBibleProject = path.indexOf('/projects/bible') !== -1;
     client.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-            if (session.user.email === ADMIN_EMAIL) {
+            if (session.user.email === ADMIN_EMAIL || isBibleProject) {
                 overlay.remove();
                 document.body.style.overflow = '';
-                console.log('Auth guard: Admin access granted after login');
+                console.log('Auth guard: Access granted after login', isBibleProject ? '(bible)' : '(admin)');
             } else {
                 errorEl.textContent = `Access denied. ${session.user.email} is not an admin.`;
                 errorEl.style.display = 'block';
