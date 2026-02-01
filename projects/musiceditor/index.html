@@ -452,11 +452,24 @@
         if (cutClipboard.length === 0) return;
         pauseIfPlaying();
         pushUndo();
-        const insertAt = Math.max(selectedStart, selectedEnd) + 1;
         const toInsert = cutClipboard.map(n => [n[0], n[1]]);
-        melody = melody.slice(0, insertAt).concat(toInsert, melody.slice(insertAt));
-        selectedStart = insertAt;
-        selectedEnd = insertAt + toInsert.length - 1;
+        // If single rest is selected, overwrite it with first pasted note, then insert rest after
+        if (melody.length > 0 && selectedStart === selectedEnd && isRest(melody[selectedStart][0])) {
+          const idx = selectedStart;
+          melody[idx] = [toInsert[0][0], toInsert[0][1]];
+          if (toInsert.length > 1) {
+            const remaining = toInsert.slice(1);
+            melody = melody.slice(0, idx + 1).concat(remaining, melody.slice(idx + 1));
+          }
+          selectedStart = idx;
+          selectedEnd = idx + toInsert.length - 1;
+        } else {
+          // Normal paste: insert after selection
+          const insertAt = Math.max(selectedStart, selectedEnd) + 1;
+          melody = melody.slice(0, insertAt).concat(toInsert, melody.slice(insertAt));
+          selectedStart = insertAt;
+          selectedEnd = insertAt + toInsert.length - 1;
+        }
         drawStaff(document.getElementById('staff'));
         updateCodeView();
       }
