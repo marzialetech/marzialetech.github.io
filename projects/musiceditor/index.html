@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle fill='%23e85d04' cx='16' cy='16' r='14'/%3E%3C/svg%3E" type="image/svg+xml">
+  <title>Sheet music editor</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f8f8f8;
+      padding: 16px;
+    }
+    h1 { font-size: 1rem; margin: 0 0 8px 0; font-weight: 600; color: #333; }
+    .staff-wrap {
+      position: relative;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 24px 32px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+    #playhead {
+      position: absolute;
+      top: 20px;
+      bottom: 24px;
+      width: 0;
+      left: 92px;
+      pointer-events: none;
+      display: none;
+    }
+    #playhead.visible { display: block; }
+    #playhead .line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      min-width: 2px;
+      background: #e85d04;
+    }
+    #playhead .arrow {
+      position: absolute;
+      right: -7px;
+      left: auto;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 10px solid #e85d04;
+    }
+    .staff-wrap:focus { outline: none; }
+    svg { display: block; }
+    .staff-line { stroke: #111; stroke-width: 1; }
+    .ledger { stroke: #111; stroke-width: 1; }
+    .note-head { fill: #111; stroke: none; }
+    .note-head.selected { fill: #e85d04; }
+    .note-head.open { fill: #fff; stroke: #111; stroke-width: 1.5; }
+    .note-head.open.selected { stroke: #e85d04; }
+    .stem { stroke: #111; stroke-width: 1.5; }
+    .stem.selected { stroke: #e85d04; }
+    .flag { stroke: #111; }
+    .flag.selected { stroke: #e85d04; }
+    .rest-symbol { fill: #111; }
+    .rest-symbol.selected { fill: #e85d04; }
+    .rest-symbol.selected path { stroke: #e85d04; }
+    .rest-symbol.selected rect { fill: #e85d04; }
+    .accidental { fill: none; stroke: #111; }
+    .accidental.selected { stroke: #e85d04; }
+    .code-wrap {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      font-family: "Consolas", "Monaco", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .buttons { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .tempo-label { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #333; }
+    #tempo { width: 56px; padding: 6px 8px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; }
+    button {
+      padding: 8px 14px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fff;
+      cursor: pointer;
+    }
+    button:hover { background: #f0f0f0; }
+    button.primary { background: #e85d04; color: #fff; border-color: #e85d04; }
+    button.primary:hover { background: #d45203; }
+    .help { font-size: 12px; color: #666; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Melody editor</h1>
+  <div class="buttons">
+    <label class="tempo-label">Tempo <input type="number" id="tempo" value="100" min="20" max="300" step="1"></label>
+    <button type="button" id="play" class="primary">Play</button>
+    <button type="button" id="copy">Copy code</button>
+    <button type="button" id="save">Save to song file</button>
+  </div>
+  <div class="staff-wrap" id="staffWrap" tabindex="0">
+    <div id="playhead">
+      <div class="arrow"></div>
+      <div class="line"></div>
+    </div>
+    <svg id="staff" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="code-wrap" id="codeView"></div>
+  <p class="help">Space play/pause · Enter append note · Cmd+Enter insert before · Backspace/Delete rest (remove if already rest) · [ ] halve/double length · ← → cursor · ↑ ↓ semitone · A–G add note (octave 5) · Cmd+Z undo · Cmd+A select all · Cmd+X cut · Cmd+C copy · Cmd+V paste</p>
+
+  <script>
+    (function () {
+      const NOTE_TO_MIDI = {
+        'c': 0, 'c#': 1, 'db': 1, 'd': 2, 'd#': 3, 'eb': 3, 'e': 4,
+        'f': 5, 'f#': 6, 'gb': 6, 'g': 7, 'g#': 8, 'ab': 8,
+        'a': 9, 'a#': 10, 'bb': 10, 'b': 11
+      };
+      const MIDI_TO_NAME = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+      function parseNote(s) {
+        const m = /^([a-gA-G][#b]?)(-?\d+)$/.exec(String(s).trim());
+        if (!m) return null;
+        const note = m[1].toLowerCase();
+        const oct = parseInt(m[2], 10);
+        const offset = NOTE_TO_MIDI[note];
+        if (offset == null) return null;
+        return (oct + 1) * 12 + offset;
+      }
+
+      function midiToName(midi) {
+        const oct = Math.floor(midi / 12) - 1;
+        const pc = ((midi % 12) + 12) % 12;
+        if (pc === 10) return 'Bb' + oct;
+        if (pc === 3) return 'Eb' + oct;
+        return MIDI_TO_NAME[pc] + oct;
+      }
+
+      function isRest(name) {
+        return String(name).toLowerCase() === 'rest';
+      }
+
+      let melody = [
+        ['C4', 1], ['C4', 1], ['G4', 1], ['G4', 1], ['A4', 1], ['A4', 1], ['G4', 2],
+        ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 1], ['D4', 1], ['C4', 2],
+        ['G4', 1], ['G4', 1], ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 2],
+        ['G4', 1], ['G4', 1], ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 2],
+        ['C4', 1], ['C4', 1], ['G4', 1], ['G4', 1], ['A4', 1], ['A4', 1], ['G4', 2],
+        ['F4', 1], ['F4', 1], ['E4', 1], ['E4', 1], ['D4', 1], ['D4', 1], ['C4', 2]
+      ];
+
+      function loadFromServer() {
+        fetch('/api/melody?song=twinkle_twinkle').then(r => r.json()).then(data => {
+          if (data.melody && Array.isArray(data.melody)) {
+            melody = data.melody.map(n => [String(n[0]), Number(n[1])]);
+            selectedStart = selectedEnd = 0;
+            drawStaff(document.getElementById('staff'));
+            updateCodeView();
+          }
+        }).catch(() => {});
+      }
+      if (window.location.port === '5050') loadFromServer();
+
+      let selectedStart = 0;
+      let selectedEnd = 0;
+      let undoHistory = [];
+      const MAX_UNDO = 50;
+      let cutClipboard = [];
+      let isPlaying = false;
+      let audioContext = null;
+      let oscillatorsRef = [];
+      let playStartTime = 0;
+      let melodyTimeOffset = 0;
+      let rafId = null;
+      let lastNoteStartTimes = [];
+      let lastTotalDuration = 0;
+      const STAFF_TOP = 50;
+      const LINE_SPACING = 10;
+      const NOTE_SPACING = 28;
+      const LEFT_MARGIN = 60;
+      const STAFF_PADDING_LEFT = 32;
+      // Bass clef: bottom line G2 (43), top line A3 (57). C4 (60) = one ledger above staff.
+      const BASS_BOTTOM_MIDI = 43;
+      const BASS_TOP_MIDI = 57;
+      const STAFF_BOTTOM = STAFF_TOP + 4 * LINE_SPACING;
+      const STAFF_HEIGHT = STAFF_BOTTOM - STAFF_TOP;
+      const SEMITONE_STEP = STAFF_HEIGHT / 14;
+
+      // Diatonic (C major) staff position: C/C# same line, D/D# same, etc. Only naturals move staff position.
+      const PC_TO_DIATONIC = [0, 0, 2, 2, 4, 5, 5, 7, 7, 9, 9, 11];
+
+      function midiToDiatonicMidi(midi) {
+        const pc = ((midi % 12) + 12) % 12;
+        return 12 * Math.floor(midi / 12) + PC_TO_DIATONIC[pc];
+      }
+
+      const OCTAVE_SHIFT = -24;
+
+      function midiToY(midi) {
+        const diatonic = midiToDiatonicMidi(midi);
+        return STAFF_BOTTOM - (diatonic + OCTAVE_SHIFT - BASS_BOTTOM_MIDI) * SEMITONE_STEP;
+      }
+
+      function needsAccidental(midi) {
+        const pc = ((midi % 12) + 12) % 12;
+        return [1, 3, 6, 8, 10].indexOf(pc) >= 0;
+      }
+
+      function needsFlat(midi) {
+        const pc = ((midi % 12) + 12) % 12;
+        return pc === 3 || pc === 10;
+      }
+
+      function drawStaff(svg) {
+        const numNotes = melody.length;
+        const width = Math.max(600, LEFT_MARGIN + numNotes * NOTE_SPACING + 40);
+        const height = 180;
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', 'translate(0, 20)');
+
+        const bassImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        bassImg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/bass-clef.svg');
+        bassImg.setAttribute('x', '0');
+        bassImg.setAttribute('y', String(STAFF_TOP - 8));
+        bassImg.setAttribute('width', '42');
+        bassImg.setAttribute('height', '56');
+        g.appendChild(bassImg);
+
+        for (let i = 0; i < 5; i++) {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'staff-line');
+          line.setAttribute('x1', 0);
+          line.setAttribute('y1', STAFF_TOP + i * LINE_SPACING);
+          line.setAttribute('x2', width);
+          line.setAttribute('y2', STAFF_TOP + i * LINE_SPACING);
+          g.appendChild(line);
+        }
+
+        melody.forEach((n, i) => {
+          const [name, dur] = n;
+          const x = LEFT_MARGIN + i * NOTE_SPACING;
+          const selected = i >= selectedStart && i <= selectedEnd;
+
+          if (isRest(name)) {
+            const restY = STAFF_TOP + 2 * LINE_SPACING;
+            const rest = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            rest.setAttribute('class', 'rest-symbol' + (selected ? ' selected' : ''));
+            rest.setAttribute('data-index', i);
+            rest.setAttribute('transform', 'translate(' + x + ',' + restY + ')');
+            if (dur >= 2) {
+              const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+              rect.setAttribute('x', -6);
+              rect.setAttribute('y', -2);
+              rect.setAttribute('width', 12);
+              rect.setAttribute('height', 4);
+              rest.appendChild(rect);
+            } else {
+              const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              path.setAttribute('d', 'M-2 -8 Q2 -4 -2 0 Q2 4 -2 8');
+              path.setAttribute('stroke', 'currentColor');
+              path.setAttribute('fill', 'none');
+              path.setAttribute('stroke-width', '2');
+              rest.appendChild(path);
+            }
+            g.appendChild(rest);
+            return;
+          }
+
+          const midi = parseNote(name);
+          if (midi == null) return;
+          const y = midiToY(midi);
+
+          if (y > STAFF_BOTTOM) {
+            for (let ly = STAFF_BOTTOM + LINE_SPACING; ly <= y + 1; ly += LINE_SPACING) {
+              const led = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              led.setAttribute('class', 'ledger');
+              led.setAttribute('x1', x - 8);
+              led.setAttribute('y1', ly);
+              led.setAttribute('x2', x + 8);
+              led.setAttribute('y2', ly);
+              g.appendChild(led);
+            }
+          } else if (y < STAFF_TOP) {
+            for (let ly = STAFF_TOP - LINE_SPACING; ly >= y - 1; ly -= LINE_SPACING) {
+              const led = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              led.setAttribute('class', 'ledger');
+              led.setAttribute('x1', x - 8);
+              led.setAttribute('y1', ly);
+              led.setAttribute('x2', x + 8);
+              led.setAttribute('y2', ly);
+              g.appendChild(led);
+            }
+          }
+
+          if (needsAccidental(midi)) {
+            const accW = 14;
+            const accH = 22;
+            const shiftLeft = Math.round(accW * 0.2);
+            const isFlat = needsFlat(midi);
+            const w = isFlat ? accW * 0.9 : accW;
+            const h = isFlat ? accH * 0.9 : accH;
+            const acc = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            acc.setAttribute('class', 'accidental' + (selected ? ' selected' : ''));
+            acc.setAttribute('data-index', i);
+            acc.setAttribute('transform', 'translate(' + (x - 14 - shiftLeft) + ',' + (y - h / 2) + ')');
+            const accImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+            accImg.setAttributeNS('http://www.w3.org/1999/xlink', 'href', isFlat ? 'assets/flat.png' : 'assets/sharp.png');
+            accImg.setAttribute('x', '0');
+            accImg.setAttribute('y', '0');
+            accImg.setAttribute('width', String(w));
+            accImg.setAttribute('height', String(h));
+            acc.appendChild(accImg);
+            g.appendChild(acc);
+          }
+
+          const isWhole = dur >= 4;
+          const isHalf = dur >= 2 && dur < 4;
+          const isOpen = isWhole || isHalf;
+
+          const head = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+          head.setAttribute('cx', x);
+          head.setAttribute('cy', y);
+          head.setAttribute('rx', isWhole ? 7 : 6);
+          head.setAttribute('ry', isWhole ? 5 : 4.5);
+          head.setAttribute('class', 'note-head' + (isOpen ? ' open' : '') + (selected ? ' selected' : ''));
+          head.setAttribute('data-index', i);
+          g.appendChild(head);
+
+          if (!isWhole) {
+            const stemUp = midi < 50;
+            const stemX = stemUp ? x + 6 : x - 6;
+            const stemEndY = stemUp ? y - 35 : y + 35;
+            const stem = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            stem.setAttribute('class', 'stem' + (selected ? ' selected' : ''));
+            stem.setAttribute('x1', stemX);
+            stem.setAttribute('y1', y);
+            stem.setAttribute('x2', stemX);
+            stem.setAttribute('y2', stemEndY);
+            g.appendChild(stem);
+
+            const numFlags = dur < 0.5 ? 2 : (dur < 1 ? 1 : 0);
+            for (let f = 0; f < numFlags; f++) {
+              const flag = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+              const flagOffset = f * 8;
+              if (stemUp) {
+                flag.setAttribute('d', 'M' + stemX + ' ' + (stemEndY + flagOffset) + ' Q' + (stemX + 10) + ' ' + (stemEndY + flagOffset + 8) + ' ' + stemX + ' ' + (stemEndY + flagOffset + 14));
+              } else {
+                flag.setAttribute('d', 'M' + stemX + ' ' + (stemEndY - flagOffset) + ' Q' + (stemX - 10) + ' ' + (stemEndY - flagOffset - 8) + ' ' + stemX + ' ' + (stemEndY - flagOffset - 14));
+              }
+              flag.setAttribute('class', 'flag' + (selected ? ' selected' : ''));
+              flag.setAttribute('stroke', 'currentColor');
+              flag.setAttribute('stroke-width', '2');
+              flag.setAttribute('fill', 'none');
+              g.appendChild(flag);
+            }
+          }
+        });
+
+        svg.innerHTML = '';
+        svg.appendChild(g);
+      }
+
+      document.getElementById('staff').addEventListener('click', (e) => {
+        const el = e.target;
+        const idx = (el.getAttribute && el.getAttribute('data-index')) || (el.parentNode && el.parentNode.getAttribute && el.parentNode.getAttribute('data-index'));
+        if (idx != null) select(parseInt(idx, 10));
+      });
+
+      function updateCodeView() {
+        const lines = ['MELODY = ['];
+        melody.forEach((n, i) => {
+          const comma = i < melody.length - 1 ? ',' : '';
+          lines.push('    ("' + n[0] + '", ' + n[1] + ')' + comma);
+        });
+        lines.push(']');
+        document.getElementById('codeView').textContent = lines.join('\n');
+      }
+
+      function select(i) {
+        const idx = Math.max(0, Math.min(melody.length - 1, i));
+        selectedStart = idx;
+        selectedEnd = idx;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function extendSelectionLeft() {
+        selectedStart = Math.max(0, selectedStart - 1);
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function extendSelectionRight() {
+        selectedEnd = Math.min(melody.length - 1, selectedEnd + 1);
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function pushUndo() {
+        undoHistory.push({
+          melody: melody.map(n => [n[0], n[1]]),
+          selectedStart,
+          selectedEnd
+        });
+        if (undoHistory.length > MAX_UNDO) undoHistory.shift();
+      }
+
+      function undo() {
+        if (undoHistory.length === 0) return;
+        pauseIfPlaying();
+        const state = undoHistory.pop();
+        melody = state.melody.map(n => [n[0], n[1]]);
+        selectedStart = Math.min(state.selectedStart, melody.length - 1);
+        selectedEnd = Math.min(state.selectedEnd, melody.length - 1);
+        if (melody.length === 0) selectedStart = selectedEnd = 0;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function selectAll() {
+        if (melody.length === 0) return;
+        selectedStart = 0;
+        selectedEnd = melody.length - 1;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function pauseIfPlaying() {
+        if (isPlaying) stopPlayback(true);
+      }
+
+      function copy() {
+        if (melody.length === 0) return;
+        const start = Math.min(selectedStart, selectedEnd);
+        const end = Math.max(selectedStart, selectedEnd);
+        cutClipboard = melody.slice(start, end + 1).map(n => [n[0], n[1]]);
+      }
+
+      function paste() {
+        if (cutClipboard.length === 0) return;
+        pauseIfPlaying();
+        pushUndo();
+        const insertAt = Math.max(selectedStart, selectedEnd) + 1;
+        const toInsert = cutClipboard.map(n => [n[0], n[1]]);
+        melody = melody.slice(0, insertAt).concat(toInsert, melody.slice(insertAt));
+        selectedStart = insertAt;
+        selectedEnd = insertAt + toInsert.length - 1;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function cut() {
+        if (melody.length === 0) return;
+        pauseIfPlaying();
+        const start = Math.min(selectedStart, selectedEnd);
+        const end = Math.max(selectedStart, selectedEnd);
+        pushUndo();
+        cutClipboard = melody.slice(start, end + 1).map(n => [n[0], n[1]]);
+        melody = melody.slice(0, start).concat(melody.slice(end + 1));
+        selectedStart = selectedEnd = Math.min(start, Math.max(0, melody.length - 1));
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      const DEFAULT_REST_NOTE_MIDI = 74;
+      const DEFAULT_NOTE = 'D5';
+
+      function movePitch(delta) {
+        pauseIfPlaying();
+        pushUndo();
+        for (let i = selectedStart; i <= selectedEnd; i++) {
+          const n = melody[i];
+          const midi = parseNote(n[0]);
+          const isRestNote = midi == null;
+          const baseMidi = isRestNote ? DEFAULT_REST_NOTE_MIDI : midi;
+          // Rest + up arrow → D5; rest + down arrow → D5 + delta (e.g. Db5)
+          const newMidi = isRestNote && delta > 0
+            ? DEFAULT_REST_NOTE_MIDI
+            : Math.max(0, Math.min(127, baseMidi + delta));
+          melody[i] = [midiToName(newMidi), n[1]];
+        }
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function defaultPitch() {
+        if (melody.length === 0) return DEFAULT_NOTE;
+        const last = melody[melody.length - 1];
+        if (!isRest(last[0])) return last[0];
+        for (let i = melody.length - 1; i >= 0; i--) {
+          if (!isRest(melody[i][0])) return melody[i][0];
+        }
+        return DEFAULT_NOTE;
+      }
+
+      function appendNote() {
+        pauseIfPlaying();
+        pushUndo();
+        const pitch = defaultPitch();
+        melody.push([pitch, 1]);
+        selectedStart = selectedEnd = melody.length - 1;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function insertNoteBefore() {
+        pauseIfPlaying();
+        pushUndo();
+        const pitch = melody.length > 0 && !isRest(melody[selectedStart][0]) ? melody[selectedStart][0] : DEFAULT_NOTE;
+        const at = melody.length === 0 ? 0 : selectedStart;
+        melody.splice(at, 0, [pitch, 1]);
+        selectedStart = selectedEnd = at;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function insertLetterNote(pitch) {
+        pauseIfPlaying();
+        pushUndo();
+        const insertAt = melody.length === 0 ? 0 : Math.max(selectedStart, selectedEnd) + 1;
+        melody.splice(insertAt, 0, [pitch, 1]);
+        selectedStart = selectedEnd = insertAt;
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function replaceWithRest() {
+        if (melody.length === 0) return;
+        pauseIfPlaying();
+        pushUndo();
+        const start = Math.min(selectedStart, selectedEnd);
+        const end = Math.max(selectedStart, selectedEnd);
+        const allRests = Array.from({ length: end - start + 1 }, (_, i) => start + i).every(i => isRest(melody[i][0]));
+        if (allRests) {
+          melody = melody.slice(0, start).concat(melody.slice(end + 1));
+          selectedStart = selectedEnd = melody.length === 0 ? 0 : Math.max(0, start - 1);
+        } else {
+          for (let i = start; i <= end; i++) {
+            melody[i] = ['rest', melody[i][1]];
+          }
+          selectedStart = selectedEnd = Math.max(0, start - 1);
+        }
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function halveLength() {
+        if (melody.length === 0) return;
+        pauseIfPlaying();
+        pushUndo();
+        const minDur = 0.25;
+        for (let i = selectedStart; i <= selectedEnd; i++) {
+          const d = melody[i][1];
+          melody[i][1] = Math.max(minDur, d / 2);
+        }
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      function doubleLength() {
+        if (melody.length === 0) return;
+        pauseIfPlaying();
+        pushUndo();
+        const maxDur = 4;
+        for (let i = selectedStart; i <= selectedEnd; i++) {
+          const d = melody[i][1];
+          melody[i][1] = Math.min(maxDur, d * 2);
+        }
+        drawStaff(document.getElementById('staff'));
+        updateCodeView();
+      }
+
+      document.addEventListener('keydown', (e) => {
+        const cmd = e.metaKey || e.ctrlKey;
+        if (cmd && e.key === 'z') {
+          e.preventDefault();
+          undo();
+          return;
+        }
+        if (cmd && e.key === 'a') {
+          e.preventDefault();
+          selectAll();
+          return;
+        }
+        if (cmd && e.key === 'x') {
+          e.preventDefault();
+          cut();
+          return;
+        }
+        if (cmd && e.key === 'c') {
+          e.preventDefault();
+          copy();
+          return;
+        }
+        if (cmd && e.key === 'v') {
+          e.preventDefault();
+          paste();
+          return;
+        }
+        const letterNote = !cmd && !e.ctrlKey && /^[a-gA-G]$/.test(e.key) && { a: 'A5', b: 'B5', c: 'C5', d: 'D5', e: 'E5', f: 'F5', g: 'G5' }[e.key.toLowerCase()];
+        if (letterNote) {
+          const tag = e.target && e.target.tagName ? e.target.tagName.toLowerCase() : '';
+          if (tag !== 'input' && tag !== 'textarea') {
+            e.preventDefault();
+            insertLetterNote(letterNote);
+            return;
+          }
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (cmd) insertNoteBefore();
+          else appendNote();
+          return;
+        }
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          e.preventDefault();
+          replaceWithRest();
+          return;
+        }
+        if (e.key === '[') {
+          e.preventDefault();
+          halveLength();
+          return;
+        }
+        if (e.key === ']') {
+          e.preventDefault();
+          doubleLength();
+          return;
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          if (e.shiftKey) extendSelectionLeft();
+          else select(selectedStart - 1);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          if (e.shiftKey) extendSelectionRight();
+          else select(selectedEnd + 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          movePitch(e.shiftKey ? 12 : 1);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          movePitch(e.shiftKey ? -12 : -1);
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            if (isPlaying) stopPlayback(false);
+            melodyTimeOffset = 0;
+            playMelody();
+          } else {
+            playMelody();
+          }
+        }
+      });
+
+      function stopPlayback(keepPlayheadAtPosition) {
+        isPlaying = false;
+        melodyTimeOffset = audioContext ? melodyTimeOffset + (audioContext.currentTime - playStartTime) : 0;
+        oscillatorsRef.forEach(({ osc }) => { try { osc.stop(); } catch (_) {} });
+        oscillatorsRef = [];
+        if (rafId != null) cancelAnimationFrame(rafId);
+        rafId = null;
+        if (keepPlayheadAtPosition && lastNoteStartTimes.length) {
+          updatePlayhead(melodyTimeOffset, lastNoteStartTimes, lastTotalDuration);
+          document.getElementById('playhead').classList.add('visible');
+        } else {
+          document.getElementById('playhead').classList.remove('visible');
+        }
+      }
+
+      function updatePlayhead(currentMelodyTime, noteStartTimes, totalDuration) {
+        const ph = document.getElementById('playhead');
+        if (currentMelodyTime >= totalDuration || currentMelodyTime < 0) {
+          ph.classList.remove('visible');
+          return;
+        }
+        ph.classList.add('visible');
+        let idx = 0;
+        let frac = 0;
+        for (let i = 0; i < melody.length; i++) {
+          const t0 = noteStartTimes[i];
+          const dur = melody[i][1] * (60 / 100) / 60;
+          if (currentMelodyTime < t0 + dur) {
+            idx = i;
+            frac = Math.min((currentMelodyTime - t0) / dur, 1);
+            break;
+          }
+        }
+        const baseX = STAFF_PADDING_LEFT + LEFT_MARGIN;
+        const prevNoteX = baseX + (idx > 0 ? idx - 1 : 0) * NOTE_SPACING;
+        const currentNoteX = baseX + (idx + frac) * NOTE_SPACING;
+        const segWidth = Math.max(2, currentNoteX - prevNoteX);
+        ph.style.left = prevNoteX + 'px';
+        ph.style.width = segWidth + 'px';
+      }
+
+      async function playMelody() {
+        if (isPlaying) {
+          stopPlayback(true);
+          return;
+        }
+        if (melody.length === 0) return;
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        audioContext = ctx;
+        if (ctx.state === 'suspended') await ctx.resume();
+        const bpm = Math.max(20, Math.min(300, parseInt(document.getElementById('tempo').value, 10) || 100));
+        document.getElementById('tempo').value = bpm;
+        const secPerBeat = 60 / bpm;
+        const noteStartTimes = [];
+        let t = 0;
+        melody.forEach(([, dur]) => {
+          noteStartTimes.push(t);
+          t += dur * secPerBeat;
+        });
+        const totalDuration = t;
+        if (melodyTimeOffset >= totalDuration) melodyTimeOffset = 0;
+
+        let startIdx = 0;
+        for (let i = 0; i < noteStartTimes.length; i++) {
+          if (noteStartTimes[i] >= melodyTimeOffset) { startIdx = i; break; }
+        }
+        if (startIdx >= melody.length) { melodyTimeOffset = 0; return; }
+        lastNoteStartTimes = noteStartTimes;
+        lastTotalDuration = totalDuration;
+        const scheduleStart = ctx.currentTime + 0.05;
+        oscillatorsRef = [];
+
+        for (let i = startIdx; i < melody.length; i++) {
+          const [name, dur] = melody[i];
+          const midi = parseNote(name);
+          if (midi == null) continue;
+          const freq = 440 * Math.pow(2, (midi - 69) / 12);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const noteStart = noteStartTimes[i] - melodyTimeOffset;
+          const time = scheduleStart + noteStart;
+          const noteDur = dur * secPerBeat;
+          gain.gain.setValueAtTime(0, time);
+          gain.gain.linearRampToValueAtTime(0.25, time + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + noteDur * 0.9);
+          gain.gain.setValueAtTime(0, time + noteDur);
+          osc.start(time);
+          osc.stop(time + noteDur);
+          oscillatorsRef.push({ osc, gain });
+        }
+
+        playStartTime = ctx.currentTime;
+        isPlaying = true;
+        document.getElementById('playhead').classList.add('visible');
+
+        function tick() {
+          if (!isPlaying || !audioContext) return;
+          const currentMelodyTime = melodyTimeOffset + (audioContext.currentTime - playStartTime);
+          if (currentMelodyTime >= totalDuration) {
+            stopPlayback(false);
+            melodyTimeOffset = 0;
+            return;
+          }
+          updatePlayhead(currentMelodyTime, noteStartTimes, totalDuration);
+          rafId = requestAnimationFrame(tick);
+        }
+        rafId = requestAnimationFrame(tick);
+      }
+
+      document.getElementById('play').addEventListener('click', playMelody);
+
+      document.getElementById('copy').addEventListener('click', () => {
+        const text = document.getElementById('codeView').textContent;
+        navigator.clipboard.writeText(text).then(() => alert('Code copied to clipboard.'));
+      });
+
+      document.getElementById('save').addEventListener('click', () => {
+        fetch('/api/melody', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ song: 'twinkle_twinkle', melody: melody })
+        }).then(r => r.json()).then(data => {
+          if (data.ok) alert('Saved to songs/twinkle_twinkle.py'); else alert(data.error || 'Save failed');
+        }).catch(() => alert('Run the server to save: python editor/serve.py'));
+      });
+
+      drawStaff(document.getElementById('staff'));
+      updateCodeView();
+    })();
+  </script>
+</body>
+</html>
