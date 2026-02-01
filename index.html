@@ -923,12 +923,6 @@
         }
 
         /* My Products icon (hidden by default, shown when logged in) */
-        #productsBtn {
-            display: none;
-        }
-        body.logged-in #productsBtn {
-            display: flex;
-        }
         #productsBtn .products-folder-icon {
             width: 100%;
             height: clamp(2.5rem, 6vw, 3.5rem);
@@ -22213,7 +22207,11 @@
         if (user && user.email === ADMIN_EMAIL) {
             products = ADMIN_PRODUCTS;
         }
-        if (products.length === 0) {
+        if (!user) {
+            productsEmpty.textContent = 'Empty. Create an account before buying products.';
+            productsEmpty.style.display = 'block';
+        } else if (products.length === 0) {
+            productsEmpty.textContent = 'No products available yet.';
             productsEmpty.style.display = 'block';
         } else {
             productsEmpty.style.display = 'none';
