@@ -23,7 +23,7 @@ Fitness data already lives in Project 2; no migration needed.
 ## 3. Test
 
 1. Open https://marziale.tech and click the **Login** icon.
-2. Sign in with GitHub in the login window.
+2. Log in with GitHub in the login window.
 3. Visit https://marziale.tech/projects/ — you should be recognized as admin (no overlay).
 4. Visit https://marziale.tech/projects/fitness/ — you should see your signed-in state.
 5. Visit https://marziale.tech/projects/milk-chase/ — leaderboard should work (same project).

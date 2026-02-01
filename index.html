@@ -16278,7 +16278,7 @@
         </button>
         <button class="desktop-icon login-icon-scaled" id="loginBtn" type="button">
             <img id="loginBtnIcon" src="assets/brand/login-icon.png" alt="" draggable="false">
-            <span class="icon-caption" id="loginBtnCaption">Login</span>
+            <span class="icon-caption" id="loginBtnCaption">Log In</span>
         </button>
         <button class="desktop-icon pay-icon-scaled" id="payBtn" type="button">
             <img src="assets/brand/pay-icon.png" alt="" draggable="false">
@@ -21546,14 +21546,14 @@
 
     <div class="login-window" id="loginWindow">
         <div class="login-window-header" id="loginWindowHeader">
-            <span>Login</span>
+            <span>Log In</span>
             <button class="login-window-close" id="loginWindowClose">&times;</button>
         </div>
         <div class="login-window-body">
             <div id="loginAuthForm">
-                <p style="margin:0 0 8px 0;">Sign in with GitHub to access projects.</p>
+                <p style="margin:0 0 8px 0;">Log in with GitHub to buy and access products.</p>
                 <div id="loginError" class="login-error" style="display:none;"></div>
-                <button type="button" class="login-btn" id="loginGithubBtn">Sign in with GitHub</button>
+                <button type="button" class="login-btn" id="loginGithubBtn">Log in with GitHub</button>
             </div>
             <div id="loginLoggedInView" style="display:none;">
                 <p class="login-logged-in">Signed in as <strong id="loginUserEmail"></strong></p>
@@ -22208,7 +22208,7 @@
             products = ADMIN_PRODUCTS;
         }
         if (!user) {
-            productsEmpty.textContent = 'Empty. Create an account before buying products.';
+            productsEmpty.textContent = 'Log in to access products.';
             productsEmpty.style.display = 'block';
         } else if (products.length === 0) {
             productsEmpty.textContent = 'No products available yet.';
@@ -22336,7 +22336,7 @@
             if (loginError) { loginError.style.display = 'none'; loginError.textContent = ''; }
             document.body.classList.remove('logged-in');
             // Reset icon caption and color
-            if (loginBtnCaption) loginBtnCaption.textContent = 'Login';
+            if (loginBtnCaption) loginBtnCaption.textContent = 'Log In';
             if (loginBtnIcon) loginBtnIcon.style.filter = '';
             // Close products window when logged out
             closeProductsWindow();

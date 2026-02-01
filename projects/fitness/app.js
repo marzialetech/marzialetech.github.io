@@ -210,8 +210,8 @@ async function handleSignIn() {
         await window.db.signInWithGitHub();
         showToast('Redirecting to GitHub...', 'success');
     } catch (error) {
-        console.error('Sign in error:', error);
-        showToast('Sign in failed: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Log in error:', error);
+        showToast('Log in failed: ' + (error.message || 'Unknown error'), 'error');
     }
 }
 
