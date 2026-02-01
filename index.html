@@ -406,12 +406,78 @@
             height: 300px;
             max-height: 50vh;
             overflow-y: auto;
+        }
+        .about-ascii {
             font-family: Consolas, Monaco, "Courier New", monospace;
             font-size: 6.6px;
             line-height: 1;
             white-space: pre;
+            margin: 0;
         }
-
+        .about-flags-below {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .about-flags-below .about-flag-wrap {
+            width: 120px;
+            height: 200px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .about-flags-below .about-flag-wrap img {
+            width: 200px;
+            height: 120px;
+            object-fit: contain;
+            transform: rotate(90deg);
+        }
+        .about-credits {
+            margin-top: 16px;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+        }
+        .about-bio {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-top: 12px;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+        }
+        .about-bio img {
+            width: 72px;
+            height: auto;
+            flex-shrink: 0;
+            border: 1px solid #808080;
+        }
+        .about-est {
+            margin: 12px 0 8px 0;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+        }
+        .about-clients {
+            margin: 12px 0 0 0;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+        }
+        .about-window-body a {
+            color: #000080;
+            text-decoration: underline;
+        }
+        .about-window-body a:hover {
+            color: #0000ff;
+        }
         @media (min-width: 701px) {
             .about-window,
             .about-window-header,
@@ -421,11 +487,16 @@
             .about-window {
                 width: 600px;
             }
-            .about-window-body {
-                font-size: 9.6px;
-                height: 400px;
-                padding: 16px;
-            }
+            .about-window-body { height: 400px; padding: 16px; }
+            .about-ascii { font-size: 9.6px; }
+            .about-flags-below { margin-top: 20px; gap: 24px; }
+            .about-credits { font-size: 12px; margin-top: 20px; }
+            .about-flags-below .about-flag-wrap { width: 160px; height: 260px; }
+            .about-flags-below .about-flag-wrap img { width: 260px; height: 160px; }
+            .about-est { font-size: 14px; margin: 16px 0 12px 0; }
+            .about-bio { font-size: 14px; margin-top: 16px; }
+            .about-bio img { width: 96px; }
+            .about-clients { font-size: 14px; margin-top: 16px; }
         }
 
         /* Pay Window (Windows 95 style) */
@@ -1132,6 +1203,15 @@
         }
         .shopify-checkout-btn:active {
             border-color: #404040 #fff #fff #404040;
+        }
+        /* COMING SOON flash (replaces checkout redirect while Shopify is being set up) */
+        .shopify-coming-soon-flash {
+            color: #c00;
+            font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 8px;
+            display: block;
         }
         .shopify-cart-empty {
             color: #808080;
@@ -21391,13 +21471,25 @@
             <span>About</span>
             <button class="about-window-close" id="aboutWindowClose">&times;</button>
         </div>
-        <div class="about-window-body" id="aboutWindowBody"> ▄▀▀▄ ▄▀▄  ▄▀▀█▄   ▄▀▀▄▀▀▀▄  ▄▀▀▀▀▄   ▄▀▀█▀▄    ▄▀▀█▄   ▄▀▀▀▀▄     ▄▀▀█▄▄▄▄
+        <div class="about-window-body" id="aboutWindowBody">
+            <pre class="about-ascii"> ▄▀▀▄ ▄▀▄  ▄▀▀█▄   ▄▀▀▄▀▀▀▄  ▄▀▀▀▀▄   ▄▀▀█▀▄    ▄▀▀█▄   ▄▀▀▀▀▄     ▄▀▀█▄▄▄▄
 █  █ ▀  █ ▐ ▄▀ ▀▄ █   █   █ █     ▄▀ █   █  █  ▐ ▄▀ ▀▄ █    █     ▐  ▄▀   ▐
 ▐  █    █   █▄▄▄█ ▐  █▀▀█▀  ▐ ▄▄▀▀   ▐   █  ▐    █▄▄▄█ ▐    █       █▄▄▄▄▄
   █    █   ▄▀   █  ▄▀    █    █          █      ▄▀   █     █        █    ▌
 ▄▀   ▄▀   █   ▄▀  █     █      ▀▄▄▄▄▀ ▄▀▀▀▀▀▄  █   ▄▀    ▄▀▄▄▄▄▄▄▀ ▄▀▄▄▄▄
 █    █    ▐   ▐   ▐     ▐          ▐ █       █ ▐   ▐     █         █    ▐
-▐    ▐                               ▐       ▐           ▐         ▐
+▐    ▐                               ▐       ▐           ▐         ▐</pre>
+            <p class="about-est">Est. 2026 in Lowville, NY.</p>
+            <div class="about-bio">
+                <img src="assets/brand/joseph-marziale.png" alt="Dr. Joseph Marziale">
+                <p>Marziale Technologies conducts research and solves a wide set of technological problems for the purpose of advancing civilization in New York's North Country. It is led by <a href="https://scholar.google.com/citations?user=Jibr76oAAAAJ&hl=en&oi=ao" target="_blank" rel="noopener">Dr. Joseph Marziale</a>, former GA-3 at <a href="https://www.imdb.com/title/tt15398776/" target="_blank" rel="noopener">Los Alamos National Laboratory</a>.</p>
+            </div>
+            <p class="about-clients">Clients include <a href="https://pixamation.com/" target="_blank" rel="noopener">Pixamation</a>, <a href="https://flackbroadcasting.com/" target="_blank" rel="noopener">Flack Broadcasting</a>, <a href="https://www.shuebrothers.com/" target="_blank" rel="noopener">Shue Brothers</a>, and <a href="https://redbarnmeatsinc.com/" target="_blank" rel="noopener">Red Barn Meats</a>.</p>
+            <div class="about-flags-below">
+                <div class="about-flag-wrap"><img src="assets/brand/flag-ny.png" alt="New York State flag"></div>
+                <div class="about-flag-wrap"><img src="assets/brand/flag-usa.png" alt="US flag"></div>
+            </div>
+            <p class="about-credits">Icon art © Copyright Microsoft Corp.<br>Symbolism adapted from work by <a href="https://www.nga.gov/artworks/52451-voyage-life-youth" target="_blank" rel="noopener">Thomas Cole</a>.</p>
         </div>
     </div>
 
@@ -21610,6 +21702,8 @@
     };
     let shopifyClient = null;
     let shopifyCheckout = null;
+    // Local quantity overrides (workaround for SDK Cart API bug returning quantity: 0)
+    var localQuantities = {}; // key: variantId, value: quantity
 
     const ADMIN_EMAIL = 'jm@marziale.tech';
     const ADMIN_PRODUCTS = [
@@ -21839,6 +21933,11 @@
     }
     function getLineQuantity(item) {
         if (!item) return 1;
+        // Check local override first (workaround for SDK bug)
+        var vid = getLineVariantId(item);
+        if (vid && localQuantities[vid] !== undefined) {
+            return localQuantities[vid];
+        }
         var q = item.quantity;
         if (q === undefined || q === null) q = (item.attrs && item.attrs.quantity);
         // If quantity is 0 or invalid, default to 1 (you can't have 0 items in a cart)
@@ -21880,13 +21979,20 @@
     }
     function getLineId(item) {
         if (!item) return null;
-        return item.id || (item.attrs && item.attrs.id) || null;
+        return item.id ||
+            (item.attrs && item.attrs.id) ||
+            (item.node && item.node.id) ||
+            (item.attrs && item.attrs.node && item.attrs.node.id) || null;
     }
     function getLineVariantId(item) {
         if (!item) return null;
-        return (item.variant && item.variant.id) ||
+        var v = (item.variant && item.variant.id) ||
             (item.merchandise && item.merchandise.id) ||
-            (item.attrs && item.attrs.variant && item.attrs.variant.id) || null;
+            (item.attrs && item.attrs.variant && item.attrs.variant.id) ||
+            (item.attrs && item.attrs.merchandise && item.attrs.merchandise.id) ||
+            (item.node && item.node.variant && item.node.variant.id) ||
+            (item.node && item.node.merchandise && item.node.merchandise.id);
+        return v || null;
     }
 
     // Update cart UI in the merch window
@@ -21904,13 +22010,14 @@
         lines.forEach(function(item, idx) {
             var qty = getLineQuantity(item);
             var lineId = getLineId(item);
-            var dataAttr = lineId ? ' data-line-id="' + lineId + '"' : ' data-line-idx="' + idx + '"';
+            var dataAttr = ' data-line-idx="' + idx + '"';
+            if (lineId) dataAttr += ' data-line-id="' + String(lineId).replace(/"/g, '&quot;') + '"';
             html += '<div class="cart-line-item"' + dataAttr + '>';
             html += '<span class="item-title">' + getLineTitle(item) + '</span>';
             html += '<span class="item-qty-controls">';
-            html += '<button class="qty-btn" onclick="updateCartQuantity(' + idx + ', -1)">−</button>';
+            html += '<button type="button" class="qty-btn qty-minus" data-delta="-1">−</button>';
             html += '<span class="item-qty">' + qty + '</span>';
-            html += '<button class="qty-btn" onclick="updateCartQuantity(' + idx + ', 1)">+</button>';
+            html += '<button type="button" class="qty-btn qty-plus" data-delta="1">+</button>';
             html += '</span>';
             html += '<span class="item-price">$' + getLinePrice(item) + '</span>';
             html += '</div>';
@@ -21920,8 +22027,10 @@
         html += '<span class="total-price">$' + getCartTotal() + '</span>';
         html += '</div>';
         html += '</div>';
-        html += '<button class="shopify-checkout-btn" onclick="openShopifyCheckout()">Checkout</button>';
+        html += '<button type="button" class="shopify-checkout-btn" id="shopifyCheckoutBtn">Checkout</button>';
         cartDiv.innerHTML = html;
+        var checkoutBtn = document.getElementById('shopifyCheckoutBtn');
+        if (checkoutBtn) checkoutBtn.onclick = openShopifyCheckout;
     }
 
     // Update quantity for a cart line (delta: +1 or -1)
@@ -21934,13 +22043,41 @@
         var currentQty = getLineQuantity(item);
         var newQty = Math.max(0, currentQty + delta);
 
-        if (!shopifyClient || !shopifyCheckout) return;
+        var row = document.querySelector('.cart-line-item[data-line-idx="' + lineIdx + '"]');
+        var qtySpan = row ? row.querySelector('.item-qty') : null;
+        var totalEl = document.querySelector('#shopifyCart .total-price');
+        var pricePerUnit = parseFloat(getLinePrice(item)) || 0;
 
-        // Disable buttons temporarily
-        var btns = document.querySelectorAll('.cart-line-item[data-line-idx="' + lineIdx + '"] .qty-btn, .cart-line-item[data-line-id="' + lineId + '"] .qty-btn');
+        // Store in local overrides (workaround for SDK bug)
+        if (variantId) {
+            localQuantities[variantId] = newQty;
+        }
+
+        // Optimistic UI: update displayed quantity and total immediately
+        function setQtyDisplay(q) {
+            if (qtySpan) qtySpan.textContent = q;
+            if (totalEl) {
+                var lines = getCartLines();
+                var sum = 0;
+                lines.forEach(function(ln, i) {
+                    var n = (i === lineIdx) ? q : getLineQuantity(ln);
+                    sum += n * (parseFloat(getLinePrice(ln)) || 0);
+                });
+                totalEl.textContent = '$' + sum.toFixed(2);
+            }
+        }
+        setQtyDisplay(newQty);
+
+        if (!shopifyClient || !shopifyCheckout) {
+            return;
+        }
+
+        var btns = document.querySelectorAll('.cart-line-item[data-line-idx="' + lineIdx + '"] .qty-btn');
         btns.forEach(function(b) { b.disabled = true; });
 
         if (newQty === 0) {
+            // Remove from local quantities
+            if (variantId) delete localQuantities[variantId];
             // Remove line item
             if (lineId) {
                 shopifyClient.checkout.removeLineItems(shopifyCheckout.id, [lineId]).then(function(checkout) {
@@ -21950,32 +22087,59 @@
                     console.error('Failed to remove line item:', err);
                     btns.forEach(function(b) { b.disabled = false; });
                 });
+            } else {
+                // No lineId, just update UI
+                updateCartUI();
             }
         } else {
-            // Update quantity
-            if (lineId) {
-                var updatePayload = { id: lineId, quantity: newQty };
-                if (variantId) updatePayload.variantId = variantId;
-                console.log('Updating line item:', updatePayload);
-                shopifyClient.checkout.updateLineItems(shopifyCheckout.id, [updatePayload]).then(function(checkout) {
-                    console.log('Update successful:', checkout);
+            // Update quantity: try updateLineItems first; if no lineId or it fails, use replaceLineItems with full cart
+            var doUpdate = function() {
+                if (lineId && typeof shopifyClient.checkout.updateLineItems === 'function') {
+                    // Cart API only needs id + quantity; do NOT include variantId
+                    var updatePayload = { id: lineId, quantity: newQty };
+                    console.log('doUpdate payload:', updatePayload);
+                    return shopifyClient.checkout.updateLineItems(shopifyCheckout.id, [updatePayload]);
+                }
+                return null;
+            };
+            var doReplace = function() {
+                var lines = getCartLines();
+                var lineItems = lines.map(function(ln, i) {
+                    var vid = getLineVariantId(ln);
+                    var q = (i === lineIdx) ? newQty : getLineQuantity(ln);
+                    return vid ? { variantId: vid, quantity: q } : null;
+                }).filter(Boolean);
+                if (lineItems.length === 0) return Promise.reject(new Error('No variant IDs'));
+                return shopifyClient.checkout.replaceLineItems(shopifyCheckout.id, lineItems);
+            };
+            // Skip doUpdate (buggy with Cart API) and always use replaceLineItems
+            var prom = doReplace();
+            if (prom) {
+                prom.then(function(checkout) {
+                    // SDK returns quantity: 0 due to Cart API bug - keep optimistic UI
                     shopifyCheckout = checkout;
-                    updateCartUI();
+                    btns.forEach(function(b) { b.disabled = false; });
                 }).catch(function(err) {
                     console.error('Failed to update line item:', err);
                     btns.forEach(function(b) { b.disabled = false; });
                 });
             } else {
-                console.error('No lineId found for item at index', lineIdx, item);
                 btns.forEach(function(b) { b.disabled = false; });
             }
         }
     }
 
-    // Open Shopify checkout in new window
+    // Open Shopify checkout — for now show COMING SOON text that disappears (redirect disabled while Shopify is being set up)
     function openShopifyCheckout() {
-        var url = getCheckoutWebUrl();
-        if (url) window.open(url, '_blank');
+        var cartDiv = document.getElementById('shopifyCart');
+        if (!cartDiv) return;
+        var existing = cartDiv.querySelector('.shopify-coming-soon-flash');
+        if (existing) existing.remove();
+        var flash = document.createElement('span');
+        flash.className = 'shopify-coming-soon-flash';
+        flash.textContent = 'COMING SOON';
+        cartDiv.appendChild(flash);
+        setTimeout(function() { flash.remove(); }, 2000);
     }
 
     // Expose cart functions globally for onclick handlers
@@ -22009,6 +22173,9 @@
                 return;
             }
             var variantId = product.variants[0].id;
+            // Set initial quantity in local override (workaround for SDK bug)
+            var existingQty = localQuantities[variantId] || 0;
+            localQuantities[variantId] = existingQty + 1;
             // Add to checkout
             var lineItemsToAdd = [{ variantId: variantId, quantity: 1 }];
             return shopifyClient.checkout.addLineItems(shopifyCheckout.id, lineItemsToAdd);
@@ -22638,6 +22805,18 @@
                 item.addEventListener('click', function() {
                     handleMerchClick(item.dataset.product);
                 });
+            });
+        }
+        var shopifyCartEl = document.getElementById('shopifyCart');
+        if (shopifyCartEl) {
+            shopifyCartEl.addEventListener('click', function(e) {
+                var btn = e.target.closest('.qty-btn');
+                if (!btn) return;
+                var row = btn.closest('.cart-line-item');
+                if (!row) return;
+                var idx = row.getAttribute('data-line-idx');
+                var delta = btn.getAttribute('data-delta');
+                if (idx != null && delta != null) updateCartQuantity(parseInt(idx, 10), parseInt(delta, 10));
             });
         }
         initShopify();
