@@ -106,6 +106,7 @@
     <button type="button" id="play" class="primary">Play</button>
     <button type="button" id="copy">Copy code</button>
     <button type="button" id="save">Save to song file</button>
+    <span id="lastKey" style="font-size: 12px; color: #666; margin-left: 8px;"></span>
   </div>
   <div class="staff-wrap" id="staffWrap" tabindex="0">
     <div id="playhead">
@@ -590,6 +591,11 @@
       }
 
       document.addEventListener('keydown', (e) => {
+        // Display last keystroke
+        const mods = (e.metaKey ? '⌘' : '') + (e.ctrlKey ? 'Ctrl+' : '') + (e.shiftKey ? 'Shift+' : '') + (e.altKey ? 'Alt+' : '');
+        const keyLabel = e.key === ' ' ? 'Space' : e.key;
+        document.getElementById('lastKey').textContent = mods + keyLabel;
+
         const cmd = e.metaKey || e.ctrlKey;
         if (cmd && e.key === 'z') {
           e.preventDefault();
