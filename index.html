@@ -21702,8 +21702,12 @@
     var localQuantities = {}; // key: variantId, value: quantity
 
     const ADMIN_EMAIL = 'jm@marziale.tech';
-    const ADMIN_PRODUCTS = [
-        { name: 'Bible', href: '/projects/bible/', icon: '<img src="/assets/brand/bible-icon.png" alt="">' },
+    // Products available to all logged-in users
+    const USER_PRODUCTS = [
+        { name: 'Bible', href: '/projects/bible/', icon: '<img src="/assets/brand/bible-icon.png" alt="">' }
+    ];
+    // Additional products only for admin
+    const ADMIN_ONLY_PRODUCTS = [
         { name: 'Fitness', href: '/projects/fitness/', icon: '💪' },
         { name: 'Home', href: '/projects/home/', icon: '🏠' },
         { name: 'LACS', href: '/projects/lacs/', icon: '📄' },
@@ -22206,8 +22210,13 @@
         productsGrid.innerHTML = '';
         var user = window.currentLoginUser;
         var products = [];
-        if (user && user.email === ADMIN_EMAIL) {
-            products = ADMIN_PRODUCTS;
+        if (user) {
+            // All logged-in users get USER_PRODUCTS
+            products = USER_PRODUCTS.slice();
+            // Admin gets additional products
+            if (user.email === ADMIN_EMAIL) {
+                products = products.concat(ADMIN_ONLY_PRODUCTS);
+            }
         }
         if (!user) {
             productsEmpty.textContent = 'Log in to access products.';
