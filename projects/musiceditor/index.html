@@ -528,6 +528,14 @@
       function insertLetterNote(pitch) {
         pauseIfPlaying();
         pushUndo();
+        // If a single rest is selected, transform it into the note (keep duration)
+        if (melody.length > 0 && selectedStart === selectedEnd && isRest(melody[selectedStart][0])) {
+          melody[selectedStart] = [pitch, melody[selectedStart][1]];
+          drawStaff(document.getElementById('staff'));
+          updateCodeView();
+          return;
+        }
+        // Otherwise insert a new note after selection
         const insertAt = melody.length === 0 ? 0 : Math.max(selectedStart, selectedEnd) + 1;
         melody.splice(insertAt, 0, [pitch, 1]);
         selectedStart = selectedEnd = insertAt;
