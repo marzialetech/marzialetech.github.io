@@ -929,6 +929,14 @@
             object-fit: contain;
         }
 
+        /* Research icon */
+        #researchBtn .research-folder-icon {
+            width: 100%;
+            height: clamp(2.5rem, 6vw, 3.5rem);
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
         /* Merch Window */
         .merch-window {
             position: fixed;
@@ -1111,6 +1119,88 @@
             .products-grid .product-link { width: 90px; }
             .products-grid .product-link .p-icon { font-size: 36px; }
             .products-grid .product-link .p-icon img { width: 36px; height: 36px; }
+        }
+
+        /* Research Window (folder-style, like My Products) */
+        .research-window {
+            position: fixed;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #dfdfdf #000 #000 #dfdfdf;
+            box-shadow: 2px 2px 0 #404040;
+            z-index: 200;
+            min-width: 320px;
+            max-width: 90vw;
+            font-family: inherit;
+            display: none;
+            font-size: 11px;
+        }
+        .research-window.open { display: block; }
+        .research-window-header {
+            background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+            color: #fff;
+            padding: 3px 6px 4px 6px;
+            font-size: 11px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #000;
+        }
+        .research-window-header:active { cursor: grabbing; }
+        .research-window-close {
+            background: #c0c0c0;
+            color: #000;
+            border: 1px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 6px;
+            font-family: inherit;
+        }
+        .research-window-close:hover { background: #d4d0c8; }
+        .research-window-close:active { border-color: #404040 #fff #fff #404040; }
+        .research-window-body {
+            padding: 16px;
+            background: #fff;
+            border: 1px solid #808080;
+            margin: 2px;
+            min-height: 80px;
+        }
+        .research-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .research-grid .product-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: #000;
+            padding: 6px;
+            border: 1px solid transparent;
+            width: 70px;
+        }
+        .research-grid .product-link:hover {
+            background: #cce8ff;
+            border: 1px dotted #000080;
+        }
+        .research-grid .product-link .p-icon { font-size: 28px; }
+        .research-grid .product-link .p-icon img { width: 28px; height: 28px; object-fit: contain; image-rendering: auto; display: block; }
+        .research-grid .product-link .p-label { font-size: 10px; text-align: center; }
+        .research-grid .product-link .p-subtitle { font-size: 8px; text-align: center; color: #606060; text-transform: uppercase; letter-spacing: 0.02em; }
+        @media (min-width: 701px) {
+            .research-window, .research-window-header, .research-window-close { font-size: 16px; }
+            .research-window-body { padding: 20px; }
+            .research-grid .product-link { width: 90px; }
+            .research-grid .product-link .p-icon { font-size: 36px; }
+            .research-grid .product-link .p-icon img { width: 36px; height: 36px; }
+            .research-grid .product-link .p-label { font-size: 16px; }
+            .research-grid .product-link .p-subtitle { font-size: 9px; }
         }
 
         /* Shopify Cart UI */
@@ -16290,6 +16380,10 @@
             <img class="products-folder-icon" src="assets/brand/folder-icon.png" alt="" draggable="false">
             <span class="icon-caption" style="white-space:nowrap;">My Products</span>
         </button>
+        <button class="desktop-icon" id="researchBtn" type="button" style="width:auto;min-width:clamp(3rem,8vw,4.5rem);">
+            <img class="research-folder-icon" src="assets/brand/research-icon.png" alt="" draggable="false">
+            <span class="icon-caption" style="white-space:nowrap;">Research</span>
+        </button>
         <button class="desktop-icon" id="merchBtn" type="button">
             <img src="assets/brand/merch-icon.png" alt="" draggable="false">
             <span class="icon-caption">Merch</span>
@@ -21553,7 +21647,7 @@
         </div>
         <div class="login-window-body">
             <div id="loginAuthForm">
-                <p style="margin:0 0 8px 0;">Log in with GitHub to buy and access products.</p>
+                <p style="margin:0 0 8px 0;">Log in with GitHub to buy and access commercial products.</p>
                 <div id="loginError" class="login-error" style="display:none;"></div>
                 <button type="button" class="login-btn" id="loginGithubBtn">Log in with GitHub</button>
             </div>
@@ -21572,6 +21666,22 @@
         <div class="products-window-body">
             <div class="products-grid" id="productsGrid"></div>
             <div class="products-empty" id="productsEmpty" style="display:none;">No products available yet.</div>
+        </div>
+    </div>
+
+    <div class="research-window" id="researchWindow">
+        <div class="research-window-header" id="researchWindowHeader">
+            <span>Research</span>
+            <button class="research-window-close" id="researchWindowClose">&times;</button>
+        </div>
+        <div class="research-window-body">
+            <div class="research-grid" id="researchGrid">
+                <a class="product-link" href="https://intsharp.marziale.tech" target="_blank" rel="noopener">
+                    <span class="p-icon"><img src="assets/brand/intsharp-icon.png" alt=""></span>
+                    <span class="p-label">intsharp</span>
+                    <span class="p-subtitle">OPEN SOURCE</span>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -21682,6 +21792,12 @@
     const productsWindowClose = document.getElementById('productsWindowClose');
     const productsGrid = document.getElementById('productsGrid');
     const productsEmpty = document.getElementById('productsEmpty');
+
+    // Research button & window
+    const researchBtn = document.getElementById('researchBtn');
+    const researchWindow = document.getElementById('researchWindow');
+    const researchWindowHeader = document.getElementById('researchWindowHeader');
+    const researchWindowClose = document.getElementById('researchWindowClose');
 
     // Merch button & window
     const merchBtn = document.getElementById('merchBtn');
@@ -21867,6 +21983,33 @@
     // Close products window
     function closeProductsWindow() {
         if (productsWindow) productsWindow.classList.remove('open');
+    }
+
+    // Position the Research button: x = Login initial x, y = Contact initial y
+    function positionResearchBtn() {
+        if (!researchBtn || !mailBtn) return;
+        const figRect = figAngel.getBoundingClientRect();
+        const mailRect = mailBtn.getBoundingClientRect();
+        const btnX = (window.innerWidth * 0.75) - (researchBtn.offsetWidth / 2) - figRect.left;
+        const btnY = mailRect.top - figRect.top;
+        researchBtn.style.left = btnX + 'px';
+        researchBtn.style.top = btnY + 'px';
+    }
+
+    // Open research window (centered)
+    function openResearchWindow() {
+        if (!researchWindow) return;
+        researchWindow.style.left = Math.max(10, (window.innerWidth - 360) / 2) + 'px';
+        researchWindow.style.top = Math.max(10, (window.innerHeight - 300) / 2) + 'px';
+        researchWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            researchWindow.style.left = Math.max(10, (window.innerWidth - researchWindow.offsetWidth) / 2) + 'px';
+        });
+    }
+
+    // Close research window
+    function closeResearchWindow() {
+        if (researchWindow) researchWindow.classList.remove('open');
     }
 
     // Position the Merch button: y = midpoint of Contact and About, x = Contact's x
@@ -22219,7 +22362,7 @@
             }
         }
         if (!user) {
-            productsEmpty.textContent = 'Log in to access products.';
+            productsEmpty.textContent = 'Log in to access commercial products.';
             productsEmpty.style.display = 'block';
         } else if (products.length === 0) {
             productsEmpty.textContent = 'No products available yet.';
@@ -22792,6 +22935,23 @@
             productsWindowClose.addEventListener('click', closeProductsWindow);
         }
 
+        // Research button & window
+        if (researchBtn) {
+            positionResearchBtn();
+            makeDraggable(researchBtn, null, openResearchWindow);
+            researchBtn.addEventListener('click', function(e) {
+                if (Date.now() - lastOpenedFromTap < 400) return;
+                if (Date.now() - lastDragEndedAt < 100) return;
+                openResearchWindow();
+            });
+        }
+        if (researchWindow && researchWindowHeader) {
+            makeDraggable(researchWindow, researchWindowHeader);
+        }
+        if (researchWindowClose) {
+            researchWindowClose.addEventListener('click', closeResearchWindow);
+        }
+
         // Merch button & window
         if (merchBtn) {
             positionMerchBtn();
@@ -22869,6 +23029,7 @@
             positionLoginBtn();
             positionPayBtn();
             positionProductsBtn();
+            positionResearchBtn();
             positionMerchBtn();
         });
     }
