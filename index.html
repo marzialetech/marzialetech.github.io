@@ -22970,12 +22970,13 @@
         document.addEventListener('touchend', onEnd);
     }
 
-    // Open mail window (above Contact icon)
+    // Open mail window (centered on page)
     function openMailWindow() {
-        const btnRect = mailBtn.getBoundingClientRect();
-        mailWindow.style.left = Math.max(10, btnRect.left - 100) + 'px';
-        mailWindow.style.top = Math.max(10, btnRect.top - (mailWindow.offsetHeight || 320) - 10) + 'px';
         mailWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            mailWindow.style.left = Math.max(10, (window.innerWidth - mailWindow.offsetWidth) / 2) + 'px';
+            mailWindow.style.top = Math.max(10, (window.innerHeight - mailWindow.offsetHeight) / 2) + 'px';
+        });
     }
 
     // Close mail window
