@@ -22552,11 +22552,14 @@
         }
     }
 
-    // Open pay window (always near top left of page)
+    // Open pay window (left, centered vertically at 75% of viewport height)
     function openPayWindow() {
         payWindow.style.left = '10px';
-        payWindow.style.top = '10px';
         payWindow.classList.add('open');
+        requestAnimationFrame(function() {
+            var h = payWindow.offsetHeight;
+            payWindow.style.top = Math.max(10, window.innerHeight * 0.75 - h / 2) + 'px';
+        });
 
         // Initialize Stripe when window opens
         initStripe();
