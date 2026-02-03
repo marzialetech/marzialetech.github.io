@@ -689,6 +689,46 @@
             min-height: 50px;
             resize: vertical;
         }
+        .pay-method-divider {
+            text-align: center;
+            font-size: 11px;
+            color: #808080;
+            margin: 12px 0 10px 0;
+        }
+        .pay-apple-pay-row {
+            margin-bottom: 12px;
+        }
+        .pay-apple-pay-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 12px;
+            background: #c0c0c0;
+            color: #000;
+            border: 2px solid;
+            border-color: #fff #404040 #404040 #fff;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .pay-apple-pay-btn:hover {
+            background: #d4d0c8;
+        }
+        .pay-apple-pay-btn:active {
+            border-color: #404040 #fff #fff #404040;
+        }
+        .pay-apple-pay-btn:disabled {
+            color: #808080;
+            cursor: not-allowed;
+        }
+        .pay-apple-pay-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23000"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M12 2c.73 2.91 3.5 4.75 3.51 4.76-.02.07-.5-1.26-.5-2.61 0-1.39.61-2.61 1.32-3.61-.7-.93-1.33-2.04-1.76-3.39z"/></svg>') center/contain no-repeat;
+        }
         .pay-card-row {
             margin-bottom: 10px;
         }
@@ -761,8 +801,14 @@
             .pay-row input,
             .pay-row textarea,
             .pay-submit-btn,
+            .pay-apple-pay-btn,
+            .pay-method-divider,
             .pay-status {
                 font-size: 22px;
+            }
+            .pay-apple-pay-icon {
+                width: 24px;
+                height: 24px;
             }
             .pay-window-body {
                 padding: 20px;
@@ -21626,6 +21672,12 @@
                     <label for="payMessage">Message</label>
                     <textarea id="payMessage" placeholder=""></textarea>
                 </div>
+                <div class="pay-method-divider">— or —</div>
+                <div class="pay-apple-pay-row" id="payApplePayRow" style="display:none;">
+                    <button class="pay-apple-pay-btn" id="payApplePayBtn" type="button">
+                        <span class="pay-apple-pay-icon"></span> Pay with Apple Pay
+                    </button>
+                </div>
                 <div class="pay-card-row">
                     <div class="pay-card-element" id="payCardElement">
                         <!-- Stripe Card Element will be mounted here -->
@@ -21872,7 +21924,10 @@
     const PAY_API_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co/functions/v1/create-payment-intent';
     let stripe = null;
     let cardElement = null;
+    let paymentRequest = null;
     let stripeInitialized = false;
+    const payApplePayRow = document.getElementById('payApplePayRow');
+    const payApplePayBtn = document.getElementById('payApplePayBtn');
 
     // Position the mail button near the man on boat's hand
     // Man on boat SVG viewBox is 0 0 1200 800
@@ -22553,6 +22608,36 @@
         payStep2.classList.add('active');
         payStatus.textContent = '';
         payStatus.className = 'pay-status';
+        updateApplePayAvailability();
+    }
+
+    // Update Apple Pay button visibility (only shown when Apple Pay is available)
+    function updateApplePayAvailability() {
+        if (!stripe || !payApplePayRow || !payApplePayBtn) return;
+        if (STRIPE_PUBLISHABLE_KEY === 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY') {
+            payApplePayRow.style.display = 'none';
+            return;
+        }
+        var amount = getPayAmountCents();
+        if (amount < 100) amount = 100;
+        try {
+            paymentRequest = stripe.paymentRequest({
+                country: 'US',
+                currency: 'usd',
+                total: { label: 'Total', amount: amount }
+            });
+            paymentRequest.canMakePayment().then(function(result) {
+                if (result && result.applePay) {
+                    payApplePayRow.style.display = 'block';
+                } else {
+                    payApplePayRow.style.display = 'none';
+                }
+            }).catch(function() {
+                payApplePayRow.style.display = 'none';
+            });
+        } catch (e) {
+            payApplePayRow.style.display = 'none';
+        }
     }
 
     // Go back to step 1
@@ -22664,6 +22749,98 @@
         
         paySubmitBtn.disabled = false;
         paySubmitBtn.textContent = 'Submit';
+    }
+
+    // Handle Apple Pay click
+    async function handleApplePayClick() {
+        var amount = getPayAmountCents();
+        var name = payName.value.trim();
+        var email = payEmail.value.trim();
+        var message = payMessage.value.trim();
+
+        if (!name) {
+            payStatus.textContent = 'Name is required';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            payStatus.textContent = 'Valid email is required';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        if (amount < 100) {
+            payStatus.textContent = 'Minimum amount is $1.00';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+        if (!paymentRequest || !stripe) {
+            payStatus.textContent = 'Apple Pay not available';
+            payStatus.className = 'pay-status error';
+            return;
+        }
+
+        payApplePayBtn.disabled = true;
+        payStatus.textContent = 'Processing...';
+        payStatus.className = 'pay-status processing';
+
+        try {
+            paymentRequest.off('paymentmethod');
+            paymentRequest.on('paymentmethod', async function(ev) {
+                try {
+                    var response = await fetch(PAY_API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + LOGIN_SUPABASE_ANON_KEY
+                        },
+                        body: JSON.stringify({
+                            amount: amount,
+                            name: name,
+                            email: email,
+                            message: message
+                        })
+                    });
+                    var data = await response.json().catch(function() { return {}; });
+                    if (!response.ok || !data.clientSecret) {
+                        ev.complete('fail');
+                        payStatus.textContent = data.error || 'Failed to create payment';
+                        payStatus.className = 'pay-status error';
+                        return;
+                    }
+                    var confirmResult = await stripe.confirmCardPayment(data.clientSecret, {
+                        payment_method: ev.paymentMethod
+                    });
+                    if (confirmResult.error) {
+                        ev.complete('fail');
+                        payStatus.textContent = confirmResult.error.message;
+                        payStatus.className = 'pay-status error';
+                    } else {
+                        ev.complete('success');
+                        payStatus.textContent = 'Payment successful! Thank you!';
+                        payStatus.className = 'pay-status success';
+                        payName.value = '';
+                        payEmail.value = '';
+                        payMessage.value = '';
+                        payDollars.value = '5';
+                        setTimeout(function() {
+                            goToPayStep1();
+                            closePayWindow();
+                        }, 3000);
+                    }
+                } catch (err) {
+                    ev.complete('fail');
+                    payStatus.textContent = err.message || 'Payment failed';
+                    payStatus.className = 'pay-status error';
+                }
+                payApplePayBtn.disabled = false;
+            });
+
+            paymentRequest.show();
+        } catch (err) {
+            payStatus.textContent = err.message || 'Apple Pay failed';
+            payStatus.className = 'pay-status error';
+            payApplePayBtn.disabled = false;
+        }
     }
 
     // Make an element draggable (with movement threshold so taps work on mobile)
@@ -22918,6 +23095,7 @@
         payConfirmBtn.addEventListener('click', goToPayStep2);
         payEditBtn.addEventListener('click', goToPayStep1);
         paySubmitBtn.addEventListener('click', handlePaySubmit);
+        if (payApplePayBtn) payApplePayBtn.addEventListener('click', handleApplePayClick);
 
         // Allow Enter key to confirm amount
         payDollars.addEventListener('keypress', function(e) {
