@@ -499,7 +499,7 @@
             .about-clients { font-size: 14px; margin-top: 16px; }
         }
 
-        /* Pay Window (Windows 95 style) */
+        /* Pay Window (Windows 95 style) - width matches full card bar (16 digits, CVC, ZIP, etc.) */
         .pay-window {
             position: fixed;
             background: #c0c0c0;
@@ -508,6 +508,7 @@
             border-color: #dfdfdf #000 #000 #dfdfdf;
             box-shadow: 2px 2px 0 #404040;
             z-index: 200;
+            width: 720px;
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
@@ -733,19 +734,22 @@
             margin-bottom: 10px;
         }
         .pay-card-element {
+            width: 100%;
             padding: 6px 8px;
             border: 2px solid;
             border-color: #404040 #fff #fff #404040;
             background: #fff;
             min-height: 24px;
+            box-sizing: border-box;
         }
         .pay-submit-row {
             display: flex;
-            justify-content: flex-end;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             gap: 12px;
         }
         .pay-submit-btn {
+            width: 100%;
             background: #c0c0c0;
             color: #000;
             border: 2px solid;
@@ -21638,7 +21642,7 @@
             <button class="pay-window-btn" id="payWindowClose">&times;</button>
         </div>
         <div class="pay-window-body">
-            <!-- Step 1: Amount Selection -->
+            <!-- Step 1: Amount -->
             <div class="pay-step active" id="payStep1">
                 <div class="pay-amount-row">
                     <span class="currency">$</span>
@@ -21650,7 +21654,7 @@
                 <div class="pay-stripe-badge">Powered by <strong>stripe</strong></div>
             </div>
 
-            <!-- Step 2: Payment Form -->
+            <!-- Step 2: Payment (Apple Pay or card) -->
             <div class="pay-step" id="payStep2">
                 <div class="pay-amount-display">
                     <span class="amount" id="payAmountDisplay">$5.00</span>
@@ -22493,17 +22497,11 @@
         }
     }
 
-    // Open pay window (above the Pay icon, centered horizontally)
+    // Open pay window (always near top left of page)
     function openPayWindow() {
-        const btnRect = payBtn.getBoundingClientRect();
-        const gap = 10;
-        payWindow.style.left = Math.max(10, (window.innerWidth - 400) / 2) + 'px'; // center horizontally (estimate)
-        payWindow.style.top = Math.max(10, btnRect.top - 420 - gap) + 'px'; // estimate so it opens above
+        payWindow.style.left = '10px';
+        payWindow.style.top = '10px';
         payWindow.classList.add('open');
-        requestAnimationFrame(function() {
-            payWindow.style.left = Math.max(10, (window.innerWidth - payWindow.offsetWidth) / 2) + 'px';
-            payWindow.style.top = Math.max(10, btnRect.top - payWindow.offsetHeight - gap) + 'px';
-        });
 
         // Initialize Stripe when window opens
         initStripe();
