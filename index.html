@@ -703,6 +703,13 @@
             font-size: 11px;
             background: #fff;
         }
+        @media (max-width: 700px) {
+            .pay-row input,
+            .pay-row textarea,
+            .pay-amount-row input {
+                font-size: 16px;
+            }
+        }
         .pay-row input:focus,
         .pay-row textarea:focus {
             outline: 1px dotted #000;
@@ -22515,7 +22522,7 @@
                 style: {
                     base: {
                         fontFamily: '"W95FA", "MS Sans Serif", Geneva, sans-serif',
-                        fontSize: window.innerWidth > 700 ? '18px' : '14px',
+                        fontSize: window.innerWidth > 700 ? '18px' : '16px',
                         color: '#000',
                         '::placeholder': {
                             color: '#808080'
