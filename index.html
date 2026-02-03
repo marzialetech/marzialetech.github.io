@@ -22617,11 +22617,16 @@
                 })
             });
             
+            const data = await response.json().catch(function() { return {}; });
+            
             if (!response.ok) {
-                throw new Error('Failed to create payment');
+                throw new Error(data.error || 'Failed to create payment (check if Edge Function is deployed)');
             }
             
-            const { clientSecret } = await response.json();
+            const clientSecret = data.clientSecret;
+            if (!clientSecret) {
+                throw new Error(data.error || 'No client secret returned');
+            }
             
             // Step 2: Confirm the payment with Stripe
             const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
@@ -22652,7 +22657,7 @@
                 }, 3000);
             }
         } catch (error) {
-            payStatus.textContent = 'Payment failed. Please try again.';
+            payStatus.textContent = error.message || 'Payment failed. Please try again.';
             payStatus.className = 'pay-status error';
             console.error('Payment error:', error);
         }
