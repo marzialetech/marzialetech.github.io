@@ -184,11 +184,18 @@
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
         .mail-window.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
         }
         .mail-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
@@ -360,11 +367,18 @@
             width: 420px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
         .about-window.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
         }
         .about-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
@@ -512,11 +526,18 @@
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
         .pay-window.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
         }
         .pay-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
@@ -893,11 +914,18 @@
             min-width: 280px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
         .login-window.open {
-            display: block;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
         }
         .login-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
@@ -999,10 +1027,19 @@
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
-        .merch-window.open { display: block; }
+        .merch-window.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
+        }
         .merch-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
             color: #fff;
@@ -1102,10 +1139,19 @@
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
-        .products-window.open { display: block; }
+        .products-window.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
+        }
         .products-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
             color: #fff;
@@ -1183,10 +1229,19 @@
             min-width: 320px;
             max-width: 90vw;
             font-family: inherit;
-            display: none;
             font-size: 11px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+            transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out;
         }
-        .research-window.open { display: block; }
+        .research-window.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
+        }
         .research-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
             color: #fff;
@@ -22905,11 +22960,11 @@
         document.addEventListener('touchend', onEnd);
     }
 
-    // Open mail window
+    // Open mail window (above Contact icon)
     function openMailWindow() {
         const btnRect = mailBtn.getBoundingClientRect();
         mailWindow.style.left = Math.max(10, btnRect.left - 100) + 'px';
-        mailWindow.style.top = Math.max(10, btnRect.bottom + 10) + 'px';
+        mailWindow.style.top = Math.max(10, btnRect.top - (mailWindow.offsetHeight || 320) - 10) + 'px';
         mailWindow.classList.add('open');
     }
 
