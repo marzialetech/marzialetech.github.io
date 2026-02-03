@@ -21866,9 +21866,10 @@
     const payStatus = document.getElementById('payStatus');
 
     // Stripe setup
-    // IMPORTANT: Replace with your actual Stripe publishable key
-    // For testing, use: pk_test_... (get from https://dashboard.stripe.com/test/apikeys)
-    const STRIPE_PUBLISHABLE_KEY = 'pk_test_YOUR_STRIPE_PUBLISHABLE_KEY';
+    // Replace with your Stripe publishable key from https://dashboard.stripe.com/apikeys
+    // Use pk_test_... for testing, pk_live_... for production
+    const STRIPE_PUBLISHABLE_KEY = 'pk_test_51SwawCJtMKNtpznQhtF32cpbOdm1Fl6Y7An95GdYBfeLPWsI6Xx9XVWP5FYjoUKLH9VcPlnyEbYGOoWjMCDa3xdX006mw8QK3S';
+    const PAY_API_URL = 'https://qvrrlfzogtuahmvsbvmu.supabase.co/functions/v1/create-payment-intent';
     let stripe = null;
     let cardElement = null;
     let stripeInitialized = false;
@@ -22602,10 +22603,11 @@
             // Step 1: Create PaymentIntent on your server
             // You need to create a serverless function or backend endpoint
             // that creates a PaymentIntent and returns the client_secret
-            const response = await fetch('/api/create-payment-intent', {
+            const response = await fetch(PAY_API_URL, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + LOGIN_SUPABASE_ANON_KEY
                 },
                 body: JSON.stringify({
                     amount: amount,
