@@ -82,6 +82,27 @@ if (fs.existsSync(deerDir)) {
   console.log('');
 }
 
+// Marziale wordmark (PNG sources)
+const logoDir = path.join(brandDir, 'logo');
+function pngTo400dpi(srcPath, destPath) {
+  if (!fs.existsSync(srcPath)) {
+    console.warn('  Skip (no source):', srcPath);
+    return;
+  }
+  try {
+    execSync(`magick "${srcPath}" -density 72 -resample 400 "${destPath}"`, { stdio: 'pipe' });
+    console.log('  ', path.basename(destPath));
+  } catch (e) {
+    console.warn('  Failed:', path.basename(destPath));
+  }
+}
+if (fs.existsSync(logoDir)) {
+  console.log('LANL style (marziale-wordmark):');
+  pngTo400dpi(path.join(logoDir, 'marziale-wordmark-black.png'), path.join(dpiDir, 'marziale-wordmark-black-400dpi.png'));
+  pngTo400dpi(path.join(logoDir, 'marziale-wordmark-white.png'), path.join(dpiDir, 'marziale-wordmark-white-400dpi.png'));
+  console.log('');
+}
+
 // Copy pizza-delivery and metal-band fill variants to 400dpi folder
 for (const dir of ['pizza-delivery', 'metal-band']) {
   const dirPath = path.join(brandDir, dir);
