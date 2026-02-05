@@ -22283,7 +22283,7 @@
         }
         showMsg('Loading products…', false);
         var url = 'https://' + SHOPIFY_DOMAIN + '/api/2024-01/graphql.json';
-        var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 1) { edges { node { id } } } } } } }';
+        var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 1) { edges { node { id price { amount } } } } } } } }';
         fetch(url, {
             method: 'POST',
             headers: {
@@ -22312,6 +22312,9 @@
                 if (!productId || variants.length === 0) return;
                 var imgUrl = (node.featuredImage && node.featuredImage.url) || 'assets/brand/icons/socks-icon.png';
                 var title = node.title || 'Product';
+                var variantNode = variants[0] && variants[0].node;
+                var priceAmt = (variantNode && variantNode.price && variantNode.price.amount) ? parseFloat(variantNode.price.amount).toFixed(2) : null;
+                var labelText = priceAmt != null ? title + ' - $' + priceAmt : title;
                 var item = document.createElement('div');
                 item.className = 'merch-item';
                 item.dataset.product = productId;
@@ -22322,7 +22325,7 @@
                 item.appendChild(icon);
                 var label = document.createElement('span');
                 label.className = 'merch-label';
-                label.textContent = title;
+                label.textContent = labelText;
                 item.appendChild(label);
                 var actions = document.createElement('div');
                 actions.className = 'merch-item-actions';
