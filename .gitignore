@@ -1,5 +1,6 @@
 .DS_Store
 node_modules/
+shopify-config.js
 *.log
 scripts/_tmp_*/
 scripts/_tmp_*.png

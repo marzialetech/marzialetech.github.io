@@ -1438,6 +1438,7 @@
         }
     </style>
     <script src="https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js"></script>
+    <script src="shopify-config.js"></script>
 </head>
 <body>
     <header class="header" id="figMartech">
@@ -21810,6 +21811,7 @@
         </div>
         <div class="merch-window-body">
             <div class="merch-grid" id="merchGrid">
+                <!-- Product buttons are populated dynamically from Shopify -->
                 <a class="merch-item" id="merchCustomLogo" href="assets/brand/400dpi/400dpi-logos-preview.html" target="_blank">
                     <img class="merch-icon" src="assets/brand/icons/socks-icon.png" alt="">
                     <span class="merch-label">Design</span>
@@ -21923,12 +21925,9 @@
     const merchWindowClose = document.getElementById('merchWindowClose');
     const merchGrid = document.getElementById('merchGrid');
 
-    // Shopify configuration
-    const SHOPIFY_DOMAIN = '01untr-if.myshopify.com';
-    const SHOPIFY_STOREFRONT_TOKEN = 'c74ef8907b35f5a2764569718eaed57c';
-    const SHOPIFY_PRODUCT_IDS = {
-        socks: '7681599668301'
-    };
+    // Shopify configuration — token from shopify-config.js (gitignored). See shopify-config.example.js
+    const SHOPIFY_DOMAIN = 'marzialetech.myshopify.com';
+    const SHOPIFY_STOREFRONT_TOKEN = (typeof window !== 'undefined' && window.SHOPIFY_STOREFRONT_TOKEN) || '';
     let shopifyClient = null;
     let shopifyCheckout = null;
     // Local quantity overrides (workaround for SDK Cart API bug returning quantity: 0)
@@ -22168,6 +22167,55 @@
         if (merchWindow) merchWindow.classList.remove('open');
     }
 
+    // Fetch products from Shopify Storefront API and populate merch grid
+    function fetchShopifyProducts() {
+        var merchGrid = document.getElementById('merchGrid');
+        if (!merchGrid) return;
+        var designLink = document.getElementById('merchCustomLogo');
+        var url = 'https://' + SHOPIFY_DOMAIN + '/api/2024-01/graphql.json';
+        var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 1) { edges { node { id } } } } } } }';
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Shopify-Storefront-Access-Token': SHOPIFY_STOREFRONT_TOKEN
+            },
+            body: JSON.stringify({ query: query })
+        }).then(function(res) { return res.json(); }).then(function(data) {
+            if (data.errors) {
+                console.error('Shopify products error:', data.errors);
+                return;
+            }
+            var edges = (data.data && data.data.products && data.data.products.edges) || [];
+            merchGrid.innerHTML = '';
+            edges.forEach(function(edge) {
+                var node = edge.node;
+                var productId = (node.id || '').replace('gid://shopify/Product/', '');
+                var variants = (node.variants && node.variants.edges) || [];
+                if (!productId || variants.length === 0) return;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'merch-item';
+                btn.dataset.product = productId;
+                var img = node.featuredImage && node.featuredImage.url;
+                var icon = document.createElement('img');
+                icon.className = 'merch-icon';
+                icon.src = img || 'assets/brand/icons/socks-icon.png';
+                icon.alt = '';
+                btn.appendChild(icon);
+                var label = document.createElement('span');
+                label.className = 'merch-label';
+                label.textContent = node.title || 'Product';
+                btn.appendChild(label);
+                btn.addEventListener('click', function() { handleMerchClick(productId); });
+                merchGrid.appendChild(btn);
+            });
+            if (designLink) merchGrid.appendChild(designLink);
+        }).catch(function(err) {
+            console.error('Failed to fetch Shopify products:', err);
+        });
+    }
+
     // Initialize Shopify Buy SDK
     function initShopify() {
         if (typeof ShopifyBuy === 'undefined') {
@@ -22182,8 +22230,10 @@
         shopifyClient.checkout.create().then(function(checkout) {
             shopifyCheckout = checkout;
             updateCartUI();
+            fetchShopifyProducts();
         }).catch(function(err) {
             console.error('Failed to create Shopify checkout:', err);
+            fetchShopifyProducts();
         });
     }
 
@@ -22394,45 +22444,45 @@
         }
     }
 
-    // Open Shopify checkout — for now show COMING SOON text that disappears (redirect disabled while Shopify is being set up)
+    // Open Shopify checkout — redirect to Shopify checkout page
     function openShopifyCheckout() {
-        var cartDiv = document.getElementById('shopifyCart');
-        if (!cartDiv) return;
-        var existing = cartDiv.querySelector('.shopify-coming-soon-flash');
-        if (existing) existing.remove();
-        var flash = document.createElement('span');
-        flash.className = 'shopify-coming-soon-flash';
-        flash.textContent = 'COMING SOON';
-        cartDiv.appendChild(flash);
-        setTimeout(function() { flash.remove(); }, 2000);
+        var url = getCheckoutWebUrl();
+        if (url) {
+            window.open(url, '_blank');
+        } else {
+            var cartDiv = document.getElementById('shopifyCart');
+            if (cartDiv) {
+                var existing = cartDiv.querySelector('.shopify-coming-soon-flash');
+                if (existing) existing.remove();
+                var flash = document.createElement('span');
+                flash.className = 'shopify-coming-soon-flash';
+                flash.textContent = 'Cart is empty';
+                cartDiv.appendChild(flash);
+                setTimeout(function() { flash.remove(); }, 2000);
+            }
+        }
     }
 
     // Expose cart functions globally for onclick handlers
     window.openShopifyCheckout = openShopifyCheckout;
     window.updateCartQuantity = updateCartQuantity;
 
-    // Handle merch item click - add to Shopify cart
+    // Handle merch item click - add to Shopify cart (productId is the numeric Shopify product ID)
     function handleMerchClick(productId) {
         if (!shopifyClient || !shopifyCheckout) {
             console.log('Shopify not initialized yet');
-            // Show temporary message
             showMerchFeedback(productId, 'Loading...', false);
-            // Try to init and retry
             initShopify();
             return;
         }
 
-        var shopifyProductId = SHOPIFY_PRODUCT_IDS[productId];
-        if (!shopifyProductId) {
-            console.log('Unknown product:', productId);
-            return;
-        }
+        if (!productId) return;
 
         // Show loading feedback
         showMerchFeedback(productId, 'Adding...', false);
 
         // Fetch product to get the first variant
-        shopifyClient.product.fetch('gid://shopify/Product/' + shopifyProductId).then(function(product) {
+        shopifyClient.product.fetch('gid://shopify/Product/' + productId).then(function(product) {
             if (!product || !product.variants || product.variants.length === 0) {
                 showMerchFeedback(productId, 'Error', false);
                 return;
