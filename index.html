@@ -1031,8 +1031,7 @@
             border-color: #dfdfdf #000 #000 #dfdfdf;
             box-shadow: 2px 2px 0 #404040;
             z-index: 200;
-            min-width: 320px;
-            max-width: 90vw;
+            width: min(92vw, 520px);
             font-family: inherit;
             font-size: 11px;
             opacity: 0;
@@ -1077,12 +1076,14 @@
             background: #fff;
             border: 1px solid #808080;
             margin: 2px;
-            min-height: 100px;
+            max-height: 60vh;
+            overflow-y: auto;
+            min-height: 120px;
         }
         .merch-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
         }
         .merch-grid .merch-item {
             position: relative;
@@ -1092,9 +1093,9 @@
             gap: 6px;
             text-decoration: none;
             color: #000;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid transparent;
-            width: 100px;
+            min-width: 0;
             cursor: pointer;
             background: none;
             font-family: inherit;
@@ -1120,17 +1121,18 @@
             background: #cce8ff;
             border: 1px dotted #000080;
         }
-        .merch-grid .merch-item .merch-icon { font-size: 36px; }
-        .merch-grid .merch-item img.merch-icon { width: 36px; height: 36px; object-fit: contain; font-size: 0; }
-        .merch-grid .merch-item .merch-label { font-size: 11px; text-align: center; }
+        .merch-grid .merch-item .merch-icon { font-size: 40px; }
+        .merch-grid .merch-item img.merch-icon { width: 48px; height: 48px; object-fit: contain; font-size: 0; }
+        .merch-grid .merch-item .merch-label { font-size: 12px; text-align: center; line-height: 1.2; }
         .merch-grid .merch-item .merch-price { font-size: 10px; color: #006400; font-weight: bold; }
         @media (min-width: 701px) {
-            .merch-window, .merch-window-header, .merch-window-close,
-            .merch-grid .merch-item .merch-label { font-size: 16px; }
-            .merch-window-body { padding: 20px; }
-            .merch-grid .merch-item { width: 120px; }
-            .merch-grid .merch-item .merch-icon { font-size: 48px; }
-            .merch-grid .merch-item img.merch-icon { width: 48px; height: 48px; }
+            .merch-window { width: min(90vw, 640px); }
+            .merch-window, .merch-window-header, .merch-window-close { font-size: 16px; }
+            .merch-window-body { padding: 20px; max-height: 70vh; }
+            .merch-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 16px; }
+            .merch-grid .merch-item .merch-label { font-size: 14px; }
+            .merch-grid .merch-item .merch-icon { font-size: 56px; }
+            .merch-grid .merch-item img.merch-icon { width: 64px; height: 64px; }
             .merch-grid .merch-item .merch-price { font-size: 14px; }
         }
 
@@ -21812,10 +21814,6 @@
         <div class="merch-window-body">
             <div class="merch-grid" id="merchGrid">
                 <!-- Product buttons are populated dynamically from Shopify -->
-                <a class="merch-item" id="merchCustomLogo" href="assets/brand/400dpi/400dpi-logos-preview.html" target="_blank">
-                    <img class="merch-icon" src="assets/brand/icons/socks-icon.png" alt="">
-                    <span class="merch-label">Design</span>
-                </a>
             </div>
             <div id="shopifyCart" style="margin-top:12px;"></div>
         </div>
@@ -22151,14 +22149,19 @@
         merchBtn.style.top = btnY + 'px';
     }
 
-    // Open merch window (centered)
+    // Open merch window (centered in viewport)
     function openMerchWindow() {
         if (!merchWindow) return;
-        merchWindow.style.left = Math.max(10, (window.innerWidth - 380) / 2) + 'px';
-        merchWindow.style.top = Math.max(10, (window.innerHeight - 320) / 2) + 'px';
         merchWindow.classList.add('open');
+        function centerMerchWindow() {
+            var w = merchWindow.offsetWidth || 380;
+            var h = merchWindow.offsetHeight || 320;
+            merchWindow.style.left = Math.max(10, (window.innerWidth - w) / 2) + 'px';
+            merchWindow.style.top = Math.max(10, (window.innerHeight - h) / 2) + 'px';
+        }
+        centerMerchWindow();
         requestAnimationFrame(function() {
-            merchWindow.style.left = Math.max(10, (window.innerWidth - merchWindow.offsetWidth) / 2) + 'px';
+            requestAnimationFrame(centerMerchWindow);
         });
     }
 
@@ -22171,7 +22174,6 @@
     function fetchShopifyProducts() {
         var merchGrid = document.getElementById('merchGrid');
         if (!merchGrid) return;
-        var designLink = document.getElementById('merchCustomLogo');
         function showMsg(msg, isError) {
             merchGrid.innerHTML = '';
             var p = document.createElement('p');
@@ -22181,7 +22183,6 @@
             p.style.fontSize = '12px';
             p.style.color = isError ? '#c00' : '#666';
             merchGrid.appendChild(p);
-            if (designLink) merchGrid.appendChild(designLink);
         }
         if (!SHOPIFY_STOREFRONT_TOKEN) {
             showMsg('Add your Storefront API token to shopify-config.js (see SHOPIFY_SETUP.md)', true);
@@ -22210,6 +22211,7 @@
                 showMsg('No products in your store yet. Add products in Shopify Admin.', false);
                 return;
             }
+            merchGrid.innerHTML = '';
             edges.forEach(function(edge) {
                 var node = edge.node;
                 var productId = (node.id || '').replace('gid://shopify/Product/', '');
@@ -22232,7 +22234,6 @@
                 btn.addEventListener('click', function() { handleMerchClick(productId); });
                 merchGrid.appendChild(btn);
             });
-            if (designLink) merchGrid.appendChild(designLink);
         }).catch(function(err) {
             console.error('Failed to fetch Shopify products:', err);
             showMsg('Could not load products. Check token and network.', true);
