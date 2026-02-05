@@ -6,12 +6,17 @@
   <title>400 DPI Logos – Preview</title>
   <style>
     * { box-sizing: border-box; }
+    html { overflow-x: hidden; width: 100%; }
+    .page-wrap { width: 100%; max-width: 100%; overflow-x: hidden; }
     body {
       font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
       padding: 2rem;
       background: #1a1a1a;
       color: #fff;
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
     }
     h1 {
       font-size: 1.75rem;
@@ -27,12 +32,14 @@
       gap: 2rem;
       align-items: flex-start;
       flex-wrap: wrap;
+      max-width: 100%;
     }
     .controls {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
       flex-shrink: 0;
+      min-width: 0;
     }
     .control-group label {
       display: block;
@@ -50,6 +57,7 @@
       border-collapse: collapse;
       width: 100%;
       max-width: 800px;
+      min-width: 0;
     }
     .logo-table th, .bg-table th {
       text-align: left;
@@ -72,11 +80,14 @@
       min-width: 120px;
       font-size: 0.8rem;
       color: #aaa;
+      word-break: break-word;
     }
     .logo-table .color-cell, .bg-table .color-cell {
       display: flex;
       flex-wrap: wrap;
       gap: 0.35rem;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
     .btn {
       padding: 0.5rem 0.75rem;
@@ -123,9 +134,25 @@
       background-repeat: no-repeat;
       background-position: center;
     }
+    @media (max-width: 768px) {
+      body { padding: 0.5rem; }
+      h1 { font-size: 1.15rem; }
+      .intro { margin-bottom: 0.75rem; font-size: 0.85rem; }
+      .layout { flex-direction: column; gap: 0.75rem; width: 100%; min-width: 0; }
+      .controls { width: 100%; max-width: 100%; flex-shrink: 1; }
+      .control-group { min-width: 0; overflow-x: hidden; }
+      .logo-table, .bg-table { max-width: 100%; width: 100%; table-layout: fixed; }
+      .logo-table .design-cell, .bg-table .design-cell { min-width: 0; width: 26%; font-size: 0.7rem; padding-right: 0.5rem; }
+      .logo-table .color-cell, .bg-table .color-cell { min-width: 0; width: 74%; flex-wrap: wrap; gap: 0.2rem; }
+      .btn { padding: 0.3rem 0.4rem; font-size: 0.65rem; }
+      .bg-btn { min-width: 1.5rem; height: 1.4rem; }
+      .preview-wrap { min-height: 220px; padding: 0.75rem; min-width: 0; width: 100%; }
+      .preview { max-width: 100%; }
+    }
   </style>
 </head>
 <body>
+  <div class="page-wrap">
   <h1>400 DPI Logos – Preview</h1>
   <p class="intro">Select a logo and a background to preview the combination.</p>
 
@@ -149,6 +176,7 @@
 
   <div class="preview-wrap">
     <div class="preview" id="preview"></div>
+  </div>
   </div>
   </div>
 
