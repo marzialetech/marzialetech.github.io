@@ -1136,11 +1136,11 @@
             .merch-grid .merch-item {
                 flex-direction: row;
                 justify-content: flex-start;
-                gap: 16px;
-                padding: 14px 16px;
+                gap: 20px;
+                padding: 16px;
                 width: 100%;
             }
-            .merch-grid .merch-item img.merch-icon { width: 56px; height: 56px; }
+            .merch-grid .merch-item img.merch-icon { width: 168px; height: 168px; min-width: 168px; }
             .merch-grid .merch-item .merch-label { font-size: 16px; text-align: left; }
         }
 
@@ -21820,10 +21820,11 @@
             <button class="merch-window-close" id="merchWindowClose">&times;</button>
         </div>
         <div class="merch-window-body">
+            <div id="shopifyCartTop" class="shopify-cart-slot" style="margin-bottom:12px;"></div>
             <div class="merch-grid" id="merchGrid">
                 <!-- Product buttons are populated dynamically from Shopify -->
             </div>
-            <div id="shopifyCart" style="margin-top:12px;"></div>
+            <div id="shopifyCartBottom" class="shopify-cart-slot" style="margin-top:12px;"></div>
         </div>
     </div>
 
@@ -22342,14 +22343,17 @@
         return v || null;
     }
 
-    // Update cart UI in the merch window
+    // Update cart UI in the merch window (top and bottom)
     function updateCartUI() {
-        var cartDiv = document.getElementById('shopifyCart');
-        if (!cartDiv) return;
+        var cartTop = document.getElementById('shopifyCartTop');
+        var cartBottom = document.getElementById('shopifyCartBottom');
+        if (!cartTop || !cartBottom) return;
 
         var lines = getCartLines();
+        var emptyHtml = '<div class="shopify-cart-empty">Cart is empty</div>';
         if (lines.length === 0) {
-            cartDiv.innerHTML = '<div class="shopify-cart-empty">Cart is empty</div>';
+            cartTop.innerHTML = emptyHtml;
+            cartBottom.innerHTML = emptyHtml;
             return;
         }
 
@@ -22374,10 +22378,12 @@
         html += '<span class="total-price">$' + getCartTotal() + '</span>';
         html += '</div>';
         html += '</div>';
-        html += '<button type="button" class="shopify-checkout-btn" id="shopifyCheckoutBtn">Checkout</button>';
-        cartDiv.innerHTML = html;
-        var checkoutBtn = document.getElementById('shopifyCheckoutBtn');
-        if (checkoutBtn) checkoutBtn.onclick = openShopifyCheckout;
+        html += '<button type="button" class="shopify-checkout-btn">Checkout</button>';
+        cartTop.innerHTML = html;
+        cartBottom.innerHTML = html;
+        document.querySelectorAll('.shopify-cart-slot .shopify-checkout-btn').forEach(function(btn) {
+            btn.onclick = openShopifyCheckout;
+        });
     }
 
     // Update quantity for a cart line (delta: +1 or -1)
@@ -22390,9 +22396,9 @@
         var currentQty = getLineQuantity(item);
         var newQty = Math.max(0, currentQty + delta);
 
-        var row = document.querySelector('.cart-line-item[data-line-idx="' + lineIdx + '"]');
-        var qtySpan = row ? row.querySelector('.item-qty') : null;
-        var totalEl = document.querySelector('#shopifyCart .total-price');
+        var rows = document.querySelectorAll('.cart-line-item[data-line-idx="' + lineIdx + '"]');
+        var qtySpans = rows.length ? Array.from(rows).map(function(r) { return r.querySelector('.item-qty'); }).filter(Boolean) : [];
+        var totalEls = document.querySelectorAll('.shopify-cart-slot .total-price');
         var pricePerUnit = parseFloat(getLinePrice(item)) || 0;
 
         // Store in local overrides (workaround for SDK bug)
@@ -22402,16 +22408,15 @@
 
         // Optimistic UI: update displayed quantity and total immediately
         function setQtyDisplay(q) {
-            if (qtySpan) qtySpan.textContent = q;
-            if (totalEl) {
-                var lines = getCartLines();
-                var sum = 0;
-                lines.forEach(function(ln, i) {
-                    var n = (i === lineIdx) ? q : getLineQuantity(ln);
-                    sum += n * (parseFloat(getLinePrice(ln)) || 0);
-                });
-                totalEl.textContent = '$' + sum.toFixed(2);
-            }
+            qtySpans.forEach(function(sp) { if (sp) sp.textContent = q; });
+            var sum = 0;
+            var lines = getCartLines();
+            lines.forEach(function(ln, i) {
+                var n = (i === lineIdx) ? q : getLineQuantity(ln);
+                sum += n * (parseFloat(getLinePrice(ln)) || 0);
+            });
+            var totalStr = '$' + sum.toFixed(2);
+            totalEls.forEach(function(el) { if (el) el.textContent = totalStr; });
         }
         setQtyDisplay(newQty);
 
@@ -22419,7 +22424,7 @@
             return;
         }
 
-        var btns = document.querySelectorAll('.cart-line-item[data-line-idx="' + lineIdx + '"] .qty-btn');
+        var btns = document.querySelectorAll('.merch-window-body .cart-line-item[data-line-idx="' + lineIdx + '"] .qty-btn');
         btns.forEach(function(b) { b.disabled = true; });
 
         if (newQty === 0) {
@@ -22482,8 +22487,7 @@
         if (url) {
             window.open(url, '_blank');
         } else {
-            var cartDiv = document.getElementById('shopifyCart');
-            if (cartDiv) {
+            document.querySelectorAll('.shopify-cart-slot').forEach(function(cartDiv) {
                 var existing = cartDiv.querySelector('.shopify-coming-soon-flash');
                 if (existing) existing.remove();
                 var flash = document.createElement('span');
@@ -22491,7 +22495,7 @@
                 flash.textContent = 'Cart is empty';
                 cartDiv.appendChild(flash);
                 setTimeout(function() { flash.remove(); }, 2000);
-            }
+            });
         }
     }
 
@@ -23308,9 +23312,9 @@
                 });
             });
         }
-        var shopifyCartEl = document.getElementById('shopifyCart');
-        if (shopifyCartEl) {
-            shopifyCartEl.addEventListener('click', function(e) {
+        var merchWindowBody = document.querySelector('.merch-window-body');
+        if (merchWindowBody) {
+            merchWindowBody.addEventListener('click', function(e) {
                 var btn = e.target.closest('.qty-btn');
                 if (!btn) return;
                 var row = btn.closest('.cart-line-item');
