@@ -22283,7 +22283,7 @@
         }
         showMsg('Loading products…', false);
         var url = 'https://' + SHOPIFY_DOMAIN + '/api/2024-01/graphql.json';
-        var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 1) { edges { node { id price { amount } } } } } } } }';
+        var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 50) { edges { node { id price { amount } availableForSale selectedOptions { name value } image { url } } } } } } } }';
         fetch(url, {
             method: 'POST',
             headers: {
@@ -22308,41 +22308,54 @@
             edges.forEach(function(edge) {
                 var node = edge.node;
                 var productId = (node.id || '').replace('gid://shopify/Product/', '');
-                var variants = (node.variants && node.variants.edges) || [];
-                if (!productId || variants.length === 0) return;
-                var imgUrl = (node.featuredImage && node.featuredImage.url) || 'assets/brand/icons/socks-icon.png';
-                var title = node.title || 'Product';
-                var variantNode = variants[0] && variants[0].node;
-                var priceAmt = (variantNode && variantNode.price && variantNode.price.amount) ? parseFloat(variantNode.price.amount).toFixed(2) : null;
-                var labelText = priceAmt != null ? title + ' - $' + priceAmt : title;
-                var item = document.createElement('div');
-                item.className = 'merch-item';
-                item.dataset.product = productId;
-                var icon = document.createElement('img');
-                icon.className = 'merch-icon';
-                icon.src = imgUrl;
-                icon.alt = '';
-                item.appendChild(icon);
-                var label = document.createElement('span');
-                label.className = 'merch-label';
-                label.textContent = labelText;
-                item.appendChild(label);
-                var actions = document.createElement('div');
-                actions.className = 'merch-item-actions';
-                var previewBtn = document.createElement('button');
-                previewBtn.type = 'button';
-                previewBtn.className = 'merch-btn merch-btn-preview';
-                previewBtn.textContent = 'Preview';
-                previewBtn.addEventListener('click', function(e) { e.stopPropagation(); openProductPreview(imgUrl, title); });
-                var addBtn = document.createElement('button');
-                addBtn.type = 'button';
-                addBtn.className = 'merch-btn merch-btn-add';
-                addBtn.textContent = 'Add to cart';
-                addBtn.addEventListener('click', function(e) { e.stopPropagation(); handleMerchClick(productId); });
-                actions.appendChild(previewBtn);
-                actions.appendChild(addBtn);
-                item.appendChild(actions);
-                merchGrid.appendChild(item);
+                var variantEdges = (node.variants && node.variants.edges) || [];
+                if (!productId || variantEdges.length === 0) return;
+                var productImg = (node.featuredImage && node.featuredImage.url) || 'assets/brand/icons/socks-icon.png';
+                var productTitle = node.title || 'Product';
+                variantEdges.forEach(function(vEdge) {
+                    var v = vEdge.node;
+                    if (v.availableForSale === false) return;
+                    var variantId = v.id;
+                    var imgUrl = (v.image && v.image.url) || productImg;
+                    var priceAmt = (v.price && v.price.amount) ? parseFloat(v.price.amount).toFixed(2) : null;
+                    var opts = (v.selectedOptions || []).map(function(o) { return (o.value || '').trim(); }).filter(Boolean);
+                    var optsStr = opts.length ? ' - ' + opts.join(' / ') : '';
+                    var labelText = productTitle + optsStr + (priceAmt != null ? ' - $' + priceAmt : '');
+                    var item = document.createElement('div');
+                    item.className = 'merch-item';
+                    item.dataset.variant = variantId;
+                    var icon = document.createElement('img');
+                    icon.className = 'merch-icon';
+                    icon.src = imgUrl;
+                    icon.alt = '';
+                    item.appendChild(icon);
+                    var label = document.createElement('span');
+                    label.className = 'merch-label';
+                    label.appendChild(document.createTextNode(productTitle + optsStr + (priceAmt != null ? ' - ' : '')));
+                    if (priceAmt != null) {
+                        var priceSpan = document.createElement('span');
+                        priceSpan.className = 'merch-price';
+                        priceSpan.textContent = '$' + priceAmt;
+                        label.appendChild(priceSpan);
+                    }
+                    item.appendChild(label);
+                    var actions = document.createElement('div');
+                    actions.className = 'merch-item-actions';
+                    var previewBtn = document.createElement('button');
+                    previewBtn.type = 'button';
+                    previewBtn.className = 'merch-btn merch-btn-preview';
+                    previewBtn.textContent = 'Preview';
+                    previewBtn.addEventListener('click', function(e) { e.stopPropagation(); openProductPreview(imgUrl, labelText); });
+                    var addBtn = document.createElement('button');
+                    addBtn.type = 'button';
+                    addBtn.className = 'merch-btn merch-btn-add';
+                    addBtn.textContent = 'Add to cart';
+                    addBtn.addEventListener('click', function(e) { e.stopPropagation(); handleMerchClick(variantId); });
+                    actions.appendChild(previewBtn);
+                    actions.appendChild(addBtn);
+                    item.appendChild(actions);
+                    merchGrid.appendChild(item);
+                });
             });
         }).catch(function(err) {
             console.error('Failed to fetch Shopify products:', err);
@@ -22627,48 +22640,41 @@
         });
     })();
 
-    // Handle merch item click - add to Shopify cart (productId is the numeric Shopify product ID)
-    function handleMerchClick(productId) {
+    // Handle merch item click - add to Shopify cart (variantId is the Shopify variant GID)
+    function handleMerchClick(variantId) {
         if (!shopifyClient || !shopifyCheckout) {
             console.log('Shopify not initialized yet');
-            showMerchFeedback(productId, 'Loading...', false);
+            showMerchFeedback(variantId, 'Loading...', false);
             initShopify();
             return;
         }
 
-        if (!productId) return;
+        if (!variantId) return;
 
         // Show loading feedback
-        showMerchFeedback(productId, 'Adding...', false);
+        showMerchFeedback(variantId, 'Adding...', false);
 
-        // Fetch product to get the first variant
-        shopifyClient.product.fetch('gid://shopify/Product/' + productId).then(function(product) {
-            if (!product || !product.variants || product.variants.length === 0) {
-                showMerchFeedback(productId, 'Error', false);
-                return;
-            }
-            var variantId = product.variants[0].id;
-            // Set initial quantity in local override (workaround for SDK bug)
-            var existingQty = localQuantities[variantId] || 0;
-            localQuantities[variantId] = existingQty + 1;
-            // Add to checkout
-            var lineItemsToAdd = [{ variantId: variantId, quantity: 1 }];
-            return shopifyClient.checkout.addLineItems(shopifyCheckout.id, lineItemsToAdd);
-        }).then(function(checkout) {
+        // Set initial quantity in local override (workaround for SDK bug)
+        var existingQty = localQuantities[variantId] || 0;
+        localQuantities[variantId] = existingQty + 1;
+        // Add to checkout
+        var lineItemsToAdd = [{ variantId: variantId, quantity: 1 }];
+        shopifyClient.checkout.addLineItems(shopifyCheckout.id, lineItemsToAdd).then(function(checkout) {
             if (checkout) {
                 shopifyCheckout = checkout;
                 updateCartUI();
-                showMerchFeedback(productId, 'Added!', true);
+                showMerchFeedback(variantId, 'Added!', true);
             }
         }).catch(function(err) {
             console.error('Failed to add to cart:', err);
-            showMerchFeedback(productId, 'Error', false);
+            localQuantities[variantId] = (localQuantities[variantId] || 1) - 1;
+            showMerchFeedback(variantId, 'Error', false);
         });
     }
 
     // Show feedback overlay on merch item
-    function showMerchFeedback(productId, message, success) {
-        var item = document.querySelector('.merch-item[data-product="' + productId + '"]');
+    function showMerchFeedback(variantId, message, success) {
+        var item = document.querySelector('.merch-item[data-variant="' + variantId + '"]');
         if (!item) return;
         var existing = item.querySelector('.merch-item-added, .merch-coming-soon');
         if (existing) existing.remove();
