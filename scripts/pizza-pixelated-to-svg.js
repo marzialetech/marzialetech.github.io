@@ -9,8 +9,8 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const blocks = parseInt(process.argv[2], 10) || 720;
-const inputPath = path.resolve(process.argv[3] || 'assets/brand/pizza-delivery-outline-white-on-pink.png');
-const outputPath = path.resolve(process.argv[4] || 'assets/brand/pizza-delivery-outline-white-on-pink-pixelated.svg');
+const inputPath = path.resolve(process.argv[3] || 'assets/brand/pizza-delivery/pizza-delivery-outline-white-on-pink.png');
+const outputPath = path.resolve(process.argv[4] || 'assets/brand/pizza-delivery/pizza-delivery-outline-white-on-pink-pixelated.svg');
 
 // Resize to blocks x blocks, output raw RGBA (white outline = bright pixels)
 const rawPath = path.join(path.dirname(outputPath), '.pizza-pixel-raw.bin');

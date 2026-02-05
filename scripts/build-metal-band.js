@@ -16,6 +16,7 @@ const { execSync } = require('child_process');
 const scriptDir = path.resolve(__dirname);
 const repoRoot = path.join(scriptDir, '..');
 const assetsDir = path.join(repoRoot, 'assets', 'brand');
+const metalBandDir = path.join(assetsDir, 'metal-band');
 
 const defaultSource = '32280345-8BE8-43F9-82AD-0E6FE020C430-5487a398-d1c2-4464-bce2-58445f318bbb.png';
 const sourceArg = process.argv[2] || defaultSource;
@@ -30,10 +31,10 @@ if (!fs.existsSync(sourcePath)) {
   process.exit(1);
 }
 
-const blackPng = path.join(assetsDir, 'metal-band-black.png');
-const whitePng = path.join(assetsDir, 'metal-band-white.png');
-const blackSvg = path.join(assetsDir, 'metal-band-black.svg');
-const whiteSvg = path.join(assetsDir, 'metal-band-white.svg');
+const blackPng = path.join(metalBandDir, 'metal-band-black.png');
+const whitePng = path.join(metalBandDir, 'metal-band-white.png');
+const blackSvg = path.join(metalBandDir, 'metal-band-black.svg');
+const whiteSvg = path.join(metalBandDir, 'metal-band-white.svg');
 const pbmPath = path.join(scriptDir, '_tmp_marziale.pbm');
 const maskPath = path.join(scriptDir, '_tmp_marziale_mask.png');
 const outlinePath = path.join(scriptDir, '_tmp_marziale_outline.png');
@@ -73,22 +74,50 @@ console.log('6. Extracting outline...');
 execSync(`magick "${maskPath}" -morphology EdgeOut Diamond "${outlinePath}"`, { stdio: 'inherit' });
 
 // 7. White outline on transparent
-const outlineWhitePng = path.join(assetsDir, 'metal-band-outline-white.png');
+const outlineWhitePng = path.join(metalBandDir, 'metal-band-outline-white.png');
+const outlineWhiteSvg = path.join(metalBandDir, 'metal-band-outline-white.svg');
+const outlineWhite400dpi = path.join(metalBandDir, 'metal-band-outline-white-400dpi.png');
 execSync(`magick "${outlinePath}" -background white -alpha shape "${outlineWhitePng}"`, { stdio: 'inherit' });
+
+// 7b. Outline-white SVG (pixel-perfect) + 400 DPI PNG
+const pixelSvgScript = path.join(scriptDir, 'png-to-pixel-svg.js');
+console.log('7b. Creating outline-white SVG and 400DPI PNG...');
+execSync(`node "${pixelSvgScript}" "${outlineWhitePng}" "${outlineWhiteSvg}"`, { stdio: 'inherit', env: { ...process.env, FILL: '#fff' } });
+try {
+  const tmpPath = outlineWhite400dpi.replace(/\.png$/, '-tmp.png');
+  execSync(`magick -density 400 -background none "${outlineWhiteSvg}" "${tmpPath}"`, { stdio: 'pipe' });
+  execSync(`magick "${tmpPath}" -morphology Dilate "Diamond:6" -background none "${outlineWhite400dpi}"`, { stdio: 'pipe' });
+  try { fs.unlinkSync(tmpPath); } catch (_) {}
+  console.log('  400 DPI:', outlineWhite400dpi);
+} catch (e) {
+  console.warn('  (400 DPI PNG skip)');
+}
+
+// 7c. Outline-black 400 DPI: negate white outline
+const outlineBlack400dpi = path.join(metalBandDir, 'metal-band-outline-black-400dpi.png');
+const dpiDir = path.join(assetsDir, '400dpi');
+if (fs.existsSync(outlineWhite400dpi)) {
+  console.log('7c. Creating outline-black 400 DPI (negate white)...');
+  execSync(`magick "${outlineWhite400dpi}" -channel RGB -negate +channel "${outlineBlack400dpi}"`, { stdio: 'pipe' });
+  if (fs.existsSync(dpiDir)) {
+    fs.copyFileSync(outlineBlack400dpi, path.join(dpiDir, 'metal-band-outline-black-400dpi.png'));
+  }
+  console.log('  400 DPI:', outlineBlack400dpi);
+}
 
 // 8. Base white-on-pink (no dilate) - same as pizza-delivery-outline-white-on-pink
 console.log('7. Creating white-on-pink PNG (base)...');
-const whiteOnPinkPng = path.join(assetsDir, 'metal-band-outline-white-on-pink.png');
+const whiteOnPinkPng = path.join(metalBandDir, 'metal-band-outline-white-on-pink.png');
 execSync(`magick "${outlineWhitePng}" -background "${PINK}" -flatten "${whiteOnPinkPng}"`, { stdio: 'inherit' });
 
 // 9. Thick white-on-pink (Dilate Diamond:0.5) - same as pizza-delivery-outline-white-on-pink-thick
 console.log('8. Creating white-on-pink-thick PNG...');
-const whiteOnPinkThickPng = path.join(assetsDir, 'metal-band-outline-white-on-pink-thick.png');
+const whiteOnPinkThickPng = path.join(metalBandDir, 'metal-band-outline-white-on-pink-thick.png');
 execSync(`magick "${outlineWhitePng}" -morphology Dilate "Diamond:0.5" -background "${PINK}" -flatten "${whiteOnPinkThickPng}"`, { stdio: 'inherit' });
 
 // 10. Base white-on-pink SVG
 console.log('9. Creating white-on-pink SVG (base)...');
-const whiteOnPinkSvg = path.join(assetsDir, 'metal-band-outline-white-on-pink.svg');
+const whiteOnPinkSvg = path.join(metalBandDir, 'metal-band-outline-white-on-pink.svg');
 execSync(`magick "${outlineWhitePng}" -background black -flatten -negate -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
 execSync(`potrace "${pbmPath}" -s -o "${whiteOnPinkSvg}"`, { stdio: 'inherit' });
 svg = fs.readFileSync(whiteOnPinkSvg, 'utf8');
@@ -100,7 +129,7 @@ fs.writeFileSync(whiteOnPinkSvg, svg, 'utf8');
 
 // 11. Thick white-on-pink SVG
 console.log('10. Creating white-on-pink-thick SVG...');
-const whiteOnPinkThickSvg = path.join(assetsDir, 'metal-band-outline-white-on-pink-thick.svg');
+const whiteOnPinkThickSvg = path.join(metalBandDir, 'metal-band-outline-white-on-pink-thick.svg');
 execSync(`magick "${outlineWhitePng}" -morphology Dilate "Diamond:0.5" -background black -flatten -negate -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
 execSync(`potrace "${pbmPath}" -s -o "${whiteOnPinkThickSvg}"`, { stdio: 'inherit' });
 svg = fs.readFileSync(whiteOnPinkThickSvg, 'utf8');
@@ -112,12 +141,12 @@ fs.writeFileSync(whiteOnPinkThickSvg, svg, 'utf8');
 
 // 12. White outline on black, 2x thickness (Dilate Diamond:1.0 = 2x Diamond:0.5)
 console.log('11. Creating white-on-black PNG (2x thick)...');
-const whiteOnBlackPng = path.join(assetsDir, 'metal-band-outline-white-on-black.png');
+const whiteOnBlackPng = path.join(metalBandDir, 'metal-band-outline-white-on-black.png');
 execSync(`magick "${outlineWhitePng}" -morphology Dilate "Diamond:1.0" -background "${BLACK}" -flatten "${whiteOnBlackPng}"`, { stdio: 'inherit' });
 
 // 13. White-on-black SVG
 console.log('12. Creating white-on-black SVG...');
-const whiteOnBlackSvg = path.join(assetsDir, 'metal-band-outline-white-on-black.svg');
+const whiteOnBlackSvg = path.join(metalBandDir, 'metal-band-outline-white-on-black.svg');
 execSync(`magick "${outlineWhitePng}" -morphology Dilate "Diamond:1.0" -background black -flatten -negate -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
 execSync(`potrace "${pbmPath}" -s -o "${whiteOnBlackSvg}"`, { stdio: 'inherit' });
 svg = fs.readFileSync(whiteOnBlackSvg, 'utf8');
@@ -134,3 +163,4 @@ console.log('  Filled:', blackPng, whitePng, blackSvg, whiteSvg);
 console.log('  White-on-pink:', whiteOnPinkPng, whiteOnPinkSvg);
 console.log('  White-on-pink-thick:', whiteOnPinkThickPng, whiteOnPinkThickSvg);
 console.log('  White-on-black (2x thick):', whiteOnBlackPng, whiteOnBlackSvg);
+console.log('  400 DPI PNG: metal-band-outline-white-400dpi.png');

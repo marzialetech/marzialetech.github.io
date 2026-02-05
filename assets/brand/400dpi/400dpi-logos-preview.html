@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>400 DPI Logos – Preview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .intro {
+      color: #999;
+      margin-bottom: 2rem;
+      max-width: 60ch;
+    }
+    .layout {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      flex-shrink: 0;
+    }
+    .control-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #aaa;
+      margin-bottom: 0.5rem;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .logo-table, .bg-table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 800px;
+    }
+    .logo-table th, .bg-table th {
+      text-align: left;
+      padding: 0.5rem 1rem 0.5rem 0;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #888;
+      border-bottom: 1px solid #444;
+      vertical-align: middle;
+    }
+    .logo-table td, .bg-table td {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #333;
+      vertical-align: middle;
+    }
+    .logo-table tr:last-child td, .bg-table tr:last-child td {
+      border-bottom: none;
+    }
+    .logo-table .design-cell {
+      min-width: 120px;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+    .logo-table .color-cell, .bg-table .color-cell {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      border: 1px solid #555;
+      border-radius: 6px;
+      background: #333;
+      color: #ddd;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn:hover {
+      background: #444;
+      border-color: #666;
+    }
+    .btn.selected {
+      background: #2563eb;
+      border-color: #2563eb;
+      color: #fff;
+    }
+    .bg-btn {
+      min-width: 2.5rem;
+      height: 2rem;
+      padding: 0.25rem;
+      border-radius: 4px;
+    }
+    .preview-wrap {
+      background: #2a2a2a;
+      border-radius: 8px;
+      border: 1px solid #444;
+      padding: 2rem;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      min-width: 300px;
+    }
+    .preview {
+      width: 100%;
+      max-width: 500px;
+      aspect-ratio: 1;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>400 DPI Logos – Preview</h1>
+  <p class="intro">Select a logo and a background to preview the combination.</p>
+
+  <div class="layout">
+  <div class="controls">
+    <div class="control-group">
+      <label>Logo</label>
+      <table class="logo-table">
+        <thead><tr><th>Design</th><th>Color variants</th></tr></thead>
+        <tbody id="logo-rows"></tbody>
+      </table>
+    </div>
+    <div class="control-group">
+      <label>Background</label>
+      <table class="bg-table">
+        <thead><tr><th>Type</th><th>Options</th></tr></thead>
+        <tbody id="bg-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="preview" id="preview"></div>
+  </div>
+  </div>
+
+  <script>
+    const logoGroups = [
+      { design: 'Angel', logos: [
+        { file: 'angel-silhouette-pixelated-400dpi.png', name: 'Black' },
+        { file: 'angel-silhouette-pixelated-white-400dpi.png', name: 'White' },
+      ]},
+      { design: 'Deer', logos: [
+        { file: 'deer-black-400dpi.png', name: 'Black' },
+        { file: 'deer-white-400dpi.png', name: 'White' },
+        { file: 'deer-camo-cream-400dpi.png', name: 'Camo cream' },
+        { file: 'deer-orange-400dpi.png', name: 'Hunter orange' },
+      ]},
+      { design: 'Stay On Your Feet', logos: [
+        { file: 'feet-black-400dpi.png', name: 'Black' },
+        { file: 'feet-white-400dpi.png', name: 'White' },
+      ]},
+      { design: 'LA Text', logos: [
+        { file: 'la-text-black-400dpi.png', name: 'Black' },
+        { file: 'la-text-white-400dpi.png', name: 'White' },
+      ]},
+      { design: 'Man on boat', logos: [
+        { file: 'man-on-boat-pixelated-400dpi.png', name: 'Black' },
+        { file: 'man-on-boat-pixelated-white-400dpi.png', name: 'White' },
+      ]},
+      { design: 'Martech text', logos: [
+        { file: 'martechtext-pixelated-400dpi.png', name: 'Black' },
+        { file: 'martechtext-pixelated-white-400dpi.png', name: 'White' },
+      ]},
+      { design: 'Metal band', logos: [
+        { file: 'metal-band-black-400dpi.png', name: 'Black fill' },
+        { file: 'metal-band-white-400dpi.png', name: 'White fill' },
+        { file: 'metal-band-outline-black-400dpi.png', name: 'Black outline' },
+        { file: 'metal-band-outline-white-400dpi.png', name: 'White outline' },
+      ]},
+      { design: 'Pizza delivery', logos: [
+        { file: 'pizza-delivery-outline-black-400dpi.png', name: 'Black outline' },
+        { file: 'pizza-delivery-outline-white-400dpi.png', name: 'White outline' },
+      ]},
+    ];
+
+    const bgGroups = [
+      { type: 'Solid colors', backgrounds: [
+        { id: 'white', label: 'White', color: '#ffffff' },
+        { id: 'black', label: 'Black', color: '#000000' },
+        { id: 'blue', label: 'Blue', color: '#2563eb' },
+        { id: 'pink', label: 'Pink', color: '#ec4899' },
+        { id: 'orange', label: 'Orange', color: '#FF6600' },
+        { id: 'red', label: 'Red', color: '#dc2626' },
+        { id: 'navy', label: 'Navy', color: '#1e3a8a' },
+        { id: 'dark-green', label: 'Dark green', color: '#14532d' },
+      ]},
+      { type: 'Pattern', backgrounds: [
+        { id: 'camo-cream', label: 'Camo (cream)', isCamo: true, camoFile: 'camo-cream-6xdpi.png' },
+      ]},
+    ];
+
+    const allLogos = logoGroups.flatMap(g => g.logos.map(l => ({ ...l, design: g.design })));
+    const allBackgrounds = bgGroups.flatMap(g => g.backgrounds);
+    let selectedLogo = allLogos[0];
+    let selectedBg = allBackgrounds[0];
+
+    const logoRows = document.getElementById('logo-rows');
+    const bgRows = document.getElementById('bg-rows');
+    const preview = document.getElementById('preview');
+
+    function updatePreview() {
+      preview.style.backgroundColor = selectedBg.isCamo ? '#e8e4dc' : selectedBg.color;
+      if (selectedBg.isCamo && selectedBg.camoFile) {
+        preview.style.backgroundImage = `url('${selectedLogo.file}'), url('${selectedBg.camoFile}')`;
+        preview.style.backgroundSize = 'contain, cover';
+        preview.style.backgroundRepeat = 'no-repeat, no-repeat';
+        preview.style.backgroundPosition = 'center, center';
+      } else {
+        preview.style.backgroundImage = `url('${selectedLogo.file}')`;
+        preview.style.backgroundSize = 'contain';
+        preview.style.backgroundRepeat = 'no-repeat';
+        preview.style.backgroundPosition = 'center';
+      }
+    }
+
+    logoGroups.forEach(group => {
+      const tr = document.createElement('tr');
+      const designCell = document.createElement('td');
+      designCell.className = 'design-cell';
+      designCell.textContent = group.design;
+      tr.appendChild(designCell);
+      const colorCell = document.createElement('td');
+      colorCell.className = 'color-cell';
+      group.logos.forEach((logo, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn' + (logo.file === selectedLogo.file ? ' selected' : '');
+        btn.textContent = logo.name;
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.logo-table .btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedLogo = logo;
+          updatePreview();
+        });
+        colorCell.appendChild(btn);
+      });
+      tr.appendChild(colorCell);
+      logoRows.appendChild(tr);
+    });
+
+    bgGroups.forEach(group => {
+      const tr = document.createElement('tr');
+      const typeCell = document.createElement('td');
+      typeCell.className = 'design-cell';
+      typeCell.textContent = group.type;
+      tr.appendChild(typeCell);
+      const colorCell = document.createElement('td');
+      colorCell.className = 'color-cell';
+      group.backgrounds.forEach(bg => {
+        const btn = document.createElement('button');
+        btn.className = 'btn bg-btn' + (bg.id === selectedBg.id ? ' selected' : '');
+        btn.type = 'button';
+        btn.title = bg.label;
+        if (bg.isCamo && bg.camoFile) {
+          btn.style.background = `url('${bg.camoFile}') center/cover no-repeat`;
+          btn.style.border = '1px solid #555';
+        } else {
+          btn.style.background = bg.color;
+        }
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.bg-table .btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedBg = bg;
+          updatePreview();
+        });
+        colorCell.appendChild(btn);
+      });
+      tr.appendChild(colorCell);
+      bgRows.appendChild(tr);
+    });
+
+    updatePreview();
+  </script>
+</body>
+</html>

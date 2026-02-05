@@ -1,10 +1,19 @@
 #!/usr/bin/env node
 /**
- * Process Marziale pizza delivery logo (red on beige):
- * 1. Black/white PNG and SVG on transparent (same as feet/metal-band)
- * 2. Outline versions: outlines of the red regions only (black and white)
- * Requires: ImageMagick (magick), potrace.
- * Run: node build-pizza-delivery.js [source.png]
+ * Regenerate all pizza-delivery graphics from pizza-delivery-black.png.
+ * Source: assets/brand/pizza-delivery/pizza-delivery-black.png
+ *
+ * Generates pixel-perfect SVGs (one rect per pixel) + PDFs from those:
+ * - white on transparent (png/svg/pdf)
+ * - outline black (png/svg/pdf)
+ * - outline white (png/svg/pdf)
+ * - outline white on pink (png/svg/pdf)
+ * - outline white on pink THICK (png/svg/pdf)
+ * - outline white on pink 1.25x (png)
+ * - outline white on pink pixelated (svg/pdf)
+ *
+ * Requires: ImageMagick (magick).
+ * Run: node build-pizza-delivery.js [pizza-delivery-black.png]
  */
 const fs = require('fs');
 const path = require('path');
@@ -12,97 +21,165 @@ const { execSync } = require('child_process');
 
 const scriptDir = path.resolve(__dirname);
 const repoRoot = path.join(scriptDir, '..');
-const assetsDir = path.join(repoRoot, 'assets', 'brand');
+const pizzaDir = path.join(repoRoot, 'assets', 'brand', 'pizza-delivery');
+const pixelSvgScript = path.join(scriptDir, 'png-to-pixel-svg.js');
 
-const defaultSource = '0755877A-3C05-477B-9240-485127B91743-b21b7572-112e-4feb-98e9-67a81b7a0234.png';
+const defaultSource = path.join(pizzaDir, 'pizza-delivery-black.png');
 const sourceArg = process.argv[2] || defaultSource;
-
-const cursorAssets = path.join(process.env.HOME || '', '.cursor', 'projects', 'Users-jjmarzia-marzialetech-github-io', 'assets');
-const sourcePath = fs.existsSync(sourceArg)
-  ? path.resolve(sourceArg)
-  : path.join(cursorAssets, path.basename(sourceArg));
+const sourcePath = path.resolve(sourceArg);
 
 if (!fs.existsSync(sourcePath)) {
   console.error('Source not found:', sourcePath);
   process.exit(1);
 }
 
-const pbmPath = path.join(scriptDir, '_tmp_pizza.pbm');
 const maskPath = path.join(scriptDir, '_tmp_pizza_mask.png');
 const outlinePath = path.join(scriptDir, '_tmp_pizza_outline.png');
+const PINK = '#f8b4d9';
 
-// Beige/cream background to make transparent; red becomes the shape
-const BEIGE = '#e8dcc8';
-const FUZZ = 25;
+// Output paths (all in pizza-delivery/)
+const blackPng = path.join(pizzaDir, 'pizza-delivery-black.png');
+const whitePng = path.join(pizzaDir, 'pizza-delivery-white.png');
+const blackSvg = path.join(pizzaDir, 'pizza-delivery-black.svg');
+const whiteSvg = path.join(pizzaDir, 'pizza-delivery-white.svg');
+const outlineBlackPng = path.join(pizzaDir, 'pizza-delivery-outline-black.png');
+const outlineWhitePng = path.join(pizzaDir, 'pizza-delivery-outline-white.png');
+const outlineBlackSvg = path.join(pizzaDir, 'pizza-delivery-outline-black.svg');
+const outlineWhiteSvg = path.join(pizzaDir, 'pizza-delivery-outline-white.svg');
+const whiteOnPinkPng = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink.png');
+const whiteOnPinkSvg = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink.svg');
+const whiteOnPinkThickPng = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-thick.png');
+const whiteOnPinkThickSvg = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-thick.svg');
+const whiteOnPink125Png = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-1.25x.png');
+const whiteOnPinkPixelatedSvg = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-pixelated.svg');
+// 200 DPI PNG variants
+const black200dpi = path.join(pizzaDir, 'pizza-delivery-black-200dpi.png');
+const white200dpi = path.join(pizzaDir, 'pizza-delivery-white-200dpi.png');
+const outlineBlack200dpi = path.join(pizzaDir, 'pizza-delivery-outline-black-200dpi.png');
+const outlineWhite200dpi = path.join(pizzaDir, 'pizza-delivery-outline-white-200dpi.png');
+const outlineWhite400dpi = path.join(pizzaDir, 'pizza-delivery-outline-white-400dpi.png');
+const whiteOnPink200dpi = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-200dpi.png');
+const whiteOnPinkThick200dpi = path.join(pizzaDir, 'pizza-delivery-outline-white-on-pink-thick-200dpi.png');
 
-const blackPng = path.join(assetsDir, 'pizza-delivery-black.png');
-const whitePng = path.join(assetsDir, 'pizza-delivery-white.png');
+function pixelSvg(pngPath, svgPath, opts = {}) {
+  const env = { ...process.env };
+  if (opts.fill) env.FILL = opts.fill;
+  if (opts.background) env.BACKGROUND = opts.background;
+  execSync(`node "${pixelSvgScript}" "${pngPath}" "${svgPath}"`, {
+    stdio: 'inherit',
+    env
+  });
+}
 
-// 1. Extract mask: red on beige → make beige transparent, alpha extract gives white=red shape, black=bg
-console.log('1. Extracting mask (red regions)...');
-execSync(`magick "${sourcePath}" -fuzz ${FUZZ}% -transparent "${BEIGE}" -alpha extract -threshold 20% "${maskPath}"`, { stdio: 'inherit' });
+const HIGH_DPI = 200; // DPI for high-res PNGs from PDFs (>150)
 
-// 2. Black on transparent
-console.log('2. Creating black-on-transparent PNG...');
-execSync(`magick "${maskPath}" -background black -alpha shape "${blackPng}"`, { stdio: 'inherit' });
+function svgToPdf(svgPath) {
+  const pdfPath = svgPath.replace(/\.svg$/, '.pdf');
+  try {
+    execSync(`magick "${svgPath}" "${pdfPath}"`, { stdio: 'pipe' });
+    console.log('  PDF:', pdfPath);
+  } catch (e) {
+    console.warn('  (PDF skip:', path.basename(pdfPath), '- magick may need rsvg/inkscape)');
+  }
+}
 
-// 3. White on transparent
-console.log('3. Creating white-on-transparent PNG...');
+function svgToHighResPng(svgPath, pngPath, dpi = HIGH_DPI, dilate = null) {
+  try {
+    const tmpPath = pngPath.replace(/\.png$/, '-tmp.png');
+    execSync(`magick -density ${dpi} -background none "${svgPath}" "${tmpPath}"`, { stdio: 'pipe' });
+    if (dilate) {
+      execSync(`magick "${tmpPath}" -morphology Dilate "Diamond:${dilate}" -background none "${pngPath}"`, { stdio: 'pipe' });
+      try { fs.unlinkSync(tmpPath); } catch (_) {}
+    } else {
+      fs.renameSync(tmpPath, pngPath);
+    }
+    console.log(`  ${dpi}DPI PNG:`, pngPath);
+  } catch (e) {
+    console.warn('  (High-DPI PNG skip:', path.basename(pngPath), ')');
+  }
+}
+
+// 1. Extract mask from black.png
+console.log('1. Extracting mask from black.png...');
+execSync(`magick "${sourcePath}" -alpha extract -threshold 20% "${maskPath}"`, { stdio: 'inherit' });
+
+// 2. White on transparent PNG
+console.log('2. Creating white-on-transparent PNG...');
 execSync(`magick "${maskPath}" -background white -alpha shape "${whitePng}"`, { stdio: 'inherit' });
 
-// 4. Black SVG (potrace)
-console.log('4. Creating black-on-transparent SVG (potrace)...');
-const blackSvg = path.join(assetsDir, 'pizza-delivery-black.svg');
-execSync(`magick "${blackPng}" -background white -flatten -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
-execSync(`potrace "${pbmPath}" -s -o "${blackSvg}"`, { stdio: 'inherit' });
-let svg = fs.readFileSync(blackSvg, 'utf8');
-svg = svg.replace(/fill="#?[^"]*"/gi, 'fill="#000"');
-fs.writeFileSync(blackSvg, svg, 'utf8');
+// 3. Black SVG (pixel-perfect)
+console.log('3. Creating black SVG (pixel-perfect)...');
+pixelSvg(blackPng, blackSvg, { fill: '#000' });
+svgToPdf(blackSvg);
+svgToHighResPng(blackSvg, black200dpi);
 
-// 5. White SVG (potrace)
-console.log('5. Creating white-on-transparent SVG (potrace)...');
-const whiteSvg = path.join(assetsDir, 'pizza-delivery-white.svg');
-execSync(`magick "${whitePng}" -background black -flatten -negate -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
-execSync(`potrace "${pbmPath}" -s -o "${whiteSvg}"`, { stdio: 'inherit' });
-svg = fs.readFileSync(whiteSvg, 'utf8');
-svg = svg.replace(/fill="#?[^"]*"/gi, 'fill="#fff"');
-fs.writeFileSync(whiteSvg, svg, 'utf8');
+// 4. White SVG (pixel-perfect)
+console.log('4. Creating white SVG (pixel-perfect)...');
+pixelSvg(whitePng, whiteSvg, { fill: '#fff' });
+svgToPdf(whiteSvg);
+svgToHighResPng(whiteSvg, white200dpi);
 
-// 6. Outline extraction: morphology edge on mask
-console.log('6. Extracting outlines...');
+// 5. Outline extraction
+console.log('5. Extracting outlines...');
 execSync(`magick "${maskPath}" -morphology EdgeOut Diamond "${outlinePath}"`, { stdio: 'inherit' });
 
-// 7. Outline black PNG
-console.log('7. Creating outline-black PNG...');
-const outlineBlackPng = path.join(assetsDir, 'pizza-delivery-outline-black.png');
+// 6. Outline black PNG
+console.log('6. Creating outline-black PNG...');
 execSync(`magick "${outlinePath}" -background black -alpha shape "${outlineBlackPng}"`, { stdio: 'inherit' });
 
-// 8. Outline white PNG
-console.log('8. Creating outline-white PNG...');
-const outlineWhitePng = path.join(assetsDir, 'pizza-delivery-outline-white.png');
+// 7. Outline white PNG
+console.log('7. Creating outline-white PNG...');
 execSync(`magick "${outlinePath}" -background white -alpha shape "${outlineWhitePng}"`, { stdio: 'inherit' });
 
-// 9. Outline black SVG (potrace)
-console.log('9. Creating outline-black SVG (potrace)...');
-const outlineBlackSvg = path.join(assetsDir, 'pizza-delivery-outline-black.svg');
-execSync(`magick "${outlineBlackPng}" -background white -flatten -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
-execSync(`potrace "${pbmPath}" -s -o "${outlineBlackSvg}"`, { stdio: 'inherit' });
-svg = fs.readFileSync(outlineBlackSvg, 'utf8');
-svg = svg.replace(/fill="#?[^"]*"/gi, 'fill="#000"');
-fs.writeFileSync(outlineBlackSvg, svg, 'utf8');
+// 8. Outline black SVG (pixel-perfect)
+console.log('8. Creating outline-black SVG (pixel-perfect)...');
+pixelSvg(outlineBlackPng, outlineBlackSvg, { fill: '#000' });
+svgToPdf(outlineBlackSvg);
+svgToHighResPng(outlineBlackSvg, outlineBlack200dpi, HIGH_DPI, 3);
 
-// 10. Outline white SVG (potrace)
-console.log('10. Creating outline-white SVG (potrace)...');
-const outlineWhiteSvg = path.join(assetsDir, 'pizza-delivery-outline-white.svg');
-execSync(`magick "${outlineWhitePng}" -background black -flatten -negate -colorspace gray -threshold 50% "${pbmPath}"`, { stdio: 'inherit' });
-execSync(`potrace "${pbmPath}" -s -o "${outlineWhiteSvg}"`, { stdio: 'inherit' });
-svg = fs.readFileSync(outlineWhiteSvg, 'utf8');
-svg = svg.replace(/fill="#?[^"]*"/gi, 'fill="#fff"');
-fs.writeFileSync(outlineWhiteSvg, svg, 'utf8');
+// 9. Outline white SVG (pixel-perfect)
+console.log('9. Creating outline-white SVG (pixel-perfect)...');
+pixelSvg(outlineWhitePng, outlineWhiteSvg, { fill: '#fff' });
+svgToPdf(outlineWhiteSvg);
+
+// 9b. High-DPI PNGs from outline-white SVG (white outline on transparent, Diamond:3)
+console.log('9b. Creating outline-white 200DPI PNG...');
+svgToHighResPng(outlineWhiteSvg, outlineWhite200dpi, HIGH_DPI, 3);
+console.log('9c. Creating outline-white 400DPI PNG...');
+svgToHighResPng(outlineWhiteSvg, outlineWhite400dpi, 400, 3);
+
+// 10. White outline on pink (base) PNG
+console.log('10. Creating outline-white-on-pink PNG...');
+execSync(`magick "${outlineWhitePng}" -background "${PINK}" -flatten "${whiteOnPinkPng}"`, { stdio: 'inherit' });
+
+// 11. White outline on pink SVG (pixel-perfect - PNG has pink bg + white shape)
+console.log('11. Creating outline-white-on-pink SVG (pixel-perfect)...');
+pixelSvg(whiteOnPinkPng, whiteOnPinkSvg, { background: PINK }); // one pink rect + white shape pixels
+svgToPdf(whiteOnPinkSvg);
+svgToHighResPng(whiteOnPinkSvg, whiteOnPink200dpi);
+
+// 12. Thick white outline on pink PNG
+console.log('12. Creating outline-white-on-pink-thick PNG...');
+execSync(`magick "${outlineWhitePng}" -morphology Dilate "Diamond:0.5" -background "${PINK}" -flatten "${whiteOnPinkThickPng}"`, { stdio: 'inherit' });
+
+// 13. Thick white outline on pink SVG (pixel-perfect)
+console.log('13. Creating outline-white-on-pink-thick SVG (pixel-perfect)...');
+pixelSvg(whiteOnPinkThickPng, whiteOnPinkThickSvg, { background: PINK });
+svgToPdf(whiteOnPinkThickSvg);
+svgToHighResPng(whiteOnPinkThickSvg, whiteOnPinkThick200dpi);
+
+// 14. 1.25x scaled white-on-pink PNG
+console.log('14. Creating outline-white-on-pink-1.25x PNG...');
+execSync(`magick "${whiteOnPinkPng}" -resize 125% "${whiteOnPink125Png}"`, { stdio: 'inherit' });
+
+// 15. Pixelated SVG (already rect-based, from white-on-pink)
+console.log('15. Creating outline-white-on-pink-pixelated SVG...');
+execSync(`node "${path.join(scriptDir, 'pizza-pixelated-to-svg.js')}" 720 "${whiteOnPinkPng}" "${whiteOnPinkPixelatedSvg}"`, { stdio: 'inherit' });
+svgToPdf(whiteOnPinkPixelatedSvg);
 
 // Cleanup
-[ pbmPath, maskPath, outlinePath ].forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
+[maskPath, outlinePath].forEach(p => { if (fs.existsSync(p)) fs.unlinkSync(p); });
 
-console.log('Done.');
-console.log('  Filled:', blackPng, whitePng, blackSvg, whiteSvg);
-console.log('  Outline:', outlineBlackPng, outlineWhitePng, outlineBlackSvg, outlineWhiteSvg);
+console.log('\nDone. All SVGs and PDFs are pixel-perfect.');
+console.log('  200 DPI PNGs: black, white, outline-black, outline-white, white-on-pink, white-on-pink-thick');
+console.log('  400 DPI PNG: outline-white');
