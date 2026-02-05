@@ -4,28 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Design Your Merch – Marziale</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/logo/favicon.svg">
+  <link href="https://fonts.cdnfonts.com/css/w95fa" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-    html { overflow-x: hidden; width: 100%; }
-    .page-wrap { width: 100%; max-width: 100%; overflow-x: hidden; }
+    html, body {
+      font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+    }
     body {
-      font-family: system-ui, -apple-system, sans-serif;
       margin: 0;
-      padding: 2rem;
-      background: #1a1a1a;
+      min-height: 100vh;
+      background: #2563eb;
       color: #fff;
-      overflow-x: hidden;
-      width: 100%;
-      max-width: 100vw;
-    }
-    h1 {
-      font-size: 1.75rem;
-      margin-bottom: 0.5rem;
-    }
-    .intro {
-      color: #999;
-      margin-bottom: 2rem;
-      max-width: 60ch;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(1rem, 4vw, 2rem);
     }
     .top-actions {
       display: flex;
@@ -33,186 +27,177 @@
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
     }
-    .action-btn {
-      padding: 0.6rem 1.2rem;
-      font-size: 0.9rem;
-      border: none;
-      border-radius: 6px;
+    .btn {
+      background: #c0c0c0;
+      color: #000;
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      padding: 6px 16px;
+      font-family: inherit;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
       cursor: pointer;
       text-decoration: none;
       display: inline-block;
-      transition: background 0.15s;
     }
-    .action-btn-primary {
-      background: #2563eb;
+    .btn:hover { background: #d4d0c8; }
+    .btn:active { border-color: #404040 #fff #fff #404040; }
+    .design-window {
+      background: #c0c0c0;
+      color: #000;
+      border: 2px solid;
+      border-color: #dfdfdf #000 #000 #dfdfdf;
+      box-shadow: 2px 2px 0 #404040;
+      width: 100%;
+      max-width: 900px;
+    }
+    .design-window-header {
+      background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
       color: #fff;
+      padding: 3px 8px 4px 8px;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #000;
     }
-    .action-btn-primary:hover {
-      background: #1d4ed8;
-    }
-    .action-btn-secondary {
-      background: #444;
-      color: #ddd;
-      border: 1px solid #555;
-    }
-    .action-btn-secondary:hover {
-      background: #555;
+    .design-window-body {
+      padding: clamp(0.75rem, 3vw, 1.5rem);
+      background: #fff;
+      border: 1px solid #808080;
+      margin: 2px;
     }
     .layout {
       display: flex;
-      gap: 2rem;
+      gap: 1.5rem;
       align-items: flex-start;
       flex-wrap: wrap;
-      max-width: 100%;
     }
     .controls {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
-      flex-shrink: 0;
-      min-width: 0;
+      gap: 1rem;
+      flex: 1;
+      min-width: 200px;
     }
     .control-group label {
       display: block;
-      font-size: 0.85rem;
+      font-size: clamp(0.65rem, 1.8vw, 0.75rem);
       font-weight: 600;
-      color: #aaa;
-      margin-bottom: 0.5rem;
-    }
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      color: #000;
+      margin-bottom: 0.4rem;
     }
     .logo-table, .bg-table {
       border-collapse: collapse;
       width: 100%;
-      max-width: 800px;
-      min-width: 0;
     }
     .logo-table th, .bg-table th {
       text-align: left;
-      padding: 0.5rem 1rem 0.5rem 0;
-      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem 0.3rem 0;
+      font-size: clamp(0.55rem, 1.5vw, 0.65rem);
       font-weight: 600;
-      color: #888;
-      border-bottom: 1px solid #444;
+      color: #666;
+      border-bottom: 1px solid #c0c0c0;
       vertical-align: middle;
     }
     .logo-table td, .bg-table td {
-      padding: 0.5rem 0;
-      border-bottom: 1px solid #333;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #e0e0e0;
       vertical-align: middle;
     }
     .logo-table tr:last-child td, .bg-table tr:last-child td {
       border-bottom: none;
     }
     .logo-table .design-cell {
-      min-width: 120px;
-      font-size: 0.8rem;
-      color: #aaa;
-      word-break: break-word;
+      min-width: 80px;
+      font-size: clamp(0.55rem, 1.5vw, 0.7rem);
+      color: #333;
     }
     .logo-table .color-cell, .bg-table .color-cell {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.35rem;
-      min-width: 0;
-      overflow-wrap: anywhere;
+      gap: 0.25rem;
     }
-    .btn {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.8rem;
-      border: 1px solid #555;
-      border-radius: 6px;
-      background: #333;
-      color: #ddd;
+    .opt-btn {
+      padding: 3px 8px;
+      font-size: clamp(0.5rem, 1.4vw, 0.65rem);
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      background: #c0c0c0;
+      color: #000;
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      font-family: inherit;
     }
-    .btn:hover {
-      background: #444;
-      border-color: #666;
-    }
-    .btn.selected {
-      background: #2563eb;
-      border-color: #2563eb;
+    .opt-btn:hover { background: #d4d0c8; }
+    .opt-btn:active { border-color: #404040 #fff #fff #404040; }
+    .opt-btn.selected {
+      background: #000080;
       color: #fff;
+      border-color: #404040 #fff #fff #404040;
     }
     .bg-btn {
-      min-width: 2.5rem;
-      height: 2rem;
-      padding: 0.25rem;
-      border-radius: 4px;
+      min-width: 1.8rem;
+      height: 1.5rem;
+      padding: 0;
     }
     .preview-wrap {
-      background: #2a2a2a;
-      border-radius: 8px;
-      border: 1px solid #444;
-      padding: 2rem;
-      min-height: 400px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #404040 #fff #fff #404040;
+      padding: 1rem;
+      min-height: 280px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex: 1;
-      min-width: 300px;
+      min-width: 200px;
     }
     .preview {
       width: 100%;
-      max-width: 500px;
+      max-width: 300px;
       aspect-ratio: 1;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
     }
-    @media (max-width: 768px) {
-      body { padding: 0.5rem; }
-      h1 { font-size: 1.15rem; }
-      .intro { margin-bottom: 0.75rem; font-size: 0.85rem; }
-      .top-actions { margin-bottom: 1rem; }
-      .action-btn { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
-      .layout { flex-direction: column; gap: 0.75rem; width: 100%; min-width: 0; }
-      .controls { width: 100%; max-width: 100%; flex-shrink: 1; }
-      .control-group { min-width: 0; overflow-x: hidden; }
-      .logo-table, .bg-table { max-width: 100%; width: 100%; table-layout: fixed; }
-      .logo-table .design-cell, .bg-table .design-cell { min-width: 0; width: 26%; font-size: 0.7rem; padding-right: 0.5rem; }
-      .logo-table .color-cell, .bg-table .color-cell { min-width: 0; width: 74%; flex-wrap: wrap; gap: 0.2rem; }
-      .btn { padding: 0.3rem 0.4rem; font-size: 0.65rem; }
-      .bg-btn { min-width: 1.5rem; height: 1.4rem; }
-      .preview-wrap { min-height: 220px; padding: 0.75rem; min-width: 0; width: 100%; }
+    @media (max-width: 600px) {
+      .layout { flex-direction: column; }
+      .preview-wrap { min-height: 200px; width: 100%; }
       .preview { max-width: 100%; }
     }
   </style>
 </head>
 <body>
-  <div class="page-wrap">
   <div class="top-actions">
-    <a href="/merch" class="action-btn action-btn-secondary">&larr; Back to Merch</a>
-    <button type="button" id="sendDesignBtn" class="action-btn action-btn-primary">Send This Design</button>
+    <a href="/merch" class="btn">&larr; Back to Merch</a>
   </div>
 
-  <div class="layout">
-  <div class="controls">
-    <div class="control-group">
-      <label>Logo</label>
-      <table class="logo-table">
-        <thead><tr><th>Design</th><th>Color variants</th></tr></thead>
-        <tbody id="logo-rows"></tbody>
-      </table>
+  <div class="design-window">
+    <div class="design-window-header">
+      <span>Design Your Merch</span>
     </div>
-    <div class="control-group">
-      <label>Background</label>
-      <table class="bg-table">
-        <thead><tr><th>Type</th><th>Options</th></tr></thead>
-        <tbody id="bg-rows"></tbody>
-      </table>
+    <div class="design-window-body">
+      <div class="layout">
+        <div class="controls">
+          <div class="control-group">
+            <label>Logo</label>
+            <table class="logo-table">
+              <thead><tr><th>Design</th><th>Color</th></tr></thead>
+              <tbody id="logo-rows"></tbody>
+            </table>
+          </div>
+          <div class="control-group">
+            <label>Background</label>
+            <table class="bg-table">
+              <thead><tr><th>Type</th><th>Options</th></tr></thead>
+              <tbody id="bg-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview" id="preview"></div>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <div class="preview-wrap">
-    <div class="preview" id="preview"></div>
-  </div>
-  </div>
   </div>
 
   <script>
@@ -258,7 +243,7 @@
     ];
 
     const bgGroups = [
-      { type: 'Solid colors', backgrounds: [
+      { type: 'Solid', backgrounds: [
         { id: 'white', label: 'White', color: '#ffffff' },
         { id: 'black', label: 'Black', color: '#000000' },
         { id: 'blue', label: 'Blue', color: '#2563eb' },
@@ -305,13 +290,13 @@
       tr.appendChild(designCell);
       const colorCell = document.createElement('td');
       colorCell.className = 'color-cell';
-      group.logos.forEach((logo, i) => {
+      group.logos.forEach((logo) => {
         const btn = document.createElement('button');
-        btn.className = 'btn' + (logo.file === selectedLogo.file ? ' selected' : '');
+        btn.className = 'opt-btn' + (logo.file === selectedLogo.file ? ' selected' : '');
         btn.textContent = logo.name;
         btn.type = 'button';
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.logo-table .btn').forEach(b => b.classList.remove('selected'));
+          document.querySelectorAll('.logo-table .opt-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           selectedLogo = logo;
           updatePreview();
@@ -332,17 +317,17 @@
       colorCell.className = 'color-cell';
       group.backgrounds.forEach(bg => {
         const btn = document.createElement('button');
-        btn.className = 'btn bg-btn' + (bg.id === selectedBg.id ? ' selected' : '');
+        btn.className = 'opt-btn bg-btn' + (bg.id === selectedBg.id ? ' selected' : '');
         btn.type = 'button';
         btn.title = bg.label;
         if (bg.isCamo && bg.camoFile) {
           btn.style.background = `url('${assetBase}${bg.camoFile}') center/cover no-repeat`;
-          btn.style.border = '1px solid #555';
+          btn.style.borderColor = '#fff #404040 #404040 #fff';
         } else {
           btn.style.background = bg.color;
         }
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.bg-table .btn').forEach(b => b.classList.remove('selected'));
+          document.querySelectorAll('.bg-table .opt-btn').forEach(b => b.classList.remove('selected'));
           btn.classList.add('selected');
           selectedBg = bg;
           updatePreview();
@@ -354,15 +339,6 @@
     });
 
     updatePreview();
-
-    // Send design button
-    document.getElementById('sendDesignBtn').addEventListener('click', function() {
-      var logoName = selectedLogo.design + ' - ' + selectedLogo.name;
-      var bgName = selectedBg.label;
-      var subject = encodeURIComponent('Custom Merch Design Request');
-      var body = encodeURIComponent('Hi,\n\nI would like to request a custom merch item with the following design:\n\nLogo: ' + logoName + '\nBackground: ' + bgName + '\n\nPlease let me know the next steps.\n\nThanks!');
-      window.location.href = 'mailto:jm@marziale.tech?subject=' + subject + '&body=' + body;
-    });
   </script>
 </body>
 </html>
