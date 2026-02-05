@@ -1133,6 +1133,69 @@
             background: #cce8ff;
             border: 1px dotted #000080;
         }
+        .merch-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .merch-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            font-family: inherit;
+            border: 1px solid #404040;
+            background: #c0c0c0;
+            cursor: pointer;
+        }
+        .merch-btn:hover { background: #d4d0c8; }
+        .merch-btn-add { background: #008000; color: #fff; border-color: #006400; }
+        .merch-btn-add:hover { background: #009900; }
+        .merch-preview-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px 20px;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.2s, visibility 0.2s;
+        }
+        .merch-preview-overlay.open {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .merch-preview-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            background: #c0c0c0;
+            border: 2px solid #404040;
+            cursor: pointer;
+            color: #000;
+            line-height: 1;
+            padding: 0;
+        }
+        .merch-preview-close:hover { background: #fff; }
+        .merch-preview-img {
+            max-width: 100%;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        .merch-preview-title {
+            color: #fff;
+            font-size: 14px;
+            margin-top: 12px;
+            text-align: center;
+        }
         .merch-grid .merch-item .merch-icon { font-size: 40px; }
         .merch-grid .merch-item img.merch-icon { width: 72px; height: 72px; object-fit: contain; font-size: 0; }
         .merch-grid .merch-item .merch-label { font-size: 12px; text-align: center; line-height: 1.2; }
@@ -1145,15 +1208,18 @@
         }
         @media (max-width: 700px) {
             .merch-window { width: 100vw; max-width: 100vw; }
+            .merch-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .merch-grid .merch-item {
                 flex-direction: column;
                 align-items: center;
-                gap: 12px;
-                padding: 16px;
+                gap: 6px;
+                padding: 10px;
                 width: 100%;
             }
-            .merch-grid .merch-item img.merch-icon { width: 252px; height: 252px; min-width: 252px; }
-            .merch-grid .merch-item .merch-label { font-size: 16px; text-align: center; }
+            .merch-grid .merch-item img.merch-icon { width: 64px; height: 64px; min-width: 64px; }
+            .merch-grid .merch-item .merch-label { font-size: 11px; text-align: center; line-height: 1.2; }
+            .merch-item-actions { gap: 6px; }
+            .merch-btn { padding: 5px 8px; font-size: 10px; }
         }
 
         /* My Products Window */
@@ -21826,6 +21892,11 @@
         </div>
     </div>
 
+    <div class="merch-preview-overlay" id="merchPreviewOverlay">
+        <button type="button" class="merch-preview-close" id="merchPreviewClose">&times;</button>
+        <img class="merch-preview-img" id="merchPreviewImg" src="" alt="">
+        <span class="merch-preview-title" id="merchPreviewTitle"></span>
+    </div>
     <div class="merch-window" id="merchWindow">
         <div class="merch-window-header" id="merchWindowHeader">
             <span>Merch</span>
@@ -22239,22 +22310,36 @@
                 var productId = (node.id || '').replace('gid://shopify/Product/', '');
                 var variants = (node.variants && node.variants.edges) || [];
                 if (!productId || variants.length === 0) return;
-                var btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'merch-item';
-                btn.dataset.product = productId;
-                var img = node.featuredImage && node.featuredImage.url;
+                var imgUrl = (node.featuredImage && node.featuredImage.url) || 'assets/brand/icons/socks-icon.png';
+                var title = node.title || 'Product';
+                var item = document.createElement('div');
+                item.className = 'merch-item';
+                item.dataset.product = productId;
                 var icon = document.createElement('img');
                 icon.className = 'merch-icon';
-                icon.src = img || 'assets/brand/icons/socks-icon.png';
+                icon.src = imgUrl;
                 icon.alt = '';
-                btn.appendChild(icon);
+                item.appendChild(icon);
                 var label = document.createElement('span');
                 label.className = 'merch-label';
-                label.textContent = node.title || 'Product';
-                btn.appendChild(label);
-                btn.addEventListener('click', function() { handleMerchClick(productId); });
-                merchGrid.appendChild(btn);
+                label.textContent = title;
+                item.appendChild(label);
+                var actions = document.createElement('div');
+                actions.className = 'merch-item-actions';
+                var previewBtn = document.createElement('button');
+                previewBtn.type = 'button';
+                previewBtn.className = 'merch-btn merch-btn-preview';
+                previewBtn.textContent = 'Preview';
+                previewBtn.addEventListener('click', function(e) { e.stopPropagation(); openProductPreview(imgUrl, title); });
+                var addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'merch-btn merch-btn-add';
+                addBtn.textContent = 'Add to cart';
+                addBtn.addEventListener('click', function(e) { e.stopPropagation(); handleMerchClick(productId); });
+                actions.appendChild(previewBtn);
+                actions.appendChild(addBtn);
+                item.appendChild(actions);
+                merchGrid.appendChild(item);
             });
         }).catch(function(err) {
             console.error('Failed to fetch Shopify products:', err);
@@ -22513,6 +22598,31 @@
     // Expose cart functions globally for onclick handlers
     window.openShopifyCheckout = openShopifyCheckout;
     window.updateCartQuantity = updateCartQuantity;
+
+    // Full-screen product preview overlay
+    function openProductPreview(imgUrl, title) {
+        var overlay = document.getElementById('merchPreviewOverlay');
+        var img = document.getElementById('merchPreviewImg');
+        var titleEl = document.getElementById('merchPreviewTitle');
+        if (!overlay || !img || !titleEl) return;
+        img.src = imgUrl || '';
+        img.alt = title || '';
+        titleEl.textContent = title || '';
+        overlay.classList.add('open');
+    }
+    function closeProductPreview() {
+        var overlay = document.getElementById('merchPreviewOverlay');
+        if (overlay) overlay.classList.remove('open');
+    }
+    (function() {
+        var closeBtn = document.getElementById('merchPreviewClose');
+        var overlay = document.getElementById('merchPreviewOverlay');
+        if (closeBtn) closeBtn.addEventListener('click', closeProductPreview);
+        if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeProductPreview(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) closeProductPreview();
+        });
+    })();
 
     // Handle merch item click - add to Shopify cart (productId is the numeric Shopify product ID)
     function handleMerchClick(productId) {
@@ -23315,14 +23425,6 @@
             merchWindowClose.addEventListener('click', closeMerchWindow);
         }
         // Merch item click handlers
-        if (merchGrid) {
-            merchGrid.querySelectorAll('.merch-item').forEach(function(item) {
-                if (item.hasAttribute('href')) return; // Links (e.g. custom logo) use default behavior
-                item.addEventListener('click', function() {
-                    handleMerchClick(item.dataset.product);
-                });
-            });
-        }
         var merchWindowBody = document.querySelector('.merch-window-body');
         if (merchWindowBody) {
             merchWindowBody.addEventListener('click', function(e) {
