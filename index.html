@@ -1150,6 +1150,15 @@
         .merch-btn:hover { background: #d4d0c8; }
         .merch-btn-add { background: #008000; color: #fff; border-color: #006400; }
         .merch-btn-add:hover { background: #009900; }
+        .merch-options { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+        .merch-option-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; }
+        .merch-option-row .merch-option-label { font-size: 10px; color: #666; margin-right: 4px; }
+        .merch-option-btn {
+            padding: 4px 8px; font-size: 10px; font-family: inherit;
+            border: 1px solid #404040; background: #e8e8e8; cursor: pointer;
+        }
+        .merch-option-btn:hover { background: #d4d0c8; }
+        .merch-option-btn.selected { background: #000080; color: #fff; border-color: #000; }
         .merch-preview-overlay {
             position: fixed;
             inset: 0;
@@ -22312,50 +22321,119 @@
                 if (!productId || variantEdges.length === 0) return;
                 var productImg = (node.featuredImage && node.featuredImage.url) || 'assets/brand/icons/socks-icon.png';
                 var productTitle = node.title || 'Product';
+                var variants = [];
                 variantEdges.forEach(function(vEdge) {
                     var v = vEdge.node;
                     if (v.availableForSale === false) return;
-                    var variantId = v.id;
-                    var imgUrl = (v.image && v.image.url) || productImg;
-                    var priceAmt = (v.price && v.price.amount) ? parseFloat(v.price.amount).toFixed(2) : null;
-                    var opts = (v.selectedOptions || []).map(function(o) { return (o.value || '').trim(); }).filter(Boolean);
-                    var optsStr = opts.length ? ' - ' + opts.join(' / ') : '';
-                    var labelText = productTitle + optsStr + (priceAmt != null ? ' - $' + priceAmt : '');
-                    var item = document.createElement('div');
-                    item.className = 'merch-item';
-                    item.dataset.variant = variantId;
-                    var icon = document.createElement('img');
-                    icon.className = 'merch-icon';
-                    icon.src = imgUrl;
-                    icon.alt = '';
-                    item.appendChild(icon);
-                    var label = document.createElement('span');
-                    label.className = 'merch-label';
-                    label.appendChild(document.createTextNode(productTitle + optsStr + (priceAmt != null ? ' - ' : '')));
-                    if (priceAmt != null) {
-                        var priceSpan = document.createElement('span');
-                        priceSpan.className = 'merch-price';
-                        priceSpan.textContent = '$' + priceAmt;
-                        label.appendChild(priceSpan);
-                    }
-                    item.appendChild(label);
-                    var actions = document.createElement('div');
-                    actions.className = 'merch-item-actions';
-                    var previewBtn = document.createElement('button');
-                    previewBtn.type = 'button';
-                    previewBtn.className = 'merch-btn merch-btn-preview';
-                    previewBtn.textContent = 'Preview';
-                    previewBtn.addEventListener('click', function(e) { e.stopPropagation(); openProductPreview(imgUrl, labelText); });
-                    var addBtn = document.createElement('button');
-                    addBtn.type = 'button';
-                    addBtn.className = 'merch-btn merch-btn-add';
-                    addBtn.textContent = 'Add to cart';
-                    addBtn.addEventListener('click', function(e) { e.stopPropagation(); handleMerchClick(variantId); });
-                    actions.appendChild(previewBtn);
-                    actions.appendChild(addBtn);
-                    item.appendChild(actions);
-                    merchGrid.appendChild(item);
+                    variants.push(v);
                 });
+                if (variants.length === 0) return;
+                var firstV = variants[0];
+                var optionNames = [];
+                (firstV.selectedOptions || []).forEach(function(o) {
+                    if (o.name && optionNames.indexOf(o.name) === -1) optionNames.push(o.name);
+                });
+                function findVariant(selected) {
+                    for (var i = 0; i < variants.length; i++) {
+                        var v = variants[i];
+                        var opts = v.selectedOptions || [];
+                        var match = true;
+                        for (var k in selected) {
+                            var found = false;
+                            for (var j = 0; j < opts.length; j++) {
+                                if (opts[j].name === k && opts[j].value === selected[k]) { found = true; break; }
+                            }
+                            if (!found) { match = false; break; }
+                        }
+                        if (match) return v;
+                    }
+                    return variants[0];
+                }
+                var selected = {};
+                (firstV.selectedOptions || []).forEach(function(o) { if (o.name) selected[o.name] = o.value; });
+                var item = document.createElement('div');
+                item.className = 'merch-item';
+                item.dataset.product = productId;
+                var icon = document.createElement('img');
+                icon.className = 'merch-icon';
+                icon.src = (firstV.image && firstV.image.url) || productImg;
+                icon.alt = '';
+                item.appendChild(icon);
+                var label = document.createElement('span');
+                label.className = 'merch-label';
+                var priceAmt = (firstV.price && firstV.price.amount) ? parseFloat(firstV.price.amount).toFixed(2) : null;
+                label.appendChild(document.createTextNode(productTitle + (priceAmt != null ? ' - ' : '')));
+                if (priceAmt != null) {
+                    var priceSpan = document.createElement('span');
+                    priceSpan.className = 'merch-price';
+                    priceSpan.textContent = '$' + priceAmt;
+                    label.appendChild(priceSpan);
+                }
+                item.appendChild(label);
+                var optionsWrap = document.createElement('div');
+                optionsWrap.className = 'merch-options';
+                optionNames.forEach(function(optName) {
+                    var values = [];
+                    variants.forEach(function(v) {
+                        (v.selectedOptions || []).forEach(function(o) {
+                            if (o.name === optName && o.value && values.indexOf(o.value) === -1) values.push(o.value);
+                        });
+                    });
+                    if (values.length === 0) return;
+                    var row = document.createElement('div');
+                    row.className = 'merch-option-row';
+                    var lbl = document.createElement('span');
+                    lbl.className = 'merch-option-label';
+                    lbl.textContent = optName + ':';
+                    row.appendChild(lbl);
+                    values.forEach(function(val) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'merch-option-btn' + (selected[optName] === val ? ' selected' : '');
+                        btn.textContent = val;
+                        btn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            selected[optName] = val;
+                            row.querySelectorAll('.merch-option-btn').forEach(function(b) { b.classList.remove('selected'); });
+                            btn.classList.add('selected');
+                            var v = findVariant(selected);
+                            icon.src = (v.image && v.image.url) || productImg;
+                            var pa = (v.price && v.price.amount) ? parseFloat(v.price.amount).toFixed(2) : null;
+                            if (priceSpan) priceSpan.textContent = pa != null ? '$' + pa : '';
+                            item._currentVariant = v;
+                        });
+                        row.appendChild(btn);
+                    });
+                    optionsWrap.appendChild(row);
+                });
+                if (optionNames.length > 0) item.appendChild(optionsWrap);
+                item._currentVariant = firstV;
+                var actions = document.createElement('div');
+                actions.className = 'merch-item-actions';
+                var previewBtn = document.createElement('button');
+                previewBtn.type = 'button';
+                previewBtn.className = 'merch-btn merch-btn-preview';
+                previewBtn.textContent = 'Preview';
+                previewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var v = item._currentVariant || firstV;
+                    var img = (v.image && v.image.url) || productImg;
+                    var optsStr = (v.selectedOptions || []).map(function(o) { return o.value; }).filter(Boolean).join(' / ');
+                    openProductPreview(img, productTitle + (optsStr ? ' - ' + optsStr : ''));
+                });
+                var addBtn = document.createElement('button');
+                addBtn.type = 'button';
+                addBtn.className = 'merch-btn merch-btn-add';
+                addBtn.textContent = 'Add to cart';
+                addBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var v = item._currentVariant || firstV;
+                    handleMerchClick(v.id, productId);
+                });
+                actions.appendChild(previewBtn);
+                actions.appendChild(addBtn);
+                item.appendChild(actions);
+                merchGrid.appendChild(item);
             });
         }).catch(function(err) {
             console.error('Failed to fetch Shopify products:', err);
@@ -22640,11 +22718,11 @@
         });
     })();
 
-    // Handle merch item click - add to Shopify cart (variantId is the Shopify variant GID)
-    function handleMerchClick(variantId) {
+    // Handle merch item click - add to Shopify cart (variantId is the Shopify variant GID, productId for feedback)
+    function handleMerchClick(variantId, productId) {
         if (!shopifyClient || !shopifyCheckout) {
             console.log('Shopify not initialized yet');
-            showMerchFeedback(variantId, 'Loading...', false);
+            showMerchFeedback(productId, 'Loading...', false);
             initShopify();
             return;
         }
@@ -22652,7 +22730,7 @@
         if (!variantId) return;
 
         // Show loading feedback
-        showMerchFeedback(variantId, 'Adding...', false);
+        showMerchFeedback(productId, 'Adding...', false);
 
         // Set initial quantity in local override (workaround for SDK bug)
         var existingQty = localQuantities[variantId] || 0;
@@ -22663,18 +22741,18 @@
             if (checkout) {
                 shopifyCheckout = checkout;
                 updateCartUI();
-                showMerchFeedback(variantId, 'Added!', true);
+                showMerchFeedback(productId, 'Added!', true);
             }
         }).catch(function(err) {
             console.error('Failed to add to cart:', err);
             localQuantities[variantId] = (localQuantities[variantId] || 1) - 1;
-            showMerchFeedback(variantId, 'Error', false);
+            showMerchFeedback(productId, 'Error', false);
         });
     }
 
     // Show feedback overlay on merch item
-    function showMerchFeedback(variantId, message, success) {
-        var item = document.querySelector('.merch-item[data-variant="' + variantId + '"]');
+    function showMerchFeedback(productId, message, success) {
+        var item = document.querySelector('.merch-item[data-product="' + productId + '"]');
         if (!item) return;
         var existing = item.querySelector('.merch-item-added, .merch-coming-soon');
         if (existing) existing.remove();
