@@ -8,7 +8,7 @@
         (function() {
             var path = (window.location.pathname || '/').replace(/\/$/, '') || '/';
             var route = path === '/' ? '' : path.replace(/^\//, '').toLowerCase();
-            var hashMap = { merch: 'merch', about: 'about', contact: 'contact' };
+            var hashMap = { merch: 'merch', about: 'about', contact: 'contact', pay: 'pay', research: 'research', products: 'products' };
             var hash = hashMap[route] ? '#' + hashMap[route] : '';
             window.location.replace((window.location.origin || '') + '/' + hash);
         })();

@@ -1049,15 +1049,14 @@
         .merch-window-header {
             background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
             color: #fff;
+            cursor: default;
             padding: 3px 6px 4px 6px;
             font-size: 11px;
-            cursor: grab;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #000;
         }
-        .merch-window-header:active { cursor: grabbing; }
         .merch-window-close {
             background: #c0c0c0;
             color: #000;
@@ -22195,6 +22194,7 @@
         productsWindow.style.left = Math.max(10, (window.innerWidth - 360) / 2) + 'px';
         productsWindow.style.top = Math.max(10, (window.innerHeight - 300) / 2) + 'px';
         productsWindow.classList.add('open');
+        if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', (window.location.pathname || '/') + '#products');
         requestAnimationFrame(function() {
             productsWindow.style.left = Math.max(10, (window.innerWidth - productsWindow.offsetWidth) / 2) + 'px';
         });
@@ -22204,6 +22204,9 @@
     // Close products window
     function closeProductsWindow() {
         if (productsWindow) productsWindow.classList.remove('open');
+        if (typeof history !== 'undefined' && history.replaceState && (window.location.hash || '').replace(/^#/, '') === 'products') {
+            history.replaceState(null, '', window.location.pathname || '/');
+        }
     }
 
     // Position the Research button: x = Login initial x, y = Contact initial y
@@ -22223,6 +22226,7 @@
         researchWindow.style.left = Math.max(10, (window.innerWidth - 360) / 2) + 'px';
         researchWindow.style.top = Math.max(10, (window.innerHeight - 300) / 2) + 'px';
         researchWindow.classList.add('open');
+        if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', (window.location.pathname || '/') + '#research');
         requestAnimationFrame(function() {
             researchWindow.style.left = Math.max(10, (window.innerWidth - researchWindow.offsetWidth) / 2) + 'px';
         });
@@ -22231,6 +22235,9 @@
     // Close research window
     function closeResearchWindow() {
         if (researchWindow) researchWindow.classList.remove('open');
+        if (typeof history !== 'undefined' && history.replaceState && (window.location.hash || '').replace(/^#/, '') === 'research') {
+            history.replaceState(null, '', window.location.pathname || '/');
+        }
     }
 
     // Position the Merch button: y = midpoint of Contact and About, x = Contact's x
@@ -22251,25 +22258,37 @@
         merchBtn.style.top = btnY + 'px';
     }
 
-    // Open merch window (centered in viewport)
+    // Center merch window (non-draggable; stays centered as content loads)
+    function centerMerchWindow() {
+        if (!merchWindow || !merchWindow.classList.contains('open')) return;
+        var w = merchWindow.offsetWidth || 380;
+        var h = merchWindow.offsetHeight || 320;
+        merchWindow.style.left = Math.max(10, (window.innerWidth - w) / 2) + 'px';
+        merchWindow.style.top = Math.max(10, (window.innerHeight - h) / 2) + 'px';
+    }
+    var merchResizeObserver = null;
     function openMerchWindow() {
         if (!merchWindow) return;
         merchWindow.classList.add('open');
         if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', (window.location.pathname || '/') + '#merch');
-        function centerMerchWindow() {
-            var w = merchWindow.offsetWidth || 380;
-            var h = merchWindow.offsetHeight || 320;
-            merchWindow.style.left = Math.max(10, (window.innerWidth - w) / 2) + 'px';
-            merchWindow.style.top = Math.max(10, (window.innerHeight - h) / 2) + 'px';
-        }
         centerMerchWindow();
-        requestAnimationFrame(function() {
-            requestAnimationFrame(centerMerchWindow);
-        });
+        requestAnimationFrame(function() { requestAnimationFrame(centerMerchWindow); });
+        if (typeof ResizeObserver !== 'undefined') {
+            if (merchResizeObserver) merchResizeObserver.disconnect();
+            merchResizeObserver = new ResizeObserver(function() { centerMerchWindow(); });
+            merchResizeObserver.observe(merchWindow);
+        }
+    }
+    function stopMerchResizeObserver() {
+        if (merchResizeObserver) {
+            merchResizeObserver.disconnect();
+            merchResizeObserver = null;
+        }
     }
 
     // Close merch window
     function closeMerchWindow() {
+        stopMerchResizeObserver();
         if (merchWindow) merchWindow.classList.remove('open');
         if (typeof history !== 'undefined' && history.replaceState && (window.location.hash || '').replace(/^#/, '') === 'merch') {
             history.replaceState(null, '', window.location.pathname || '/');
@@ -22860,6 +22879,7 @@
     function openPayWindow() {
         payWindow.style.left = '10px';
         payWindow.classList.add('open');
+        if (typeof history !== 'undefined' && history.replaceState) history.replaceState(null, '', (window.location.pathname || '/') + '#pay');
         requestAnimationFrame(function() {
             var h = payWindow.offsetHeight;
             payWindow.style.top = Math.max(10, window.innerHeight * 0.30 - h / 2) + 'px';
@@ -22872,6 +22892,9 @@
     // Close pay window
     function closePayWindow() {
         payWindow.classList.remove('open');
+        if (typeof history !== 'undefined' && history.replaceState && (window.location.hash || '').replace(/^#/, '') === 'pay') {
+            history.replaceState(null, '', window.location.pathname || '/');
+        }
     }
 
     // Login window: init Supabase and auth UI
@@ -23517,9 +23540,7 @@
                 openMerchWindow();
             });
         }
-        if (merchWindow && merchWindowHeader) {
-            makeDraggable(merchWindow, merchWindowHeader);
-        }
+        // Merch window is non-draggable; ResizeObserver keeps it centered as products load
         if (merchWindowClose) {
             merchWindowClose.addEventListener('click', closeMerchWindow);
         }
@@ -23544,6 +23565,9 @@
             if (h === 'merch' && merchWindow) openMerchWindow();
             else if (h === 'about' && aboutWindow) openAboutWindow();
             else if (h === 'contact' && mailWindow) openMailWindow();
+            else if (h === 'pay' && payWindow) openPayWindow();
+            else if (h === 'research' && researchWindow) openResearchWindow();
+            else if (h === 'products' && productsWindow) openProductsWindow();
         }
         window.addEventListener('hashchange', applyWindowFromHash);
         applyWindowFromHash();
@@ -23589,6 +23613,7 @@
             positionProductsBtn();
             positionResearchBtn();
             positionMerchBtn();
+            centerMerchWindow();
         });
     }
 
