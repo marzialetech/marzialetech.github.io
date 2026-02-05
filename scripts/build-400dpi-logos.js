@@ -103,6 +103,15 @@ if (fs.existsSync(logoDir)) {
   console.log('');
 }
 
+// Lake Street Bakery logos
+const lakestreetDir = path.join(repoRoot, 'assets', 'lakestreetbakery');
+if (fs.existsSync(lakestreetDir)) {
+  console.log('Lake Street Bakery:');
+  pngTo400dpi(path.join(lakestreetDir, 'lakestreetbakery-logo.png'), path.join(dpiDir, 'lakestreetbakery-logo-400dpi.png'));
+  pngTo400dpi(path.join(lakestreetDir, 'lakestreetbakery-logo-white.png'), path.join(dpiDir, 'lakestreetbakery-logo-white-400dpi.png'));
+  console.log('');
+}
+
 // Copy pizza-delivery and metal-band fill variants to 400dpi folder
 for (const dir of ['pizza-delivery', 'metal-band']) {
   const dirPath = path.join(brandDir, dir);
