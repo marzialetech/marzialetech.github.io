@@ -22240,13 +22240,19 @@
         }
     }
 
-    // Position the Research button: x = About icon, y = Contact initial y
+    // Position the Research button: halfway between bottom of angel logo and login button
     function positionResearchBtn() {
-        if (!researchBtn || !mailBtn || !aboutBtn) return;
+        if (!researchBtn || !loginBtn) return;
         const figRect = figAngel.getBoundingClientRect();
-        const mailRect = mailBtn.getBoundingClientRect();
-        const btnX = parseFloat(aboutBtn.style.left) || 0;
-        const btnY = mailRect.top - figRect.top;
+        const loginRect = loginBtn.getBoundingClientRect();
+        const angelCenterX = figRect.left + figRect.width / 2;
+        const angelBottom = figRect.bottom;
+        const loginCenterX = loginRect.left + loginRect.width / 2;
+        const loginCenterY = loginRect.top + loginRect.height / 2;
+        const midX = (angelCenterX + loginCenterX) / 2;
+        const midY = (angelBottom + loginCenterY) / 2;
+        const btnX = midX - figRect.left - (researchBtn.offsetWidth / 2);
+        const btnY = midY - figRect.top - (researchBtn.offsetHeight / 2);
         researchBtn.style.left = btnX + 'px';
         researchBtn.style.top = btnY + 'px';
     }
