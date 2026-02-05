@@ -22172,6 +22172,22 @@
         var merchGrid = document.getElementById('merchGrid');
         if (!merchGrid) return;
         var designLink = document.getElementById('merchCustomLogo');
+        function showMsg(msg, isError) {
+            merchGrid.innerHTML = '';
+            var p = document.createElement('p');
+            p.className = 'merch-load-msg' + (isError ? ' merch-load-err' : '');
+            p.textContent = msg;
+            p.style.margin = '0.5rem 0';
+            p.style.fontSize = '12px';
+            p.style.color = isError ? '#c00' : '#666';
+            merchGrid.appendChild(p);
+            if (designLink) merchGrid.appendChild(designLink);
+        }
+        if (!SHOPIFY_STOREFRONT_TOKEN) {
+            showMsg('Add your Storefront API token to shopify-config.js (see SHOPIFY_SETUP.md)', true);
+            return;
+        }
+        showMsg('Loading products…', false);
         var url = 'https://' + SHOPIFY_DOMAIN + '/api/2024-01/graphql.json';
         var query = 'query { products(first: 50) { edges { node { id title featuredImage { url } variants(first: 1) { edges { node { id } } } } } } }';
         fetch(url, {
@@ -22184,10 +22200,15 @@
         }).then(function(res) { return res.json(); }).then(function(data) {
             if (data.errors) {
                 console.error('Shopify products error:', data.errors);
+                showMsg('Storefront API error. Check token and scopes.', true);
                 return;
             }
             var edges = (data.data && data.data.products && data.data.products.edges) || [];
             merchGrid.innerHTML = '';
+            if (edges.length === 0) {
+                showMsg('No products in your store yet. Add products in Shopify Admin.', false);
+                return;
+            }
             edges.forEach(function(edge) {
                 var node = edge.node;
                 var productId = (node.id || '').replace('gid://shopify/Product/', '');
@@ -22213,6 +22234,7 @@
             if (designLink) merchGrid.appendChild(designLink);
         }).catch(function(err) {
             console.error('Failed to fetch Shopify products:', err);
+            showMsg('Could not load products. Check token and network.', true);
         });
     }
 
