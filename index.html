@@ -22200,7 +22200,8 @@
         }).then(function(res) { return res.json(); }).then(function(data) {
             if (data.errors) {
                 console.error('Shopify products error:', data.errors);
-                showMsg('Storefront API error. Check token and scopes.', true);
+                var errMsg = (data.errors[0] && data.errors[0].message) || data.errors[0] || 'Unknown';
+                showMsg('Storefront API error: ' + String(errMsg).slice(0, 80) + '. Check token and scopes.', true);
                 return;
             }
             var edges = (data.data && data.data.products && data.data.products.edges) || [];
