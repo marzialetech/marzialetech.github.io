@@ -22240,12 +22240,12 @@
         }
     }
 
-    // Position the Research button: x = Login initial x, y = Contact initial y
+    // Position the Research button: x = About icon, y = Contact initial y
     function positionResearchBtn() {
-        if (!researchBtn || !mailBtn) return;
+        if (!researchBtn || !mailBtn || !aboutBtn) return;
         const figRect = figAngel.getBoundingClientRect();
         const mailRect = mailBtn.getBoundingClientRect();
-        const btnX = (window.innerWidth * 0.75) - (researchBtn.offsetWidth / 2) - figRect.left;
+        const btnX = parseFloat(aboutBtn.style.left) || 0;
         const btnY = mailRect.top - figRect.top;
         researchBtn.style.left = btnX + 'px';
         researchBtn.style.top = btnY + 'px';
