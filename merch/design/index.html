@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>400 DPI Logos – Preview</title>
+  <title>Design Your Merch – Marziale</title>
   <style>
     * { box-sizing: border-box; }
     html { overflow-x: hidden; width: 100%; }
@@ -26,6 +26,37 @@
       color: #999;
       margin-bottom: 2rem;
       max-width: 60ch;
+    }
+    .top-actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .action-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s;
+    }
+    .action-btn-primary {
+      background: #2563eb;
+      color: #fff;
+    }
+    .action-btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .action-btn-secondary {
+      background: #444;
+      color: #ddd;
+      border: 1px solid #555;
+    }
+    .action-btn-secondary:hover {
+      background: #555;
     }
     .layout {
       display: flex;
@@ -138,6 +169,8 @@
       body { padding: 0.5rem; }
       h1 { font-size: 1.15rem; }
       .intro { margin-bottom: 0.75rem; font-size: 0.85rem; }
+      .top-actions { margin-bottom: 1rem; }
+      .action-btn { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
       .layout { flex-direction: column; gap: 0.75rem; width: 100%; min-width: 0; }
       .controls { width: 100%; max-width: 100%; flex-shrink: 1; }
       .control-group { min-width: 0; overflow-x: hidden; }
@@ -153,8 +186,13 @@
 </head>
 <body>
   <div class="page-wrap">
-  <h1>400 DPI Logos – Preview</h1>
-  <p class="intro">Select a logo and a background to preview the combination.</p>
+  <h1>Design Your Merch</h1>
+  <p class="intro">Select a logo and a background to preview the combination. When you're happy with your design, send it to us!</p>
+
+  <div class="top-actions">
+    <a href="/merch" class="action-btn action-btn-secondary">&larr; Back to Merch</a>
+    <button type="button" id="sendDesignBtn" class="action-btn action-btn-primary">Send This Design</button>
+  </div>
 
   <div class="layout">
   <div class="controls">
@@ -181,6 +219,8 @@
   </div>
 
   <script>
+    const assetBase = '/assets/brand/400dpi/';
+
     const logoGroups = [
       { design: 'Angel', logos: [
         { file: 'angel-silhouette-pixelated-400dpi.png', name: 'Black' },
@@ -248,12 +288,12 @@
     function updatePreview() {
       preview.style.backgroundColor = selectedBg.isCamo ? '#e8e4dc' : selectedBg.color;
       if (selectedBg.isCamo && selectedBg.camoFile) {
-        preview.style.backgroundImage = `url('${selectedLogo.file}'), url('${selectedBg.camoFile}')`;
+        preview.style.backgroundImage = `url('${assetBase}${selectedLogo.file}'), url('${assetBase}${selectedBg.camoFile}')`;
         preview.style.backgroundSize = 'contain, cover';
         preview.style.backgroundRepeat = 'no-repeat, no-repeat';
         preview.style.backgroundPosition = 'center, center';
       } else {
-        preview.style.backgroundImage = `url('${selectedLogo.file}')`;
+        preview.style.backgroundImage = `url('${assetBase}${selectedLogo.file}')`;
         preview.style.backgroundSize = 'contain';
         preview.style.backgroundRepeat = 'no-repeat';
         preview.style.backgroundPosition = 'center';
@@ -299,7 +339,7 @@
         btn.type = 'button';
         btn.title = bg.label;
         if (bg.isCamo && bg.camoFile) {
-          btn.style.background = `url('${bg.camoFile}') center/cover no-repeat`;
+          btn.style.background = `url('${assetBase}${bg.camoFile}') center/cover no-repeat`;
           btn.style.border = '1px solid #555';
         } else {
           btn.style.background = bg.color;
@@ -317,6 +357,15 @@
     });
 
     updatePreview();
+
+    // Send design button
+    document.getElementById('sendDesignBtn').addEventListener('click', function() {
+      var logoName = selectedLogo.design + ' - ' + selectedLogo.name;
+      var bgName = selectedBg.label;
+      var subject = encodeURIComponent('Custom Merch Design Request');
+      var body = encodeURIComponent('Hi,\n\nI would like to request a custom merch item with the following design:\n\nLogo: ' + logoName + '\nBackground: ' + bgName + '\n\nPlease let me know the next steps.\n\nThanks!');
+      window.location.href = 'mailto:jm@marziale.tech?subject=' + subject + '&body=' + body;
+    });
   </script>
 </body>
 </html>
