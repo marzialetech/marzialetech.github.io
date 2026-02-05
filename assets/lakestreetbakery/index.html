@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lake Street Bakery – Logo Preview</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/logo/favicon.svg">
+  <link href="https://fonts.cdnfonts.com/css/w95fa" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      font-family: "W95FA", "MS Sans Serif", "Microsoft Sans Serif", Geneva, sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #2563eb;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: clamp(1rem, 4vw, 2rem);
+    }
+    .top-actions {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: #c0c0c0;
+      color: #000;
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      padding: 6px 16px;
+      font-family: inherit;
+      font-size: clamp(0.7rem, 2vw, 0.9rem);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { background: #d4d0c8; }
+    .btn:active { border-color: #404040 #fff #fff #404040; }
+    .design-window {
+      background: #c0c0c0;
+      color: #000;
+      border: 2px solid;
+      border-color: #dfdfdf #000 #000 #dfdfdf;
+      box-shadow: 2px 2px 0 #404040;
+      width: 100%;
+      max-width: 900px;
+    }
+    .design-window-header {
+      background: linear-gradient(90deg, #000080 0%, #1084d0 100%);
+      color: #fff;
+      padding: 3px 8px 4px 8px;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #000;
+    }
+    .design-window-body {
+      padding: clamp(0.75rem, 3vw, 1.5rem);
+      background: #fff;
+      border: 1px solid #808080;
+      margin: 2px;
+    }
+    .layout {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      flex: 1;
+      min-width: 200px;
+    }
+    .control-group label {
+      display: block;
+      font-size: clamp(0.65rem, 1.8vw, 0.75rem);
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 0.4rem;
+    }
+    .logo-table, .bg-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .logo-table th, .bg-table th {
+      text-align: left;
+      padding: 0.3rem 0.5rem 0.3rem 0;
+      font-size: clamp(0.55rem, 1.5vw, 0.65rem);
+      font-weight: 600;
+      color: #666;
+      border-bottom: 1px solid #c0c0c0;
+      vertical-align: middle;
+    }
+    .logo-table td, .bg-table td {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid #e0e0e0;
+      vertical-align: middle;
+    }
+    .logo-table tr:last-child td, .bg-table tr:last-child td {
+      border-bottom: none;
+    }
+    .logo-table .design-cell {
+      min-width: 80px;
+      font-size: clamp(0.55rem, 1.5vw, 0.7rem);
+      color: #333;
+    }
+    .logo-table .color-cell, .bg-table .color-cell {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+    .opt-btn {
+      padding: 3px 8px;
+      font-size: clamp(0.5rem, 1.4vw, 0.65rem);
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      background: #c0c0c0;
+      color: #000;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .opt-btn:hover { background: #d4d0c8; }
+    .opt-btn:active { border-color: #404040 #fff #fff #404040; }
+    .opt-btn.selected {
+      background: #000080;
+      color: #fff;
+      border-color: #404040 #fff #fff #404040;
+    }
+    .color-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .color-picker-row input[type="color"] {
+      width: 2.5rem;
+      height: 1.8rem;
+      padding: 2px;
+      border: 2px solid;
+      border-color: #404040 #fff #fff #404040;
+      cursor: pointer;
+      background: #c0c0c0;
+    }
+    .color-picker-row #bgColorHex {
+      font-size: clamp(0.55rem, 1.5vw, 0.7rem);
+      color: #333;
+    }
+    .preview-wrap {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #404040 #fff #fff #404040;
+      padding: 1rem;
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      min-width: 200px;
+    }
+    .preview {
+      display: inline-block;
+      position: relative;
+      line-height: 0;
+    }
+    .preview img {
+      display: block;
+      max-width: 400px;
+      width: auto;
+      height: auto;
+      vertical-align: bottom;
+    }
+    @media (max-width: 600px) {
+      .layout { flex-direction: column; }
+      .preview-wrap { min-height: 200px; width: 100%; }
+      .preview { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-actions">
+    <a href="/" class="btn">&larr; Back</a>
+  </div>
+
+  <div class="design-window">
+    <div class="design-window-header">
+      <span>Lake Street Bakery – Logo Preview</span>
+    </div>
+    <div class="design-window-body">
+      <div class="layout">
+        <div class="controls">
+          <div class="control-group">
+            <label>Logo</label>
+            <table class="logo-table">
+              <thead><tr><th>Variant</th><th>Options</th></tr></thead>
+              <tbody id="logo-rows"></tbody>
+            </table>
+          </div>
+          <div class="control-group">
+            <label>Background</label>
+            <div class="color-picker-row">
+              <input type="color" id="bgColor" value="#14532d" title="Pick background color">
+              <span id="bgColorHex">#14532d</span>
+            </div>
+          </div>
+        </div>
+        <div class="preview-wrap">
+          <div class="preview" id="preview"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const assetBase = '';
+
+    const logoGroups = [
+      { design: 'Logo', logos: [
+        { file: 'lakestreetbakery-logo.png', name: 'Black' },
+        { file: 'lakestreetbakery-logo-white.png', name: 'White' },
+      ]},
+    ];
+
+    const allLogos = logoGroups.flatMap(g => g.logos.map(l => ({ ...l, design: g.design })));
+    let selectedLogo = allLogos[0];
+    let bgColor = '#14532d';
+
+    const logoRows = document.getElementById('logo-rows');
+    const preview = document.getElementById('preview');
+    const bgColorInput = document.getElementById('bgColor');
+    const bgColorHex = document.getElementById('bgColorHex');
+
+    function updatePreview() {
+      preview.style.backgroundColor = bgColor;
+      var img = preview.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        img.alt = 'Logo preview';
+        preview.appendChild(img);
+      }
+      img.src = assetBase + selectedLogo.file;
+    }
+
+    logoGroups.forEach(group => {
+      const tr = document.createElement('tr');
+      const designCell = document.createElement('td');
+      designCell.className = 'design-cell';
+      designCell.textContent = group.design;
+      tr.appendChild(designCell);
+      const colorCell = document.createElement('td');
+      colorCell.className = 'color-cell';
+      group.logos.forEach((logo) => {
+        const btn = document.createElement('button');
+        btn.className = 'opt-btn' + (logo.file === selectedLogo.file ? ' selected' : '');
+        btn.textContent = logo.name;
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.logo-table .opt-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedLogo = logo;
+          updatePreview();
+        });
+        colorCell.appendChild(btn);
+      });
+      tr.appendChild(colorCell);
+      logoRows.appendChild(tr);
+    });
+
+    bgColorInput.addEventListener('input', function() {
+      bgColor = this.value;
+      bgColorHex.textContent = bgColor;
+      updatePreview();
+    });
+    bgColorInput.addEventListener('change', function() {
+      bgColor = this.value;
+      bgColorHex.textContent = bgColor;
+      updatePreview();
+    });
+
+    updatePreview();
+  </script>
+</body>
+</html>
