@@ -1217,10 +1217,56 @@
             padding: 0;
         }
         .merch-preview-close:hover { background: #fff; }
+        .merch-preview-viewport {
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-height: 70vh;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .merch-preview-viewport:active,
+        .merch-preview-viewport.dragging { cursor: grabbing; }
         .merch-preview-img {
             max-width: 100%;
             max-height: 70vh;
             object-fit: contain;
+            transform-origin: center center;
+            will-change: transform;
+        }
+        .merch-preview-zoom-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+        .merch-preview-zoom-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 20px;
+            background: #c0c0c0;
+            border: 2px solid #404040;
+            color: #000;
+            cursor: pointer;
+            padding: 0;
+            font-family: inherit;
+        }
+        .merch-preview-zoom-btn:hover { background: #d4d0c8; }
+        .merch-preview-zoom-label {
+            color: #fff;
+            font-size: 12px;
+            min-width: 40px;
+            text-align: center;
+        }
+        .merch-preview-hint {
+            color: #808080;
+            font-size: 11px;
+            margin: 6px 0 0 0;
         }
         .merch-preview-title {
             color: #fff;
@@ -21926,7 +21972,15 @@
 
     <div class="merch-preview-overlay" id="merchPreviewOverlay">
         <button type="button" class="merch-preview-close" id="merchPreviewClose">&times;</button>
-        <img class="merch-preview-img" id="merchPreviewImg" src="" alt="">
+        <div class="merch-preview-viewport" id="merchPreviewViewport">
+            <img class="merch-preview-img" id="merchPreviewImg" src="" alt="">
+        </div>
+        <div class="merch-preview-zoom-controls">
+            <button type="button" class="merch-preview-zoom-btn" id="merchPreviewZoomOut" title="Zoom out">−</button>
+            <span class="merch-preview-zoom-label" id="merchPreviewZoomLabel">100%</span>
+            <button type="button" class="merch-preview-zoom-btn" id="merchPreviewZoomIn" title="Zoom in">+</button>
+        </div>
+        <p class="merch-preview-hint">Drag to pan • Scroll or pinch to zoom</p>
         <span class="merch-preview-title" id="merchPreviewTitle"></span>
     </div>
     <div class="merch-window" id="merchWindow">
@@ -22753,7 +22807,35 @@
     window.openShopifyCheckout = openShopifyCheckout;
     window.updateCartQuantity = updateCartQuantity;
 
-    // Full-screen product preview overlay
+    // Full-screen product preview overlay with zoom/pan
+    var merchPreviewZoom = 1, merchPreviewPanX = 0, merchPreviewPanY = 0;
+    var merchPreviewDragging = false, merchPreviewLastX = 0, merchPreviewLastY = 0;
+    var merchPreviewLastPinchDist = 0;
+    var MERCH_PREVIEW_MIN_ZOOM = 0.5, MERCH_PREVIEW_MAX_ZOOM = 4, MERCH_PREVIEW_ZOOM_STEP = 0.25;
+
+    function merchPreviewApplyTransform() {
+        var img = document.getElementById('merchPreviewImg');
+        var label = document.getElementById('merchPreviewZoomLabel');
+        if (img) img.style.transform = 'translate(' + merchPreviewPanX + 'px,' + merchPreviewPanY + 'px) scale(' + merchPreviewZoom + ')';
+        if (label) label.textContent = Math.round(merchPreviewZoom * 100) + '%';
+    }
+    function merchPreviewDoZoom(delta, centerX, centerY) {
+        var viewport = document.getElementById('merchPreviewViewport');
+        var oldZoom = merchPreviewZoom;
+        merchPreviewZoom = Math.max(MERCH_PREVIEW_MIN_ZOOM, Math.min(MERCH_PREVIEW_MAX_ZOOM, merchPreviewZoom + delta));
+        if (viewport && centerX != null && centerY != null && oldZoom !== merchPreviewZoom) {
+            var rect = viewport.getBoundingClientRect();
+            var cx = centerX - rect.left - rect.width / 2;
+            var cy = centerY - rect.top - rect.height / 2;
+            merchPreviewPanX += cx * (1 - merchPreviewZoom / oldZoom);
+            merchPreviewPanY += cy * (1 - merchPreviewZoom / oldZoom);
+        }
+        merchPreviewApplyTransform();
+    }
+    function getMerchPreviewTouchDist(touches) {
+        return Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
+    }
+
     function openProductPreview(imgUrl, title) {
         var overlay = document.getElementById('merchPreviewOverlay');
         var img = document.getElementById('merchPreviewImg');
@@ -22762,6 +22844,10 @@
         img.src = imgUrl || '';
         img.alt = title || '';
         titleEl.textContent = title || '';
+        merchPreviewZoom = 1;
+        merchPreviewPanX = 0;
+        merchPreviewPanY = 0;
+        merchPreviewApplyTransform();
         overlay.classList.add('open');
     }
     function closeProductPreview() {
@@ -22771,11 +22857,77 @@
     (function() {
         var closeBtn = document.getElementById('merchPreviewClose');
         var overlay = document.getElementById('merchPreviewOverlay');
+        var viewport = document.getElementById('merchPreviewViewport');
+        var img = document.getElementById('merchPreviewImg');
+        var zoomInBtn = document.getElementById('merchPreviewZoomIn');
+        var zoomOutBtn = document.getElementById('merchPreviewZoomOut');
+
         if (closeBtn) closeBtn.addEventListener('click', closeProductPreview);
         if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeProductPreview(); });
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && overlay && overlay.classList.contains('open')) closeProductPreview();
         });
+
+        if (viewport && img) {
+            viewport.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                merchPreviewDragging = true;
+                merchPreviewLastX = e.clientX;
+                merchPreviewLastY = e.clientY;
+                viewport.classList.add('dragging');
+            });
+            window.addEventListener('mousemove', function(e) {
+                if (!merchPreviewDragging) return;
+                merchPreviewPanX += e.clientX - merchPreviewLastX;
+                merchPreviewPanY += e.clientY - merchPreviewLastY;
+                merchPreviewLastX = e.clientX;
+                merchPreviewLastY = e.clientY;
+                merchPreviewApplyTransform();
+            });
+            window.addEventListener('mouseup', function() {
+                merchPreviewDragging = false;
+                if (viewport) viewport.classList.remove('dragging');
+            });
+
+            viewport.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) merchPreviewLastPinchDist = getMerchPreviewTouchDist(e.touches);
+                else if (e.touches.length === 1) {
+                    merchPreviewLastX = e.touches[0].clientX;
+                    merchPreviewLastY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+            viewport.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    var dist = getMerchPreviewTouchDist(e.touches);
+                    var center = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
+                    var delta = (dist - merchPreviewLastPinchDist) * 0.01;
+                    merchPreviewDoZoom(delta, center.x, center.y);
+                    merchPreviewLastPinchDist = dist;
+                } else if (e.touches.length === 1) {
+                    e.preventDefault();
+                    merchPreviewPanX += e.touches[0].clientX - merchPreviewLastX;
+                    merchPreviewPanY += e.touches[0].clientY - merchPreviewLastY;
+                    merchPreviewLastX = e.touches[0].clientX;
+                    merchPreviewLastY = e.touches[0].clientY;
+                    merchPreviewApplyTransform();
+                }
+            }, { passive: false });
+            viewport.addEventListener('touchend', function(e) {
+                if (e.touches.length < 2) merchPreviewLastPinchDist = 0;
+                if (e.touches.length === 1) {
+                    merchPreviewLastX = e.touches[0].clientX;
+                    merchPreviewLastY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            viewport.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                merchPreviewDoZoom(-e.deltaY * 0.002, e.clientX, e.clientY);
+            }, { passive: false });
+        }
+        if (zoomInBtn) zoomInBtn.addEventListener('click', function() { merchPreviewDoZoom(MERCH_PREVIEW_ZOOM_STEP); });
+        if (zoomOutBtn) zoomOutBtn.addEventListener('click', function() { merchPreviewDoZoom(-MERCH_PREVIEW_ZOOM_STEP); });
     })();
 
     // Handle merch item click - add to Shopify cart (variantId is the Shopify variant GID, productId for feedback)
