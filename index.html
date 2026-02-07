@@ -1238,6 +1238,8 @@
             object-fit: contain;
             transform-origin: center center;
             will-change: transform;
+            -webkit-user-drag: none;
+            user-drag: none;
         }
         .merch-preview-zoom-controls {
             display: flex;
@@ -21973,7 +21975,7 @@
     <div class="merch-preview-overlay" id="merchPreviewOverlay">
         <button type="button" class="merch-preview-close" id="merchPreviewClose">&times;</button>
         <div class="merch-preview-viewport" id="merchPreviewViewport">
-            <img class="merch-preview-img" id="merchPreviewImg" src="" alt="">
+            <img class="merch-preview-img" id="merchPreviewImg" src="" alt="" draggable="false">
         </div>
         <div class="merch-preview-zoom-controls">
             <button type="button" class="merch-preview-zoom-btn" id="merchPreviewZoomOut" title="Zoom out">−</button>
@@ -22869,8 +22871,10 @@
         });
 
         if (viewport && img) {
+            img.addEventListener('dragstart', function(e) { e.preventDefault(); });
             viewport.addEventListener('mousedown', function(e) {
                 if (e.button !== 0) return;
+                e.preventDefault();
                 merchPreviewDragging = true;
                 merchPreviewLastX = e.clientX;
                 merchPreviewLastY = e.clientY;
