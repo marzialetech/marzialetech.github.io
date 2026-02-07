@@ -1259,6 +1259,11 @@
             font-family: inherit;
         }
         .merch-preview-zoom-btn:hover { background: #d4d0c8; }
+        .merch-preview-zoom-btn.reset {
+            width: auto;
+            padding: 0 12px;
+            font-size: 12px;
+        }
         .merch-preview-zoom-label {
             color: #fff;
             font-size: 12px;
@@ -21981,6 +21986,7 @@
             <button type="button" class="merch-preview-zoom-btn" id="merchPreviewZoomOut" title="Zoom out">−</button>
             <span class="merch-preview-zoom-label" id="merchPreviewZoomLabel">100%</span>
             <button type="button" class="merch-preview-zoom-btn" id="merchPreviewZoomIn" title="Zoom in">+</button>
+            <button type="button" class="merch-preview-zoom-btn reset" id="merchPreviewReset" title="Reset to center and 100%">Reset</button>
         </div>
         <p class="merch-preview-hint">Drag to pan • Scroll or pinch to zoom</p>
         <span class="merch-preview-title" id="merchPreviewTitle"></span>
@@ -22863,6 +22869,7 @@
         var img = document.getElementById('merchPreviewImg');
         var zoomInBtn = document.getElementById('merchPreviewZoomIn');
         var zoomOutBtn = document.getElementById('merchPreviewZoomOut');
+        var resetBtn = document.getElementById('merchPreviewReset');
 
         if (closeBtn) closeBtn.addEventListener('click', closeProductPreview);
         if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closeProductPreview(); });
@@ -22932,6 +22939,12 @@
         }
         if (zoomInBtn) zoomInBtn.addEventListener('click', function() { merchPreviewDoZoom(MERCH_PREVIEW_ZOOM_STEP); });
         if (zoomOutBtn) zoomOutBtn.addEventListener('click', function() { merchPreviewDoZoom(-MERCH_PREVIEW_ZOOM_STEP); });
+        if (resetBtn) resetBtn.addEventListener('click', function() {
+            merchPreviewZoom = 1;
+            merchPreviewPanX = 0;
+            merchPreviewPanY = 0;
+            merchPreviewApplyTransform();
+        });
     })();
 
     // Handle merch item click - add to Shopify cart (variantId is the Shopify variant GID, productId for feedback)
