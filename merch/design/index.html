@@ -146,58 +146,22 @@
       padding: 1rem;
       min-height: 280px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
       flex: 1;
       min-width: 200px;
     }
-    .preview-viewport {
-      overflow: hidden;
-      width: 100%;
-      max-width: 300px;
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: grab;
-      touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      background: #808080;
-    }
-    .preview-viewport:active { cursor: grabbing; }
-    .preview-viewport.dragging { cursor: grabbing; }
     .preview {
       width: 100%;
       max-width: 300px;
       aspect-ratio: 1;
-      min-width: 150px;
-      min-height: 150px;
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
-      transform-origin: center center;
-      will-change: transform;
-    }
-    .preview-zoom-controls {
-      display: flex;
-      gap: 0.25rem;
-      align-items: center;
-    }
-    .preview-zoom-controls .opt-btn {
-      padding: 2px 10px;
-      font-size: 1rem;
-      line-height: 1.2;
-    }
-    .preview-zoom-hint {
-      font-size: clamp(0.5rem, 1.2vw, 0.6rem);
-      color: #666;
     }
     @media (max-width: 600px) {
       .layout { flex-direction: column; }
       .preview-wrap { min-height: 200px; width: 100%; }
-      .preview-viewport { max-width: 100%; }
       .preview { max-width: 100%; }
     }
   </style>
@@ -230,15 +194,7 @@
           </div>
         </div>
         <div class="preview-wrap">
-          <div class="preview-viewport" id="previewViewport">
-            <div class="preview" id="preview"></div>
-          </div>
-          <div class="preview-zoom-controls">
-            <button type="button" class="opt-btn" id="zoomOut" title="Zoom out">−</button>
-            <span class="preview-zoom-hint" id="zoomLabel">100%</span>
-            <button type="button" class="opt-btn" id="zoomIn" title="Zoom in">+</button>
-          </div>
-          <p class="preview-zoom-hint">Drag to pan • Scroll or pinch to zoom</p>
+          <div class="preview" id="preview"></div>
         </div>
       </div>
     </div>
@@ -310,24 +266,8 @@
     const logoRows = document.getElementById('logo-rows');
     const bgRows = document.getElementById('bg-rows');
     const preview = document.getElementById('preview');
-    const previewViewport = document.getElementById('previewViewport');
-    const zoomInBtn = document.getElementById('zoomIn');
-    const zoomOutBtn = document.getElementById('zoomOut');
-    const zoomLabel = document.getElementById('zoomLabel');
-
-    let zoom = 1, panX = 0, panY = 0;
-    let isDragging = false, lastX = 0, lastY = 0;
-    let lastPinchDist = 0, lastPinchCenter = { x: 0, y: 0 };
-
-    const MIN_ZOOM = 0.5, MAX_ZOOM = 4, ZOOM_STEP = 0.25;
-
-    function applyTransform() {
-      preview.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-      zoomLabel.textContent = Math.round(zoom * 100) + '%';
-    }
 
     function updatePreview() {
-      zoom = 1; panX = 0; panY = 0;
       preview.style.backgroundColor = selectedBg.isCamo ? '#e8e4dc' : selectedBg.color;
       if (selectedBg.isCamo && selectedBg.camoFile) {
         preview.style.backgroundImage = `url('${assetBase}${selectedLogo.file}'), url('${assetBase}${selectedBg.camoFile}')`;
@@ -340,94 +280,7 @@
         preview.style.backgroundRepeat = 'no-repeat';
         preview.style.backgroundPosition = 'center';
       }
-      applyTransform();
     }
-
-    function doZoom(delta, centerX, centerY) {
-      const oldZoom = zoom;
-      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom + delta));
-      if (centerX != null && centerY != null && oldZoom !== zoom) {
-        const rect = previewViewport.getBoundingClientRect();
-        const cx = centerX - rect.left - rect.width / 2;
-        const cy = centerY - rect.top - rect.height / 2;
-        panX += cx * (1 - zoom / oldZoom);
-        panY += cy * (1 - zoom / oldZoom);
-      }
-      applyTransform();
-    }
-
-    function getTouchCenter(touches) {
-      return {
-        x: (touches[0].clientX + touches[1].clientX) / 2,
-        y: (touches[0].clientY + touches[1].clientY) / 2
-      };
-    }
-    function getTouchDist(touches) {
-      return Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
-    }
-
-    previewViewport.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      isDragging = true;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      previewViewport.classList.add('dragging');
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      panX += e.clientX - lastX;
-      panY += e.clientY - lastY;
-      lastX = e.clientX;
-      lastY = e.clientY;
-      applyTransform();
-    });
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      previewViewport.classList.remove('dragging');
-    });
-
-    previewViewport.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        lastPinchDist = getTouchDist(e.touches);
-        lastPinchCenter = getTouchCenter(e.touches);
-      } else if (e.touches.length === 1) {
-        lastX = e.touches[0].clientX;
-        lastY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-    previewViewport.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        const dist = getTouchDist(e.touches);
-        const center = getTouchCenter(e.touches);
-        const delta = (dist - lastPinchDist) * 0.01;
-        doZoom(delta, center.x, center.y);
-        lastPinchDist = dist;
-        lastPinchCenter = center;
-      } else if (e.touches.length === 1) {
-        e.preventDefault();
-        panX += e.touches[0].clientX - lastX;
-        panY += e.touches[0].clientY - lastY;
-        lastX = e.touches[0].clientX;
-        lastY = e.touches[0].clientY;
-        applyTransform();
-      }
-    }, { passive: false });
-    previewViewport.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) lastPinchDist = 0;
-      if (e.touches.length === 1) {
-        lastX = e.touches[0].clientX;
-        lastY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    previewViewport.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      doZoom(-e.deltaY * 0.002, e.clientX, e.clientY);
-    }, { passive: false });
-
-    zoomInBtn.addEventListener('click', () => doZoom(ZOOM_STEP));
-    zoomOutBtn.addEventListener('click', () => doZoom(-ZOOM_STEP));
 
     logoGroups.forEach(group => {
       const tr = document.createElement('tr');
